@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/providers.dart';
+import '../../models/user_model.dart';
+import '../../utils/role_guard.dart';
 import './scanner_page.dart';
 
 class ProdukPage extends ConsumerStatefulWidget {
@@ -152,6 +154,15 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
 
   @override
   Widget build(BuildContext context) {
+    // === PROTEKSI ROLE: OWNER & ADMIN YANG BISA AKSES ===
+    return RoleGuard.protect(
+      allowedRoles: [Role.OWNER, Role.ADMIN],
+      ref: ref,
+      child: _buildProdukPage(context),
+    );
+  }
+
+  Widget _buildProdukPage(BuildContext context) {
     // Gunakan provider baru untuk mengambil data
     final produkAsyncValue = ref.watch(produkListFutureProvider(widget.cabangId));
 

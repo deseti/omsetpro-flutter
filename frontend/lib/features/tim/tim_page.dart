@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import '../../providers/providers.dart';
 import '../../models/user_model.dart';
+import '../../utils/role_guard.dart';
 
 class TimPage extends ConsumerWidget {
   const TimPage({Key? key}) : super(key: key);
@@ -135,6 +135,15 @@ class TimPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // === PROTEKSI ROLE: HANYA OWNER YANG BISA AKSES ===
+    return RoleGuard.protect(
+      allowedRoles: [Role.OWNER],
+      ref: ref,
+      child: _buildTimPage(context, ref),
+    );
+  }
+
+  Widget _buildTimPage(BuildContext context, WidgetRef ref) {
     final timAsyncValue = ref.watch(timListFutureProvider);
 
     return Scaffold(

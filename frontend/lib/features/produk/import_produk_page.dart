@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart'; // Import file_picker
 import '../../providers/providers.dart';
+import '../../models/user_model.dart';
+import '../../utils/role_guard.dart';
 
 class ImportProdukPage extends ConsumerStatefulWidget {
   const ImportProdukPage({Key? key}) : super(key: key);
@@ -72,6 +74,15 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
 
   @override
   Widget build(BuildContext context) {
+    // === PROTEKSI ROLE: OWNER & ADMIN YANG BISA AKSES ===
+    return RoleGuard.protect(
+      allowedRoles: [Role.OWNER, Role.ADMIN],
+      ref: ref,
+      child: _buildImportPage(context),
+    );
+  }
+
+  Widget _buildImportPage(BuildContext context) {
     final cabangList = ref.watch(cabangListProvider);
 
     return Scaffold(

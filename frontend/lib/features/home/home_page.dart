@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:omsetpro/models/user_model.dart'; // Import model baru
 import '../../providers/providers.dart';
 import '../kasir/kasir_page.dart';
+import '../produk/produk_page.dart'; // Import halaman produk
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -89,6 +90,53 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  // --- FUNGSI BARU UNTUK MENAMPILKAN DIALOG PILIH CABANG UNTUK PRODUK ---
+  void _showPilihCabangUntukProdukDialog() {
+    final cabangList = ref.read(cabangListProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pilih Cabang untuk Kelola Produk'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: cabangList.length,
+              itemBuilder: (context, index) {
+                final cabang = cabangList[index];
+                return ListTile(
+                  title: Text(cabang['nama']),
+                  subtitle: Text(cabang['alamat']),
+                  onTap: () {
+                    // Tutup dialog dulu
+                    Navigator.of(context).pop();
+                    // Buka halaman produk untuk cabang yang dipilih
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ProdukPage(
+                          cabangId: cabang['id'],
+                          cabangNama: cabang['nama'],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
@@ -130,20 +178,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
               const SizedBox(height: 40),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.store),
-                label: const Text('Manajemen Cabang'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  textStyle: const TextStyle(fontSize: 16),
+              
+              // === MENU MANAJEMEN CABANG (HANYA OWNER) ===
+              if (userRole == Role.OWNER)
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.store),
+                  label: const Text('Manajemen Cabang'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    textStyle: const TextStyle(fontSize: 16),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/cabang');
+                  },
                 ),
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/cabang');
-                },
-              ),
-              const SizedBox(height: 20),
+              if (userRole == Role.OWNER) const SizedBox(height: 20),
 
-              // --- TAMBAHKAN TOMBOL INI DENGAN LOGIKA PENGECEKAN PERAN ---
+              // === MENU MANAJEMEN TIM (HANYA OWNER) ===
               if (userRole == Role.OWNER)
                 ElevatedButton.icon(
                   icon: const Icon(Icons.people),
@@ -157,8 +208,32 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Navigator.of(context).pushNamed('/tim');
                   },
                 ),
-              const SizedBox(height: 20),
+              if (userRole == Role.OWNER) const SizedBox(height: 20),
 
+              // === MENU MANAJEMEN PRODUK (OWNER & ADMIN) ===
+              if (userRole == Role.OWNER || userRole == Role.ADMIN)
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.inventory),
+                  label: const Text('Manajemen Produk'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    textStyle: const TextStyle(fontSize: 16),
+                    backgroundColor: Colors.blue,
+                  ),
+                  onPressed: () {
+                    final cabangList = ref.read(cabangListProvider);
+                    if (cabangList.isNotEmpty) {
+                      _showPilihCabangUntukProdukDialog();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Anda belum punya akses cabang.')),
+                      );
+                    }
+                  },
+                ),
+              if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
+
+              // === MENU KASIR (SEMUA ROLE BISA AKSES) ===
               ElevatedButton.icon(
                 icon: const Icon(Icons.point_of_sale),
                 label: const Text('Buka Kasir'),

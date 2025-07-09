@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../providers/providers.dart';
+import '../../utils/role_guard.dart';
+import '../../models/user_model.dart';
 import '../produk/produk_page.dart'; // Import halaman produk
 
 class CabangPage extends ConsumerStatefulWidget {
@@ -168,6 +170,15 @@ class _CabangPageState extends ConsumerState<CabangPage> {
 
   @override
   Widget build(BuildContext context) {
+    // === PROTEKSI ROLE: HANYA OWNER YANG BISA AKSES ===
+    return RoleGuard.protect(
+      allowedRoles: [Role.OWNER],
+      ref: ref,
+      child: _buildCabangPage(context),
+    );
+  }
+
+  Widget _buildCabangPage(BuildContext context) {
     final cabangList = ref.watch(cabangListProvider);
 
     return Scaffold(
