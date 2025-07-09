@@ -1,0 +1,68 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import
+import 'features/auth/auth_page.dart';
+import 'features/cabang/cabang_page.dart';
+import 'features/home/home_page.dart';
+import 'providers/providers.dart';
+import 'features/produk/import_produk_page.dart'; // Import halaman import produk
+import 'features/tim/tim_page.dart'; // Import halaman tim
+
+// Ubah fungsi main menjadi async
+Future<void> main() async {
+  // Pastikan semua binding Flutter sudah siap sebelum menjalankan kode async
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Buat instance SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  
+  // Baca token dari penyimpanan
+  final token = prefs.getString('accessToken');
+
+  runApp(
+    ProviderScope(
+      // Ganti nilai awal provider berdasarkan token yang ditemukan
+      overrides: [
+        accessTokenProvider.overrideWith((ref) => token),
+        authStateProvider.overrideWith((ref) => token != null),
+      ],
+      child: const OmsetProApp(),
+    ),
+  );
+}
+
+class OmsetProApp extends StatelessWidget {
+  const OmsetProApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'OmsetPro',
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Poppins',
+        useMaterial3: true,
+      ),
+      debugShowCheckedModeBanner: false,
+      routes: {
+        '/': (context) => const AuthChecker(),
+        '/home': (context) => const HomePage(),
+        '/cabang': (context) => const CabangPage(),
+        '/import-produk': (context) => const ImportProdukPage(),
+        '/tim': (context) => const TimPage(), // <-- TAMBAHKAN RUTE INI
+      },
+      initialRoute: '/',
+    );
+  }
+}
+
+class AuthChecker extends ConsumerWidget {
+  const AuthChecker({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoggedIn = ref.watch(authStateProvider);
+    return isLoggedIn ? const HomePage() : const AuthPage();
+  }
+}

@@ -1,0 +1,21 @@
+# Dependencies
+/frontend/build/
+/frontend/.dart_tool/
+/frontend/.packages
+/frontend/pubspec.lock
+/backend/node_modules/
+
+# Secret files (PENTING!)
+/backend/secrets/
+/backend/.env
+/backend/prisma/dev.db
+
+# Build and log files
+/backend/dist/
+*.log
+
+# IDE-specific files
+.idea/
+.vscode/
+*.iml
+/frontend/.metadata

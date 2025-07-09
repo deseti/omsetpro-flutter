@@ -1,0 +1,81 @@
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
+import { CreateTransaksiDto } from './dto/create-transaksi.dto';
+
+@Injectable()
+export class TransaksiService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createTransaksiDto: CreateTransaksiDto, kasirId: number) {
+    const { cabangId, metodeBayar, items } = createTransaksiDto;
+
+    if (!items || items.length === 0) {
+      throw new BadRequestException('Keranjang belanja tidak boleh kosong.');
+    }
+
+    // Ambil semua ID produk dari keranjang untuk divalidasi
+    const produkIds = items.map((item) => item.produkId);
+    const produkDiDb = await this.prisma.produk.findMany({
+      where: {
+        id: { in: produkIds },
+        cabangId: cabangId, // Pastikan semua produk dari cabang yang sama
+      },
+    });
+
+    // Cek jika ada produk di keranjang yang tidak ada di database
+    if (produkDiDb.length !== produkIds.length) {
+      throw new BadRequestException('Beberapa produk tidak ditemukan di cabang ini.');
+    }
+
+    // Hitung total harga dan siapkan data untuk detail transaksi
+    let totalHarga = 0;
+    const transaksiDetailData = produkDiDb.map((produk) => {
+      const itemDiKeranjang = items.find((item) => item.produkId === produk.id)!;
+      
+      // Cek stok
+      if (produk.stok < itemDiKeranjang.jumlah) {
+        throw new BadRequestException(`Stok untuk produk "${produk.nama}" tidak mencukupi.`);
+      }
+
+      totalHarga += produk.harga * itemDiKeranjang.jumlah;
+      return {
+        produkId: produk.id,
+        jumlah: itemDiKeranjang.jumlah,
+        hargaSaatItu: produk.harga,
+      };
+    });
+
+    // Gunakan Prisma Transaction untuk memastikan semua operasi berhasil atau semua gagal
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Buat catatan transaksi utama
+      const transaksi = await tx.transaksi.create({
+        data: {
+          total: totalHarga,
+          metodeBayar,
+          cabangId,
+          kasirId,
+          detail: {
+            create: transaksiDetailData, // Buat semua detail transaksi sekaligus
+          },
+        },
+        include: {
+          detail: true, // Sertakan detail dalam respons
+        },
+      });
+
+      // 2. Update (kurangi) stok untuk setiap produk
+      for (const item of items) {
+        await tx.produk.update({
+          where: { id: item.produkId },
+          data: {
+            stok: {
+              decrement: item.jumlah,
+            },
+          },
+        });
+      }
+
+      return transaksi;
+    });
+  }
+}

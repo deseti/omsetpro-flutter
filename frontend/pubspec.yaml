@@ -1,0 +1,42 @@
+name: omsetpro
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Untuk state management
+  flutter_riverpod: ^2.5.1
+
+  # Untuk komunikasi API
+  dio: ^5.4.3+1
+
+  # Untuk memilih gambar dari galeri/kamera
+  image_picker: ^1.1.2
+
+  # Untuk menyimpan data sesi login secara persisten
+  shared_preferences: ^2.2.3
+
+  # Untuk memilih file dari penyimpanan (Excel, dll)
+  file_picker: ^8.0.5
+  
+  # Untuk scan barcode via kamera
+  mobile_scanner: ^5.1.1
+
+  # Ikon bawaan gaya iOS
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

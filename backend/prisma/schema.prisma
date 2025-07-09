@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  KASIR
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  namaLengkap String
+  password    String
+  role        Role     @default(OWNER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // --- PERUBAHAN LOGIKA DI SINI ---
+  // Relasi untuk menunjukkan siapa Owner dari user ini.
+  // Kolom ini akan kosong jika rolenya adalah OWNER.
+  dikelolaOleh   User?  @relation("OwnerKeAnggota", fields: [dikelolaOlehId], references: [id])
+  dikelolaOlehId Int?   // Ini adalah ID dari si OWNER
+
+  // Relasi untuk menunjukkan siapa saja anggota tim dari user ini (jika dia OWNER).
+  anggotaTim     User[] @relation("OwnerKeAnggota")
+
+  cabang      Cabang[]
+  transaksi   Transaksi[]
+  aksesCabang AksesCabang[]
+}
+
+model Cabang {
+  id        Int      @id @default(autoincrement())
+  nama      String
+  alamat    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   Int
+
+  produk        Produk[]
+  transaksi     Transaksi[]
+  aksesPengguna AksesCabang[]
+}
+
+model Produk {
+  id        Int      @id @default(autoincrement())
+  nama      String
+  hargaBeli Int      @default(0)
+  harga     Int
+  stok      Int      @default(0)
+  barcode   String?  @unique
+  fotoUrl   String?
+  isArsip   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cabang    Cabang   @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+  cabangId  Int
+
+  transaksiDetail TransaksiDetail[]
+}
+
+model Transaksi {
+  id            Int      @id @default(autoincrement())
+  total         Int
+  metodeBayar   String
+  createdAt     DateTime @default(now())
+
+  cabang        Cabang   @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+  cabangId      Int
+
+  kasir         User     @relation(fields: [kasirId], references: [id])
+  kasirId       Int
+
+  detail        TransaksiDetail[]
+}
+
+model TransaksiDetail {
+  id            Int      @id @default(autoincrement())
+  jumlah        Int
+  hargaSaatItu  Int
+  transaksi     Transaksi @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
+  transaksiId   Int
+
+  produk        Produk    @relation(fields: [produkId], references: [id])
+  produkId      Int
+}
+
+model AksesCabang {
+  user      User   @relation(fields: [userId], references: [id])
+  userId    Int
+  cabang    Cabang @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+  cabangId  Int
+
+  @@id([userId, cabangId])
+}

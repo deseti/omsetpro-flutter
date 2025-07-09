@@ -1,0 +1,14 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Tambahkan baris ini untuk mengaktifkan CORS
+  // Ini mengizinkan permintaan dari sumber (origin) manapun.
+  // Untuk produksi, ini harus lebih spesifik, tapi untuk pengembangan ini sudah cukup.
+  app.enableCors();
+
+  await app.listen(3000);
+}
+bootstrap();
