@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
+import '../../services/offline_database.dart';
+import '../../services/connectivity_service.dart';
+import '../../services/sync_service.dart';
 
 class KasirPage extends ConsumerStatefulWidget {
   final int cabangId;
@@ -27,6 +30,11 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
       });
+    });
+    
+    // Start auto sync when page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SyncService.startAutoSync(ref);
     });
   }
 
@@ -75,9 +83,25 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       return sum + (item['produk']['harga'] * item['jumlah']);
     }).toInt();
 
+    // Watch connectivity status
+    final connectivityAsync = ref.watch(connectivityProvider);
+    final isOfflineMode = ref.watch(offlineModeProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Kasir di ${widget.cabangNama}'),
+        backgroundColor: isOfflineMode ? Colors.orange : null,
+        actions: [
+          // Offline mode indicator
+          connectivityAsync.when(
+            data: (isOnline) => isOnline 
+              ? const Icon(Icons.wifi, color: Colors.green)
+              : const Icon(Icons.wifi_off, color: Colors.red),
+            loading: () => const Icon(Icons.sync, color: Colors.yellow),
+            error: (_, __) => const Icon(Icons.error, color: Colors.red),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Row(
         children: [
@@ -113,33 +137,73 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      ref.invalidate(produkListFutureProvider(widget.cabangId));
+                      ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
                       ref.read(cartProvider.notifier).state = [];
                       await Future.delayed(const Duration(milliseconds: 300));
                     },
                     child: Consumer(
                       builder: (context, ref, _) {
-                        final produkAsync = ref.watch(produkListFutureProvider(widget.cabangId));
+                        final produkAsync = ref.watch(produkListWithOfflineProvider(widget.cabangId));
                         return produkAsync.when(
                           data: (produkList) {
                             final filteredProducts = _filterProducts(produkList);
-                            return GridView.builder(
-                              padding: const EdgeInsets.all(8),
-                              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 200,
-                                childAspectRatio: 3 / 4,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
-                              ),
-                              itemCount: filteredProducts.length,
-                              itemBuilder: (context, index) {
-                                final produk = filteredProducts[index];
-                                return _buildProdukCard(produk);
-                              },
+                            
+                            // Show offline banner if in offline mode
+                            return Column(
+                              children: [
+                                if (isOfflineMode)
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(8.0),
+                                    color: Colors.orange.shade100,
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.offline_bolt, color: Colors.orange),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Mode Offline - Data dari cache lokal',
+                                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                Expanded(
+                                  child: GridView.builder(
+                                    padding: const EdgeInsets.all(8),
+                                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: 200,
+                                      childAspectRatio: 3 / 4,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                    ),
+                                    itemCount: filteredProducts.length,
+                                    itemBuilder: (context, index) {
+                                      final produk = filteredProducts[index];
+                                      return _buildProdukCard(produk);
+                                    },
+                                  ),
+                                ),
+                              ],
                             );
                           },
                           loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => Center(child: Text('Error: $err')),
+                          error: (err, stack) => Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                                const SizedBox(height: 16),
+                                Text('Error: $err'),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
+                                  },
+                                  child: const Text('Coba Lagi'),
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -317,33 +381,96 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             onPressed: cart.isEmpty ? null : () async {
               try {
                 final dio = ref.read(dioProvider);
+                final isConnected = await ConnectivityService.isConnected();
+                
                 final itemsDto = cart.map((item) => {
                   'produkId': item['produk']['id'],
                   'jumlah': item['jumlah'],
                 }).toList();
 
-                await dio.post('/transaksi', data: {
-                  'cabangId': widget.cabangId,
-                  'metodeBayar': 'Tunai',
-                  'items': itemsDto,
-                });
+                if (isConnected) {
+                  // Online mode - send to server directly
+                  await dio.post('/transaksi', data: {
+                    'cabangId': widget.cabangId,
+                    'metodeBayar': 'Tunai',
+                    'items': itemsDto,
+                  });
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
-                );
-                ref.invalidate(produkListFutureProvider(widget.cabangId));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
+                  );
+                } else {
+                  // Offline mode - save to local database
+                  await OfflineDatabase.saveTransaksiOffline(
+                    cabangId: widget.cabangId,
+                    metodeBayar: 'Tunai',
+                    totalHarga: totalHarga,
+                    items: cart.map((item) => {
+                      'produkId': item['produk']['id'],
+                      'jumlah': item['jumlah'],
+                      'nama': item['produk']['nama'],
+                      'harga': item['produk']['harga'],
+                    }).toList(),
+                  );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Transaksi disimpan offline - akan disync saat online'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+
+                // Clear cart and refresh
                 ref.read(cartProvider.notifier).state = [];
+                ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
+
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Transaksi gagal!'), backgroundColor: Colors.red),
-                );
+                // Fallback to offline mode on any error
+                try {
+                  await OfflineDatabase.saveTransaksiOffline(
+                    cabangId: widget.cabangId,
+                    metodeBayar: 'Tunai',
+                    totalHarga: totalHarga,
+                    items: cart.map((item) => {
+                      'produkId': item['produk']['id'],
+                      'jumlah': item['jumlah'],
+                      'nama': item['produk']['nama'],
+                      'harga': item['produk']['harga'],
+                    }).toList(),
+                  );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Server error - transaksi disimpan offline'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+
+                  ref.read(cartProvider.notifier).state = [];
+                } catch (offlineError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $offlineError'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.green,
+              backgroundColor: ref.watch(offlineModeProvider) ? Colors.orange : Colors.green,
             ),
-            child: const Text('Bayar (Tunai)', style: TextStyle(color: Colors.white)),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final isOffline = ref.watch(offlineModeProvider);
+                return Text(
+                  isOffline ? 'Bayar (Offline)' : 'Bayar (Tunai)', 
+                  style: const TextStyle(color: Colors.white),
+                );
+              },
+            ),
           ),
         ],
       ),

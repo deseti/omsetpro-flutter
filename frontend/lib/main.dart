@@ -7,11 +7,15 @@ import 'features/home/home_page.dart';
 import 'providers/providers.dart';
 import 'features/produk/import_produk_page.dart'; // Import halaman import produk
 import 'features/tim/tim_page.dart'; // Import halaman tim
+import 'services/offline_database.dart'; // Import offline database
 
 // Ubah fungsi main menjadi async
 Future<void> main() async {
   // Pastikan semua binding Flutter sudah siap sebelum menjalankan kode async
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inisialisasi database offline
+  await OfflineDatabase.database;
   
   // Buat instance SharedPreferences
   final prefs = await SharedPreferences.getInstance();

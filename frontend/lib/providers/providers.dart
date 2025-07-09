@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../models/user_model.dart'; // Import model baru
+import '../services/connectivity_service.dart';
+import '../services/offline_database.dart';
 
 // ... (provider lain tetap sama)
 final authStateProvider = StateProvider<bool>((ref) => false);
@@ -35,3 +37,56 @@ final timListFutureProvider = FutureProvider.autoDispose<List<User>>((ref) async
   final List<dynamic> data = response.data;
   return data.map((json) => User.fromJson(json)).toList();
 });
+
+// === PROVIDER UNTUK OFFLINE MODE ===
+final offlineModeProvider = StateProvider<bool>((ref) => false);
+
+// Provider untuk produk dengan offline support
+final produkListWithOfflineProvider =
+    FutureProvider.autoDispose.family<List<dynamic>, int>((ref, cabangId) async {
+  final dio = ref.watch(dioProvider);
+  final isConnected = await ConnectivityService.isConnected();
+  
+  if (isConnected) {
+    try {
+      // Try to fetch from server
+      final response = await dio.get('/produk', queryParameters: {'cabangId': cabangId});
+      final produkList = response.data as List<dynamic>;
+      
+      // Save to offline storage
+      await OfflineDatabase.saveProdukToOffline(produkList, cabangId);
+      
+      return produkList;
+    } catch (e) {
+      // If server fails, fallback to offline
+      print('Server error, using offline data: $e');
+      final offlineData = await OfflineDatabase.getOfflineProduk(cabangId);
+      return offlineData.map((item) => {
+        'id': item['id'],
+        'nama': item['nama'],
+        'harga': item['harga'],
+        'hargaBeli': item['hargaBeli'],
+        'stok': item['stok'],
+        'barcode': item['barcode'],
+        'fotoUrl': item['fotoUrl'],
+        'isArsip': item['isArsip'] == 1,
+      }).toList();
+    }
+  } else {
+    // No connection, use offline data
+    ref.read(offlineModeProvider.notifier).state = true;
+    final offlineData = await OfflineDatabase.getOfflineProduk(cabangId);
+    return offlineData.map((item) => {
+      'id': item['id'],
+      'nama': item['nama'],
+      'harga': item['harga'],
+      'hargaBeli': item['hargaBeli'],
+      'stok': item['stok'],
+      'barcode': item['barcode'],
+      'fotoUrl': item['fotoUrl'],
+      'isArsip': item['isArsip'] == 1,
+    }).toList();
+  }
+});
+
+// === EXISTING PROVIDERS ===
