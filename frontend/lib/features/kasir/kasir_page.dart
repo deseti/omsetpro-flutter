@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
 
-class KasirPage extends ConsumerWidget {
+class KasirPage extends ConsumerStatefulWidget {
   final int cabangId;
   final String cabangNama;
 
@@ -13,7 +13,63 @@ class KasirPage extends ConsumerWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<KasirPage> createState() => _KasirPageState();
+}
+
+class _KasirPageState extends ConsumerState<KasirPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // === FUNGSI HELPER UNTUK MANAJEMEN KERANJANG ===
+  void _updateCartItemQuantity(int index, int newQuantity) {
+    if (newQuantity <= 0) {
+      // Jika jumlah 0 atau kurang, hapus item
+      _removeCartItem(index);
+      return;
+    }
+
+    final currentCart = ref.read(cartProvider);
+    final updatedCart = List<Map<String, dynamic>>.from(currentCart);
+    updatedCart[index]['jumlah'] = newQuantity;
+    ref.read(cartProvider.notifier).state = updatedCart;
+  }
+
+  void _removeCartItem(int index) {
+    final currentCart = ref.read(cartProvider);
+    final updatedCart = List<Map<String, dynamic>>.from(currentCart);
+    updatedCart.removeAt(index);
+    ref.read(cartProvider.notifier).state = updatedCart;
+  }
+
+  // === FUNGSI HELPER UNTUK FILTER PRODUK ===
+  List<dynamic> _filterProducts(List<dynamic> products) {
+    if (_searchQuery.isEmpty) {
+      return products;
+    }
+    return products.where((produk) {
+      final nama = produk['nama'].toString().toLowerCase();
+      return nama.contains(_searchQuery);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
     final totalHarga = cart.fold<double>(0, (sum, item) {
       return sum + (item['produk']['harga'] * item['jumlah']);
@@ -21,54 +77,88 @@ class KasirPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kasir di $cabangNama'),
+        title: Text('Kasir di ${widget.cabangNama}'),
       ),
       body: Row(
         children: [
           Expanded(
             flex: 2,
-            child: RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(produkListFutureProvider(cabangId));
-                ref.read(cartProvider.notifier).state = [];
-                await Future.delayed(const Duration(milliseconds: 300));
-              },
-              child: Consumer(
-                builder: (context, ref, _) {
-                  final produkAsync = ref.watch(produkListFutureProvider(cabangId));
-                  return produkAsync.when(
-                    data: (produkList) => GridView.builder(
-                      padding: const EdgeInsets.all(8),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 200,
-                        childAspectRatio: 3 / 4,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
+            child: Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari produk...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      itemCount: produkList.length,
-                      itemBuilder: (context, index) {
-                        final produk = produkList[index];
-                        return _buildProdukCard(context, ref, produk);
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                  ),
+                ),
+                // Product Grid
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(produkListFutureProvider(widget.cabangId));
+                      ref.read(cartProvider.notifier).state = [];
+                      await Future.delayed(const Duration(milliseconds: 300));
+                    },
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final produkAsync = ref.watch(produkListFutureProvider(widget.cabangId));
+                        return produkAsync.when(
+                          data: (produkList) {
+                            final filteredProducts = _filterProducts(produkList);
+                            return GridView.builder(
+                              padding: const EdgeInsets.all(8),
+                              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 200,
+                                childAspectRatio: 3 / 4,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                              itemCount: filteredProducts.length,
+                              itemBuilder: (context, index) {
+                                final produk = filteredProducts[index];
+                                return _buildProdukCard(produk);
+                              },
+                            );
+                          },
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (err, stack) => Center(child: Text('Error: $err')),
+                        );
                       },
                     ),
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Center(child: Text('Error: $err')),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
           ),
           const VerticalDivider(width: 1),
           Expanded(
             flex: 1,
-            child: _buildCartView(context, ref, cart, totalHarga, cabangId),
+            child: _buildCartView(cart, totalHarga),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProdukCard(BuildContext context, WidgetRef ref, dynamic produk) {
+  Widget _buildProdukCard(dynamic produk) {
     return InkWell(
       onTap: () {
         final cartNotifier = ref.read(cartProvider.notifier);
@@ -126,7 +216,7 @@ class KasirPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildCartView(BuildContext context, WidgetRef ref, List<Map<String, dynamic>> cart, int totalHarga, int cabangId) {
+  Widget _buildCartView(List<Map<String, dynamic>> cart, int totalHarga) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -141,10 +231,75 @@ class KasirPage extends ConsumerWidget {
                     itemCount: cart.length,
                     itemBuilder: (context, index) {
                       final item = cart[index];
-                      return ListTile(
-                        title: Text(item['produk']['nama']),
-                        subtitle: Text('Rp ${item['produk']['harga']}'),
-                        trailing: Text('x ${item['jumlah']}'),
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              // Info produk
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item['produk']['nama'],
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(
+                                      'Rp ${item['produk']['harga']}',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Kontrol jumlah
+                              Row(
+                                children: [
+                                  // Tombol kurang
+                                  IconButton(
+                                    onPressed: () {
+                                      _updateCartItemQuantity(index, item['jumlah'] - 1);
+                                    },
+                                    icon: const Icon(Icons.remove_circle_outline),
+                                    color: Colors.red,
+                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  ),
+                                  // Tampilan jumlah
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '${item['jumlah']}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  // Tombol tambah
+                                  IconButton(
+                                    onPressed: () {
+                                      _updateCartItemQuantity(index, item['jumlah'] + 1);
+                                    },
+                                    icon: const Icon(Icons.add_circle_outline),
+                                    color: Colors.green,
+                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  ),
+                                  // Tombol hapus
+                                  IconButton(
+                                    onPressed: () {
+                                      _removeCartItem(index);
+                                    },
+                                    icon: const Icon(Icons.delete_outline),
+                                    color: Colors.red,
+                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -168,7 +323,7 @@ class KasirPage extends ConsumerWidget {
                 }).toList();
 
                 await dio.post('/transaksi', data: {
-                  'cabangId': cabangId,
+                  'cabangId': widget.cabangId,
                   'metodeBayar': 'Tunai',
                   'items': itemsDto,
                 });
@@ -176,7 +331,7 @@ class KasirPage extends ConsumerWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
                 );
-                ref.invalidate(produkListFutureProvider(cabangId));
+                ref.invalidate(produkListFutureProvider(widget.cabangId));
                 ref.read(cartProvider.notifier).state = [];
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
