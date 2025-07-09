@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import
+import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'features/auth/auth_page.dart';
 import 'features/cabang/cabang_page.dart';
 import 'features/home/home_page.dart';
 import 'providers/providers.dart';
 import 'features/produk/import_produk_page.dart'; // Import halaman import produk
 import 'features/tim/tim_page.dart'; // Import halaman tim
-import 'services/offline_database.dart'; // Import offline database
+import 'services/offline_database_proxy.dart' as OfflineDatabase; // Import offline database
 
 // Ubah fungsi main menjadi async
 Future<void> main() async {
   // Pastikan semua binding Flutter sudah siap sebelum menjalankan kode async
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inisialisasi database offline
-  await OfflineDatabase.database;
+  // Inisialisasi database offline hanya untuk mobile
+  if (!kIsWeb) {
+    await OfflineDatabase.OfflineDatabase.database;
+  }
   
   // Buat instance SharedPreferences
   final prefs = await SharedPreferences.getInstance();

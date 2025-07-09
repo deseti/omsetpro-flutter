@@ -1,26 +1,35 @@
-import 'dart:io';
-import 'dart:convert';
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+
+// Import mobile implementation untuk non-web platforms
+import 'dart:io' if (dart.library.html) 'dart:html';
+import 'dart:convert' if (dart.library.html) 'dart:convert';
+import 'package:path/path.dart' if (dart.library.html) '';
+import 'package:sqflite/sqflite.dart' if (dart.library.html) '';
+import 'package:path_provider/path_provider.dart' if (dart.library.html) '';
 
 class OfflineDatabase {
   static const _databaseName = "omsetpro_offline.db";
   static const _databaseVersion = 1;
 
-  // Singleton pattern
+  // Singleton pattern - hanya untuk mobile
   static Database? _database;
   
-  static Future<Database> get database async {
+  static Future<Database?> get database async {
+    if (kIsWeb) {
+      print('OfflineDatabase: Web platform - no database');
+      return null;
+    }
+    
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
   static Future<Database> _initDatabase() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = join(documentsDirectory.path, _databaseName);
+    if (kIsWeb) throw UnsupportedError('Database not supported on web');
     
+    final Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    final String path = join(documentsDirectory.path, _databaseName);
     return await openDatabase(
       path,
       version: _databaseVersion,
@@ -29,207 +38,169 @@ class OfflineDatabase {
   }
 
   static Future<void> _onCreate(Database db, int version) async {
-    // Tabel untuk menyimpan produk secara offline
+    if (kIsWeb) return;
+    
+    // Tabel untuk menyimpan produk offline
     await db.execute('''
-      CREATE TABLE produk_offline (
+      CREATE TABLE produk (
         id INTEGER PRIMARY KEY,
+        cabang_id INTEGER NOT NULL,
         nama TEXT NOT NULL,
         harga INTEGER NOT NULL,
-        hargaBeli INTEGER NOT NULL,
+        harga_beli INTEGER,
         stok INTEGER DEFAULT 0,
         barcode TEXT,
-        fotoUrl TEXT,
-        cabangId INTEGER NOT NULL,
-        isArsip INTEGER DEFAULT 0,
-        lastUpdated TEXT NOT NULL
+        foto_url TEXT,
+        is_arsip INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     ''');
 
-    // Tabel untuk menyimpan transaksi offline (belum disync)
+    // Tabel untuk menyimpan transaksi offline
     await db.execute('''
       CREATE TABLE transaksi_offline (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        cabangId INTEGER NOT NULL,
-        metodeBayar TEXT NOT NULL,
-        totalHarga INTEGER NOT NULL,
-        items TEXT NOT NULL, -- JSON string dari items
-        timestamp TEXT NOT NULL,
-        isSynced INTEGER DEFAULT 0
+        cabang_id INTEGER NOT NULL,
+        metode_bayar TEXT NOT NULL,
+        total_harga INTEGER NOT NULL,
+        is_synced INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     ''');
 
-    // Tabel untuk melacak sync status
+    // Tabel untuk item transaksi offline
     await db.execute('''
-      CREATE TABLE sync_status (
+      CREATE TABLE transaksi_item_offline (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tableName TEXT NOT NULL,
-        lastSyncTime TEXT NOT NULL
+        transaksi_id INTEGER NOT NULL,
+        produk_id INTEGER NOT NULL,
+        nama_produk TEXT NOT NULL,
+        harga INTEGER NOT NULL,
+        jumlah INTEGER NOT NULL,
+        FOREIGN KEY (transaksi_id) REFERENCES transaksi_offline (id)
       )
     ''');
   }
 
-  // === PRODUK OFFLINE OPERATIONS ===
-  
+  // === PRODUK METHODS ===
   static Future<void> saveProdukToOffline(List<dynamic> produkList, int cabangId) async {
-    final db = await database;
-    
-    // Hapus produk lama untuk cabang ini
-    await db.delete('produk_offline', where: 'cabangId = ?', whereArgs: [cabangId]);
-    
-    // Simpan produk baru
-    for (var produk in produkList) {
-      await db.insert('produk_offline', {
-        'id': produk['id'],
-        'nama': produk['nama'],
-        'harga': produk['harga'],
-        'hargaBeli': produk['hargaBeli'],
-        'stok': produk['stok'] ?? 0,
-        'barcode': produk['barcode'],
-        'fotoUrl': produk['fotoUrl'],
-        'cabangId': cabangId,
-        'isArsip': produk['isArsip'] == true ? 1 : 0,
-        'lastUpdated': DateTime.now().toIso8601String(),
-      });
+    if (kIsWeb) {
+      print('OfflineDatabase: saveProdukToOffline called on web - ignoring');
+      return;
     }
     
-    // Update sync status
-    await _updateSyncStatus('produk_offline');
+    final db = await database;
+    if (db == null) return;
+    
+    // Clear existing data for this cabang
+    await db.delete('produk', where: 'cabang_id = ?', whereArgs: [cabangId]);
+    
+    // Insert new data
+    for (var produk in produkList) {
+      await db.insert('produk', {
+        'id': produk['id'],
+        'cabang_id': cabangId,
+        'nama': produk['nama'],
+        'harga': produk['harga'],
+        'harga_beli': produk['hargaBeli'] ?? 0,
+        'stok': produk['stok'] ?? 0,
+        'barcode': produk['barcode'],
+        'foto_url': produk['fotoUrl'],
+        'is_arsip': produk['isArsip'] == true ? 1 : 0,
+      });
+    }
   }
 
   static Future<List<Map<String, dynamic>>> getOfflineProduk(int cabangId) async {
+    if (kIsWeb) {
+      print('OfflineDatabase: getOfflineProduk called on web - returning empty list');
+      return [];
+    }
+    
     final db = await database;
+    if (db == null) return [];
+    
     return await db.query(
-      'produk_offline',
-      where: 'cabangId = ? AND isArsip = 0',
+      'produk',
+      where: 'cabang_id = ? AND is_arsip = 0',
       whereArgs: [cabangId],
     );
   }
 
-  // === TRANSAKSI OFFLINE OPERATIONS ===
-
-  static Future<int> saveTransaksiOffline({
+  // === TRANSAKSI METHODS ===
+  static Future<void> saveTransaksiOffline({
     required int cabangId,
     required String metodeBayar,
     required int totalHarga,
     required List<Map<String, dynamic>> items,
   }) async {
-    final db = await database;
+    if (kIsWeb) {
+      print('OfflineDatabase: saveTransaksiOffline called on web - ignoring');
+      return;
+    }
     
-    return await db.insert('transaksi_offline', {
-      'cabangId': cabangId,
-      'metodeBayar': metodeBayar,
-      'totalHarga': totalHarga,
-      'items': _encodeItems(items),
-      'timestamp': DateTime.now().toIso8601String(),
-      'isSynced': 0,
+    final db = await database;
+    if (db == null) return;
+    
+    // Insert transaksi
+    final transaksiId = await db.insert('transaksi_offline', {
+      'cabang_id': cabangId,
+      'metode_bayar': metodeBayar,
+      'total_harga': totalHarga,
+      'is_synced': 0,
     });
+
+    // Insert items
+    for (var item in items) {
+      await db.insert('transaksi_item_offline', {
+        'transaksi_id': transaksiId,
+        'produk_id': item['produkId'],
+        'nama_produk': item['nama'],
+        'harga': item['harga'],
+        'jumlah': item['jumlah'],
+      });
+    }
   }
 
-  static Future<List<Map<String, dynamic>>> getUnsyncedTransaksi() async {
-    final db = await database;
-    return await db.query(
-      'transaksi_offline',
-      where: 'isSynced = 0',
-      orderBy: 'timestamp ASC',
-    );
-  }
-
-  static Future<void> markTransaksiAsSynced(int id) async {
-    final db = await database;
-    await db.update(
-      'transaksi_offline',
-      {'isSynced': 1},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  static Future<List<Map<String, dynamic>>> getTransaksiWithDecodedItems() async {
-    final db = await database;
-    final transaksiList = await db.query(
-      'transaksi_offline',
-      where: 'isSynced = 0',
-      orderBy: 'timestamp ASC',
-    );
-    
-    return transaksiList.map((transaksi) {
-      final decodedItems = _decodeItems(transaksi['items'] as String);
-      return {
-        ...transaksi,
-        'items': decodedItems,
-      };
-    }).toList();
-  }
-
-  // === SYNC STATUS OPERATIONS ===
-
-  static Future<void> _updateSyncStatus(String tableName) async {
-    final db = await database;
-    await db.insert(
-      'sync_status',
-      {
-        'tableName': tableName,
-        'lastSyncTime': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  static Future<String?> getLastSyncTime(String tableName) async {
-    final db = await database;
-    final result = await db.query(
-      'sync_status',
-      where: 'tableName = ?',
-      whereArgs: [tableName],
-      orderBy: 'lastSyncTime DESC',
-      limit: 1,
-    );
-    
-    return result.isNotEmpty ? result.first['lastSyncTime'] as String : null;
-  }
-
-  // === HELPER METHODS ===
-
-  static String _encodeItems(List<Map<String, dynamic>> items) {
-    // Convert items to proper JSON string
-    final itemsJson = items.map((item) => {
-      'produkId': item['produkId'],
-      'jumlah': item['jumlah'],
-      'nama': item['nama'],
-      'harga': item['harga'],
-    }).toList();
-    return jsonEncode(itemsJson);
-  }
-
-  static List<Map<String, dynamic>> _decodeItems(String itemsString) {
-    try {
-      final decoded = jsonDecode(itemsString) as List;
-      return decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-    } catch (e) {
-      print('Error decoding items: $e');
+  static Future<List<Map<String, dynamic>>> getPendingTransaksi() async {
+    if (kIsWeb) {
+      print('OfflineDatabase: getPendingTransaksi called on web - returning empty list');
       return [];
     }
-  }
-
-  // === CLEANUP METHODS ===
-
-  static Future<void> clearOldData() async {
-    final db = await database;
-    final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
     
-    // Hapus transaksi yang sudah sync dan lebih dari 1 minggu
-    await db.delete(
+    final db = await database;
+    if (db == null) return [];
+    
+    return await db.query(
       'transaksi_offline',
-      where: 'isSynced = 1 AND timestamp < ?',
-      whereArgs: [oneWeekAgo.toIso8601String()],
+      where: 'is_synced = 0',
     );
   }
 
-  static Future<void> closeDatabase() async {
-    final db = _database;
-    if (db != null) {
-      await db.close();
-      _database = null;
+  static Future<void> markTransaksiAsSynced(int localId) async {
+    if (kIsWeb) {
+      print('OfflineDatabase: markTransaksiAsSynced called on web - ignoring');
+      return;
     }
+    
+    final db = await database;
+    if (db == null) return;
+    
+    await db.update(
+      'transaksi_offline',
+      {'is_synced': 1},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
+  // === LEGACY METHODS FOR COMPATIBILITY ===
+  static Future<void> saveProdukToCache(int cabangId, List<dynamic> produkList) async {
+    await saveProdukToOffline(produkList, cabangId);
+  }
+
+  static Future<List<dynamic>> getCachedProduk(int cabangId) async {
+    final result = await getOfflineProduk(cabangId);
+    return result.cast<dynamic>();
   }
 }

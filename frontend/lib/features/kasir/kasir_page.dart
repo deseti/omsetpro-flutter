@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/providers.dart';
-import '../../services/offline_database.dart';
+import '../../services/offline_database_proxy.dart' as OfflineDatabase;
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
+import '../../services/receipt_service.dart';
+import '../../widgets/receipt_preview_dialog.dart';
 
 class KasirPage extends ConsumerStatefulWidget {
   final int cabangId;
   final String cabangNama;
 
   const KasirPage({
-    Key? key,
+    super.key,
     required this.cabangId,
     required this.cabangNama,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<KasirPage> createState() => _KasirPageState();
@@ -76,6 +78,158 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     }).toList();
   }
 
+  // === FUNGSI HELPER UNTUK PREVIEW STRUK ===
+  void _showReceiptPreview({
+    required List<Map<String, dynamic>> cart,
+    required int totalHarga,
+    required int transaksiId,
+  }) {
+    // Ambil data user dan cabang untuk struk
+    final user = ref.read(userProfileProvider);
+    final namaKasir = user?['nama'] ?? 'Kasir';
+    
+    // Format items untuk struk
+    final items = cart.map((item) => {
+      'nama': item['produk']['nama'],
+      'jumlah': item['jumlah'],
+      'harga': item['produk']['harga'],
+    }).toList();
+    
+    // Generate receipt text
+    final receiptText = ReceiptService.formatReceiptText(
+      namaToko: 'OmsetPro POS',
+      namaCabang: widget.cabangNama,
+      alamatCabang: 'Alamat Cabang', // TODO: Ambil dari data cabang
+      namaKasir: namaKasir,
+      transaksiId: transaksiId,
+      items: items,
+      subtotal: totalHarga,
+      totalHarga: totalHarga,
+    );
+    
+    // Tampilkan preview dialog
+    ReceiptPreviewDialog.show(
+      context,
+      receiptText: receiptText,
+      transaksiId: transaksiId.toString(),
+    );
+  }
+
+  // === FUNGSI HELPER UNTUK PROSES TRANSAKSI ===
+  Future<void> _processTransaction({
+    required List<Map<String, dynamic>> cart,
+    required int totalHarga,
+  }) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    try {
+      final dio = ref.read(dioProvider);
+      final isConnected = await ConnectivityService.isConnected();
+      
+      final itemsDto = cart.map((item) => {
+        'produkId': item['produk']['id'],
+        'jumlah': item['jumlah'],
+      }).toList();
+
+      if (isConnected) {
+        // Online mode - send to server directly
+        final response = await dio.post('/transaksi', data: {
+          'cabangId': widget.cabangId,
+          'metodeBayar': 'Tunai',
+          'items': itemsDto,
+        });
+
+        final transaksiId = response.data['id'] ?? DateTime.now().millisecondsSinceEpoch;
+
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
+        );
+
+        // Tampilkan preview struk
+        _showReceiptPreview(
+          cart: cart, 
+          totalHarga: totalHarga, 
+          transaksiId: transaksiId,
+        );
+
+      } else {
+        // Offline mode - save to local database
+        final transaksiId = DateTime.now().millisecondsSinceEpoch; // Generate unique ID untuk offline
+        
+        await OfflineDatabase.OfflineDatabase.saveTransaksiOffline(
+          cabangId: widget.cabangId,
+          metodeBayar: 'Tunai',
+          totalHarga: totalHarga,
+          items: cart.map((item) => {
+            'produkId': item['produk']['id'],
+            'jumlah': item['jumlah'],
+            'nama': item['produk']['nama'],
+            'harga': item['produk']['harga'],
+          }).toList(),
+        );
+
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('Transaksi disimpan offline - akan disync saat online'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        
+        // Tampilkan preview struk untuk offline mode juga
+        _showReceiptPreview(
+          cart: cart, 
+          totalHarga: totalHarga, 
+          transaksiId: transaksiId,
+        );
+      }
+
+      // Clear cart and refresh
+      ref.read(cartProvider.notifier).state = [];
+      ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
+
+    } catch (e) {
+      // Fallback to offline mode on any error
+      try {
+        final transaksiId = DateTime.now().millisecondsSinceEpoch; // Generate unique ID untuk fallback
+
+        await OfflineDatabase.OfflineDatabase.saveTransaksiOffline(
+          cabangId: widget.cabangId,
+          metodeBayar: 'Tunai',
+          totalHarga: totalHarga,
+          items: cart.map((item) => {
+            'produkId': item['produk']['id'],
+            'jumlah': item['jumlah'],
+            'nama': item['produk']['nama'],
+            'harga': item['produk']['harga'],
+          }).toList(),
+        );
+
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('Server error - transaksi disimpan offline'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+
+        // Tampilkan preview struk untuk fallback offline mode
+        _showReceiptPreview(
+          cart: cart, 
+          totalHarga: totalHarga, 
+          transaksiId: transaksiId,
+        );
+
+        ref.read(cartProvider.notifier).state = [];
+      } catch (offlineError) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Error: $offlineError'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
@@ -95,13 +249,14 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           // Manual sync button untuk testing
           IconButton(
             onPressed: () async {
-              print('🔧 Manual sync button pressed');
+              // Manual sync button pressed - removed print for production
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               final result = await SyncService.manualSync(ref);
               final message = result 
                 ? 'Sync berhasil!' 
                 : 'Sync gagal atau tidak ada data untuk disync';
               
-              ScaffoldMessenger.of(context).showSnackBar(
+              scaffoldMessenger.showSnackBar(
                 SnackBar(
                   content: Text(message),
                   backgroundColor: result ? Colors.green : Colors.orange,
@@ -175,11 +330,11 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(8.0),
                                     color: Colors.orange.shade100,
-                                    child: Row(
+                                    child: const Row(
                                       children: [
-                                        const Icon(Icons.offline_bolt, color: Colors.orange),
-                                        const SizedBox(width: 8),
-                                        const Text(
+                                        Icon(Icons.offline_bolt, color: Colors.orange),
+                                        SizedBox(width: 8),
+                                        Text(
                                           'Mode Offline - Data dari cache lokal',
                                           style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
                                         ),
@@ -398,84 +553,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: cart.isEmpty ? null : () async {
-              try {
-                final dio = ref.read(dioProvider);
-                final isConnected = await ConnectivityService.isConnected();
-                
-                final itemsDto = cart.map((item) => {
-                  'produkId': item['produk']['id'],
-                  'jumlah': item['jumlah'],
-                }).toList();
-
-                if (isConnected) {
-                  // Online mode - send to server directly
-                  await dio.post('/transaksi', data: {
-                    'cabangId': widget.cabangId,
-                    'metodeBayar': 'Tunai',
-                    'items': itemsDto,
-                  });
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
-                  );
-                } else {
-                  // Offline mode - save to local database
-                  await OfflineDatabase.saveTransaksiOffline(
-                    cabangId: widget.cabangId,
-                    metodeBayar: 'Tunai',
-                    totalHarga: totalHarga,
-                    items: cart.map((item) => {
-                      'produkId': item['produk']['id'],
-                      'jumlah': item['jumlah'],
-                      'nama': item['produk']['nama'],
-                      'harga': item['produk']['harga'],
-                    }).toList(),
-                  );
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Transaksi disimpan offline - akan disync saat online'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-
-                // Clear cart and refresh
-                ref.read(cartProvider.notifier).state = [];
-                ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
-
-              } catch (e) {
-                // Fallback to offline mode on any error
-                try {
-                  await OfflineDatabase.saveTransaksiOffline(
-                    cabangId: widget.cabangId,
-                    metodeBayar: 'Tunai',
-                    totalHarga: totalHarga,
-                    items: cart.map((item) => {
-                      'produkId': item['produk']['id'],
-                      'jumlah': item['jumlah'],
-                      'nama': item['produk']['nama'],
-                      'harga': item['produk']['harga'],
-                    }).toList(),
-                  );
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Server error - transaksi disimpan offline'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-
-                  ref.read(cartProvider.notifier).state = [];
-                } catch (offlineError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $offlineError'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
+              _processTransaction(cart: cart, totalHarga: totalHarga);
             },
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),

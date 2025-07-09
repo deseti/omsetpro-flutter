@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../models/user_model.dart'; // Import model baru
 import '../services/connectivity_service.dart';
-import '../services/offline_database.dart';
+import '../services/offline_database_proxy.dart' as OfflineDatabase;
+import 'package:flutter/foundation.dart'; // For kIsWeb
 
 // ... (provider lain tetap sama)
 final authStateProvider = StateProvider<bool>((ref) => false);
@@ -45,6 +46,21 @@ final offlineModeProvider = StateProvider<bool>((ref) => false);
 final produkListWithOfflineProvider =
     FutureProvider.autoDispose.family<List<dynamic>, int>((ref, cabangId) async {
   final dio = ref.watch(dioProvider);
+  
+  // Check if running on web
+  if (kIsWeb) {
+    // Web platform - only fetch from server, no offline support
+    try {
+      final response = await dio.get('/produk', queryParameters: {'cabangId': cabangId});
+      return response.data as List<dynamic>;
+    } catch (e) {
+      // If server fails on web, return empty list
+      print('Server error on web: $e');
+      return [];
+    }
+  }
+  
+  // Mobile platform - full offline support
   final isConnected = await ConnectivityService.isConnected();
   
   if (isConnected) {
@@ -57,14 +73,14 @@ final produkListWithOfflineProvider =
       final produkList = response.data as List<dynamic>;
       
       // Save to offline storage
-      await OfflineDatabase.saveProdukToOffline(produkList, cabangId);
+      await OfflineDatabase.OfflineDatabase.saveProdukToOffline(produkList, cabangId);
       
       return produkList;
     } catch (e) {
       // If server fails, fallback to offline
       print('Server error, using offline data: $e');
       ref.read(offlineModeProvider.notifier).state = true;
-      final offlineData = await OfflineDatabase.getOfflineProduk(cabangId);
+      final offlineData = await OfflineDatabase.OfflineDatabase.getOfflineProduk(cabangId);
       return offlineData.map((item) => {
         'id': item['id'],
         'nama': item['nama'],
@@ -79,7 +95,7 @@ final produkListWithOfflineProvider =
   } else {
     // No connection, use offline data
     ref.read(offlineModeProvider.notifier).state = true;
-    final offlineData = await OfflineDatabase.getOfflineProduk(cabangId);
+    final offlineData = await OfflineDatabase.OfflineDatabase.getOfflineProduk(cabangId);
     return offlineData.map((item) => {
       'id': item['id'],
       'nama': item['nama'],
@@ -91,6 +107,15 @@ final produkListWithOfflineProvider =
       'isArsip': item['isArsip'] == 1,
     }).toList();
   }
+});
+
+// === CONNECTIVITY PROVIDER ===
+final connectivityProvider = FutureProvider<bool>((ref) async {
+  if (kIsWeb) {
+    // Web platform - assume always connected
+    return true;
+  }
+  return await ConnectivityService.isConnected();
 });
 
 // === EXISTING PROVIDERS ===
