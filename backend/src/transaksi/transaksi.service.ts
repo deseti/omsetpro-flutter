@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateTransaksiDto } from './dto/create-transaksi.dto';
 
@@ -6,8 +6,52 @@ import { CreateTransaksiDto } from './dto/create-transaksi.dto';
 export class TransaksiService {
   constructor(private prisma: PrismaService) {}
 
+  private async verifyCabangAccess(cabangId: number, kasirId: number) {
+    // 1. Cari cabang dan kasir
+    const cabang = await this.prisma.cabang.findUnique({
+      where: { id: cabangId },
+    });
+    if (!cabang) {
+      throw new NotFoundException(`Cabang dengan ID ${cabangId} tidak ditemukan`);
+    }
+
+    const kasir = await this.prisma.user.findUnique({
+      where: { id: kasirId },
+    });
+    if (!kasir) {
+      throw new NotFoundException('Kasir tidak ditemukan');
+    }
+
+    // 2. Jika kasir adalah OWNER, cek kepemilikan cabang
+    if (kasir.role === 'OWNER') {
+      if (cabang.ownerId !== kasirId) {
+        throw new ForbiddenException('Anda bukan pemilik cabang ini');
+      }
+      return { cabang, kasir };
+    }
+
+    // 3. Jika kasir adalah ADMIN atau KASIR, cek akses melalui tabel AksesCabang
+    const akses = await this.prisma.aksesCabang.findUnique({
+      where: {
+        userId_cabangId: {
+          userId: kasirId,
+          cabangId: cabangId,
+        },
+      },
+    });
+
+    if (!akses) {
+      throw new ForbiddenException('Anda tidak memiliki akses untuk melakukan transaksi di cabang ini');
+    }
+
+    return { cabang, kasir };
+  }
+
   async create(createTransaksiDto: CreateTransaksiDto, kasirId: number) {
     const { cabangId, metodeBayar, items } = createTransaksiDto;
+
+    // === VALIDASI AKSES CABANG BARU ===
+    await this.verifyCabangAccess(cabangId, kasirId);
 
     if (!items || items.length === 0) {
       throw new BadRequestException('Keranjang belanja tidak boleh kosong.');

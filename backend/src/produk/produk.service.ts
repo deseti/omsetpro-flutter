@@ -16,22 +16,55 @@ export class ProdukService {
     private storageService: StorageService,
   ) {}
 
-  private async verifyCabangOwnership(cabangId: number, userId: number) {
+  private async verifyCabangAccess(cabangId: number, userId: number, requireWriteAccess: boolean = true) {
+    // 1. Cari cabang dan user
     const cabang = await this.prisma.cabang.findUnique({
       where: { id: cabangId },
     });
     if (!cabang) {
       throw new NotFoundException(`Cabang dengan ID ${cabangId} tidak ditemukan`);
     }
-    if (cabang.ownerId !== userId) {
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User tidak ditemukan');
+    }
+
+    // 2. Jika user adalah OWNER, cek kepemilikan cabang
+    if (user.role === 'OWNER') {
+      if (cabang.ownerId !== userId) {
+        throw new ForbiddenException('Anda bukan pemilik cabang ini');
+      }
+      return { cabang, user };
+    }
+
+    // 3. Jika user adalah ADMIN atau KASIR, cek akses melalui tabel AksesCabang
+    const akses = await this.prisma.aksesCabang.findUnique({
+      where: {
+        userId_cabangId: {
+          userId: userId,
+          cabangId: cabangId,
+        },
+      },
+    });
+
+    if (!akses) {
       throw new ForbiddenException('Anda tidak memiliki akses ke cabang ini');
     }
-    return cabang;
+
+    // 4. Jika requireWriteAccess = true, cek apakah user boleh menulis/mengedit
+    if (requireWriteAccess && user.role === 'KASIR') {
+      throw new ForbiddenException('Kasir tidak memiliki akses untuk mengelola produk');
+    }
+
+    return { cabang, user };
   }
 
   async createMany(produkData: any[], cabangId: number, userId: number) {
-    // 1. Verifikasi kepemilikan cabang sekali saja
-    await this.verifyCabangOwnership(cabangId, userId);
+    // 1. Verifikasi akses cabang (hanya OWNER dan ADMIN yang bisa create)
+    await this.verifyCabangAccess(cabangId, userId, true);
 
     // 2. Validasi dan format data dari file Excel
     const validatedData = produkData.map((p) => {
@@ -67,7 +100,7 @@ export class ProdukService {
     if (!produk) {
       throw new NotFoundException(`Produk dengan ID ${produkId} tidak ditemukan`);
     }
-    await this.verifyCabangOwnership(produk.cabangId, userId);
+    await this.verifyCabangAccess(produk.cabangId, userId, true);
     const fotoUrl = await this.storageService.uploadFile(file);
     console.log(`Upload berhasil! URL Publik: ${fotoUrl}`);
     return this.prisma.produk.update({
@@ -79,7 +112,7 @@ export class ProdukService {
   // Fungsi membuat satu produk (tidak berubah)
   async create(createProdukDto: CreateProdukDto, userId: number) {
     const { cabangId, ...produkData } = createProdukDto;
-    await this.verifyCabangOwnership(cabangId, userId);
+    await this.verifyCabangAccess(cabangId, userId, true);
     return this.prisma.produk.create({
       data: { ...produkData, cabang: { connect: { id: cabangId } } },
     });
@@ -87,7 +120,7 @@ export class ProdukService {
 
   // Fungsi mengambil semua produk per cabang (hanya yang tidak diarsip)
   async findAllByCabang(cabangId: number, userId: number) {
-    await this.verifyCabangOwnership(cabangId, userId);
+    await this.verifyCabangAccess(cabangId, userId, false); // KASIR bisa baca produk
     return this.prisma.produk.findMany({
       where: {
         cabangId,
@@ -100,7 +133,7 @@ export class ProdukService {
   async update(id: number, updateProdukDto: UpdateProdukDto, userId: number) {
     const produk = await this.prisma.produk.findUnique({ where: { id } });
     if (!produk) throw new NotFoundException(`Produk dengan ID ${id} tidak ditemukan`);
-    await this.verifyCabangOwnership(produk.cabangId, userId);
+    await this.verifyCabangAccess(produk.cabangId, userId, true);
     return this.prisma.produk.update({ where: { id }, data: updateProdukDto });
   }
 
@@ -110,7 +143,7 @@ export class ProdukService {
     if (!produk) {
       throw new NotFoundException(`Produk dengan ID ${id} tidak ditemukan`);
     }
-    await this.verifyCabangOwnership(produk.cabangId, userId);
+    await this.verifyCabangAccess(produk.cabangId, userId, true);
     // Soft delete: update isArsip
     return this.prisma.produk.update({
       where: { id },
