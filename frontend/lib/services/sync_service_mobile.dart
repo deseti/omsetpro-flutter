@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'offline_database.dart';
+import 'offline_database_proxy.dart' as OfflineDatabase;
 import 'connectivity_service.dart';
-import '../providers/providers.dart';
+import '../providers/providers.dart' as AppProviders;
 
 class SyncService {
   static const String SYNC_LOCK_KEY = 'sync_in_progress';
@@ -28,7 +27,7 @@ class SyncService {
       }
 
       // Ambil transaksi yang belum disync dengan items yang sudah di-decode
-      final unsyncedTransaksi = await OfflineDatabase.getTransaksiWithDecodedItems();
+      final unsyncedTransaksi = await OfflineDatabase.OfflineDatabase.getTransaksiWithDecodedItems();
       print('📋 Found ${unsyncedTransaksi.length} unsynced transactions');
       
       if (unsyncedTransaksi.isEmpty) {
@@ -43,14 +42,42 @@ class SyncService {
         try {
           print('🚀 Syncing transaction ID: ${transaksi['id']}');
           
-          // Items sudah berupa List<Map<String, dynamic>>
-          final itemsData = transaksi['items'] as List<Map<String, dynamic>>;
+          // Items dari getTransaksiWithDecodedItems sudah di-decode di field 'decodedItems'
+          final decodedItems = transaksi['decodedItems'];
+          
+          // Pastikan decodedItems adalah List dan konversi ke format yang tepat
+          List<Map<String, dynamic>> itemsData;
+          if (decodedItems is List) {
+            itemsData = decodedItems.map((item) {
+              if (item is Map<String, dynamic>) {
+                return item;
+              } else if (item is Map) {
+                return Map<String, dynamic>.from(item);
+              } else {
+                print('Warning: Invalid item format: $item');
+                return <String, dynamic>{};
+              }
+            }).where((item) => item.isNotEmpty).toList();
+          } else {
+            print('Warning: decodedItems is not a List: $decodedItems');
+            itemsData = [];
+          }
+          
+          if (itemsData.isEmpty) {
+            print('⚠️ Transaction ${transaksi['id']} has no valid items, skipping');
+            continue;
+          }
           
           // Format items untuk server (hanya produkId dan jumlah)
           final serverItems = itemsData.map((item) => {
             'produkId': item['produkId'],
             'jumlah': item['jumlah'],
-          }).toList();
+          }).where((item) => item['produkId'] != null && item['jumlah'] != null).toList();
+          
+          if (serverItems.isEmpty) {
+            print('⚠️ Transaction ${transaksi['id']} has no valid server items, skipping');
+            continue;
+          }
           
           print('📦 Transaction data: cabangId=${transaksi['cabangId']}, items=${serverItems.length} items');
           
@@ -63,7 +90,7 @@ class SyncService {
 
           if (response.statusCode == 200 || response.statusCode == 201) {
             // Mark sebagai synced
-            await OfflineDatabase.markTransaksiAsSynced(transaksi['id'] as int);
+            await OfflineDatabase.OfflineDatabase.markTransaksiAsSynced(transaksi['id'] as int);
             print('✅ Transaction ${transaksi['id']} synced successfully');
             successCount++;
           } else {
@@ -93,14 +120,14 @@ class SyncService {
     print('🔧 Setting up auto-sync listener...');
     
     // Listen connectivity changes
-    ref.listen(connectivityProvider, (previous, next) async {
+    ref.listen(AppProviders.connectivityProvider, (previous, next) async {
       next.when(
         data: (isOnline) async {
           print('📡 Connectivity changed: ${isOnline ? 'ONLINE' : 'OFFLINE'}');
           
           if (isOnline && !_isSyncing) {
             print('🌐 Device is online, triggering sync...');
-            final dio = ref.read(dioProvider);
+            final dio = ref.read(AppProviders.dioProvider);
             final result = await syncOfflineTransactions(dio);
             print('🔄 Auto-sync result: $result');
           }
@@ -118,13 +145,13 @@ class SyncService {
   // Manual sync trigger untuk testing
   static Future<bool> manualSync(WidgetRef ref) async {
     print('🔧 Manual sync triggered...');
-    final dio = ref.read(dioProvider);
+    final dio = ref.read(AppProviders.dioProvider);
     return await syncOfflineTransactions(dio);
   }
 
   // Clean up old synced data
   static Future<void> cleanupOldData() async {
-    await OfflineDatabase.clearOldData();
+    await OfflineDatabase.OfflineDatabase.clearOldData();
   }
 }
 

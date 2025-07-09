@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/providers.dart';
+import '../../providers/providers.dart' as AppProviders;
 import '../../services/offline_database_proxy.dart' as OfflineDatabase;
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
@@ -54,17 +54,17 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       return;
     }
 
-    final currentCart = ref.read(cartProvider);
+    final currentCart = ref.read(AppProviders.cartProvider);
     final updatedCart = List<Map<String, dynamic>>.from(currentCart);
     updatedCart[index]['jumlah'] = newQuantity;
-    ref.read(cartProvider.notifier).state = updatedCart;
+    ref.read(AppProviders.cartProvider.notifier).state = updatedCart;
   }
 
   void _removeCartItem(int index) {
-    final currentCart = ref.read(cartProvider);
+    final currentCart = ref.read(AppProviders.cartProvider);
     final updatedCart = List<Map<String, dynamic>>.from(currentCart);
     updatedCart.removeAt(index);
-    ref.read(cartProvider.notifier).state = updatedCart;
+    ref.read(AppProviders.cartProvider.notifier).state = updatedCart;
   }
 
   // === FUNGSI HELPER UNTUK FILTER PRODUK ===
@@ -85,7 +85,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     required int transaksiId,
   }) {
     // Ambil data user dan cabang untuk struk
-    final user = ref.read(userProfileProvider);
+    final user = ref.read(AppProviders.userProfileProvider);
     final namaKasir = user?['nama'] ?? 'Kasir';
     
     // Format items untuk struk
@@ -123,7 +123,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     
     try {
-      final dio = ref.read(dioProvider);
+      final dio = ref.read(AppProviders.dioProvider);
       final isConnected = await ConnectivityService.isConnected();
       
       final itemsDto = cart.map((item) => {
@@ -184,8 +184,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       }
 
       // Clear cart and refresh
-      ref.read(cartProvider.notifier).state = [];
-      ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
+      ref.read(AppProviders.cartProvider.notifier).state = [];
+      ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
 
     } catch (e) {
       // Fallback to offline mode on any error
@@ -218,7 +218,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           transaksiId: transaksiId,
         );
 
-        ref.read(cartProvider.notifier).state = [];
+        ref.read(AppProviders.cartProvider.notifier).state = [];
       } catch (offlineError) {
         scaffoldMessenger.showSnackBar(
           SnackBar(
@@ -232,14 +232,14 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cart = ref.watch(cartProvider);
+    final cart = ref.watch(AppProviders.cartProvider);
     final totalHarga = cart.fold<double>(0, (sum, item) {
       return sum + (item['produk']['harga'] * item['jumlah']);
     }).toInt();
 
     // Watch connectivity status
-    final connectivityAsync = ref.watch(connectivityProvider);
-    final isOfflineMode = ref.watch(offlineModeProvider);
+    final connectivityAsync = ref.watch(AppProviders.connectivityProvider);
+    final isOfflineMode = ref.watch(AppProviders.offlineModeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -311,13 +311,13 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
-                      ref.read(cartProvider.notifier).state = [];
+                      ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
+                      ref.read(AppProviders.cartProvider.notifier).state = [];
                       await Future.delayed(const Duration(milliseconds: 300));
                     },
                     child: Consumer(
                       builder: (context, ref, _) {
-                        final produkAsync = ref.watch(produkListWithOfflineProvider(widget.cabangId));
+                        final produkAsync = ref.watch(AppProviders.produkListWithOfflineProvider(widget.cabangId));
                         return produkAsync.when(
                           data: (produkList) {
                             final filteredProducts = _filterProducts(produkList);
@@ -371,7 +371,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                                 const SizedBox(height: 16),
                                 ElevatedButton(
                                   onPressed: () {
-                                    ref.invalidate(produkListWithOfflineProvider(widget.cabangId));
+                                    ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
                                   },
                                   child: const Text('Coba Lagi'),
                                 ),
@@ -399,7 +399,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   Widget _buildProdukCard(dynamic produk) {
     return InkWell(
       onTap: () {
-        final cartNotifier = ref.read(cartProvider.notifier);
+        final cartNotifier = ref.read(AppProviders.cartProvider.notifier);
         final currentCart = cartNotifier.state;
         final existingItemIndex = currentCart.indexWhere((item) => item['produk']['id'] == produk['id']);
 
@@ -557,11 +557,11 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             },
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: ref.watch(offlineModeProvider) ? Colors.orange : Colors.green,
+              backgroundColor: ref.watch(AppProviders.offlineModeProvider) ? Colors.orange : Colors.green,
             ),
             child: Consumer(
               builder: (context, ref, child) {
-                final isOffline = ref.watch(offlineModeProvider);
+                final isOffline = ref.watch(AppProviders.offlineModeProvider);
                 return Text(
                   isOffline ? 'Bayar (Offline)' : 'Bayar (Tunai)', 
                   style: const TextStyle(color: Colors.white),

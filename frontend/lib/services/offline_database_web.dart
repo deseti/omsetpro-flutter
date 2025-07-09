@@ -51,4 +51,16 @@ class OfflineDatabase {
 
   // Getter for database (not used on web)
   static get database => null;
+
+  // Additional methods needed by sync service
+  static Future<List<Map<String, dynamic>>> getTransaksiWithDecodedItems() async {
+    // Web platform - return empty list
+    print('OfflineDatabase: getTransaksiWithDecodedItems called on web - returning empty list');
+    return [];
+  }
+
+  static Future<void> clearOldData() async {
+    // Web platform - no action needed
+    print('OfflineDatabase: clearOldData called on web - ignoring');
+  }
 }

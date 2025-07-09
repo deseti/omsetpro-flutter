@@ -1,5 +1,4 @@
 // Platform-agnostic offline database wrapper
-import 'package:flutter/foundation.dart';
 
 // Conditional imports
 import 'offline_database_mobile.dart' if (dart.library.html) 'offline_database_web.dart' as impl;
@@ -24,7 +23,7 @@ class OfflineDatabase {
     required int totalHarga,
     required List<Map<String, dynamic>> items,
   }) async {
-    return impl.OfflineDatabase.saveTransaksiOffline(
+    await impl.OfflineDatabase.saveTransaksiOffline(
       cabangId: cabangId,
       metodeBayar: metodeBayar,
       totalHarga: totalHarga,
@@ -37,6 +36,15 @@ class OfflineDatabase {
   }
 
   static Future<void> markTransaksiAsSynced(int localId) async {
-    return impl.OfflineDatabase.markTransaksiAsSynced(localId);
+    await impl.OfflineDatabase.markTransaksiAsSynced(localId);
+  }
+
+  // Additional methods needed by sync service
+  static Future<List<Map<String, dynamic>>> getTransaksiWithDecodedItems() async {
+    return impl.OfflineDatabase.getTransaksiWithDecodedItems();
+  }
+
+  static Future<void> clearOldData() async {
+    await impl.OfflineDatabase.clearOldData();
   }
 }

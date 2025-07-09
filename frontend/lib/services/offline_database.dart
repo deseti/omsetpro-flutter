@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 // Import mobile implementation untuk non-web platforms
 import 'dart:io' if (dart.library.html) 'dart:html';
-import 'dart:convert' if (dart.library.html) 'dart:convert';
 import 'package:path/path.dart' if (dart.library.html) '';
 import 'package:sqflite/sqflite.dart' if (dart.library.html) '';
 import 'package:path_provider/path_provider.dart' if (dart.library.html) '';

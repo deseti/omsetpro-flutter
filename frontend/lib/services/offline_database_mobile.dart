@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:convert';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -144,21 +143,16 @@ class OfflineDatabase {
     );
   }
 
-  static Future<List<Map<String, dynamic>>> getTransaksiWithDecodedItems() async {
+  static Future<List<Map<String, dynamic>>> getPendingTransaksi() async {
     final db = await database;
-    final transaksiList = await db.query(
+    final result = await db.query(
       'transaksi_offline',
-      where: 'isSynced = 0',
-      orderBy: 'timestamp ASC',
+      where: 'isSynced = ?',
+      whereArgs: [0],
     );
     
-    return transaksiList.map((transaksi) {
-      final decodedItems = _decodeItems(transaksi['items'] as String);
-      return {
-        ...transaksi,
-        'items': decodedItems,
-      };
-    }).toList();
+    print('OfflineDatabase: Found ${result.length} pending transactions');
+    return result;
   }
 
   // === SYNC STATUS OPERATIONS ===
@@ -201,21 +195,18 @@ class OfflineDatabase {
     return jsonEncode(itemsJson);
   }
 
-  static List<Map<String, dynamic>> _decodeItems(String itemsString) {
-    try {
-      final decoded = jsonDecode(itemsString) as List;
-      return decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-    } catch (e) {
-      print('Error decoding items: $e');
-      return [];
-    }
-  }
-
   // === CLEANUP METHODS ===
 
   static Future<void> clearOldData() async {
     final db = await database;
     final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
+    
+    // Hapus data cache produk yang lebih dari 1 minggu
+    await db.delete(
+      'produk_cache',
+      where: 'created_at < ?',
+      whereArgs: [oneWeekAgo.toIso8601String()],
+    );
     
     // Hapus transaksi yang sudah sync dan lebih dari 1 minggu
     await db.delete(
@@ -231,5 +222,43 @@ class OfflineDatabase {
       await db.close();
       _database = null;
     }
+  }
+
+  // Additional methods needed by sync service
+  static Future<List<Map<String, dynamic>>> getTransaksiWithDecodedItems() async {
+    final db = await database;
+    final result = await db.query(
+      'transaksi_offline',
+      where: 'isSynced = ?',
+      whereArgs: [0],
+    );
+    
+    // Decode items JSON for each transaction
+    return result.map((transaksi) {
+      try {
+        final itemsString = transaksi['items'] as String;
+        final decodedItems = jsonDecode(itemsString);
+        
+        // Ensure it's a List of Maps
+        List<Map<String, dynamic>> itemsList;
+        if (decodedItems is List) {
+          itemsList = decodedItems.map((item) => Map<String, dynamic>.from(item)).toList();
+        } else {
+          print('Warning: items is not a List, treating as empty: $decodedItems');
+          itemsList = [];
+        }
+        
+        return {
+          ...transaksi,
+          'decodedItems': itemsList,
+        };
+      } catch (e) {
+        print('Error decoding items for transaction ${transaksi['id']}: $e');
+        return {
+          ...transaksi,
+          'decodedItems': <Map<String, dynamic>>[],
+        };
+      }
+    }).toList();
   }
 }
