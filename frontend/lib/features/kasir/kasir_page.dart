@@ -92,6 +92,25 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         title: Text('Kasir di ${widget.cabangNama}'),
         backgroundColor: isOfflineMode ? Colors.orange : null,
         actions: [
+          // Manual sync button untuk testing
+          IconButton(
+            onPressed: () async {
+              print('🔧 Manual sync button pressed');
+              final result = await SyncService.manualSync(ref);
+              final message = result 
+                ? 'Sync berhasil!' 
+                : 'Sync gagal atau tidak ada data untuk disync';
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(message),
+                  backgroundColor: result ? Colors.green : Colors.orange,
+                ),
+              );
+            },
+            icon: const Icon(Icons.sync),
+            tooltip: 'Manual Sync',
+          ),
           // Offline mode indicator
           connectivityAsync.when(
             data: (isOnline) => isOnline 

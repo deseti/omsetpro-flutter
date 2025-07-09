@@ -49,6 +49,9 @@ final produkListWithOfflineProvider =
   
   if (isConnected) {
     try {
+      // Reset offline mode when online
+      ref.read(offlineModeProvider.notifier).state = false;
+      
       // Try to fetch from server
       final response = await dio.get('/produk', queryParameters: {'cabangId': cabangId});
       final produkList = response.data as List<dynamic>;
@@ -60,6 +63,7 @@ final produkListWithOfflineProvider =
     } catch (e) {
       // If server fails, fallback to offline
       print('Server error, using offline data: $e');
+      ref.read(offlineModeProvider.notifier).state = true;
       final offlineData = await OfflineDatabase.getOfflineProduk(cabangId);
       return offlineData.map((item) => {
         'id': item['id'],
