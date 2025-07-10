@@ -91,6 +91,11 @@ export class TransaksiService {
 
     // Gunakan Prisma Transaction untuk memastikan semua operasi berhasil atau semua gagal
     return this.prisma.$transaction(async (tx) => {
+      console.log('💳 === CREATING TRANSAKSI ===');
+      console.log('Kasir ID:', kasirId);
+      console.log('Cabang ID:', cabangId);
+      console.log('Total harga:', totalHarga);
+      
       // 1. Buat catatan transaksi utama
       const transaksi = await tx.transaksi.create({
         data: {
@@ -105,6 +110,14 @@ export class TransaksiService {
         include: {
           detail: true, // Sertakan detail dalam respons
         },
+      });
+
+      console.log('✅ Transaksi created:', {
+        id: transaksi.id,
+        kasirId: transaksi.kasirId,
+        cabangId: transaksi.cabangId,
+        total: transaksi.total,
+        createdAt: transaksi.createdAt
       });
 
       // 2. Update (kurangi) stok untuk setiap produk

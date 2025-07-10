@@ -6,9 +6,11 @@ import { CabangModule } from './cabang/cabang.module';
 import { ProdukModule } from './produk/produk.module';
 import { TransaksiModule } from './transaksi/transaksi.module';
 import { TimModule } from './tim/tim.module';
+import { LaporanModule } from './laporan/laporan.module';
+import { AiInsightModule } from './ai-insight/ai-insight.module';
 
 @Module({
-  imports: [AuthModule, CabangModule, ProdukModule, TransaksiModule, TimModule],
+  imports: [AuthModule, CabangModule, ProdukModule, TransaksiModule, TimModule, LaporanModule, AiInsightModule],
   controllers: [AppController],
   providers: [AppService],
 })

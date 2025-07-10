@@ -16,6 +16,7 @@ dependencies:
 
   # Untuk komunikasi API
   dio: ^5.4.3+1
+  http: ^1.4.0
 
   # Untuk memilih gambar dari galeri/kamera
   image_picker: ^1.1.2
@@ -40,6 +41,9 @@ dependencies:
   # Untuk format tanggal dan mata uang
   intl: ^0.19.0
 
+  # Untuk membuat grafik dan chart yang cantik
+  fl_chart: ^0.68.0
+
   # Ikon bawaan gaya iOS
   cupertino_icons: ^1.0.8
 
@@ -51,3 +55,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # Generate app localization (untuk format tanggal dan angka)
+  generate: true

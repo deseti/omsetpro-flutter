@@ -1,0 +1,69 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import '../utils/api_config.dart';
+
+class NetworkService {
+  static Dio? _dio;
+  static String? _workingBaseUrl;
+
+  static Future<Dio> getDio() async {
+    if (_dio != null && _workingBaseUrl != null) {
+      return _dio!;
+    }
+
+    // Test URLs untuk menemukan yang working
+    String? workingUrl = await _findWorkingUrl();
+    
+    if (workingUrl == null) {
+      throw Exception('Tidak dapat terhubung ke server. Pastikan:\n'
+          '1. Backend server berjalan\n'
+          '2. Gunakan adb reverse tcp:3000 tcp:3000\n'
+          '3. Atau hubungkan via WiFi');
+    }
+
+    _workingBaseUrl = workingUrl;
+    _dio = Dio(BaseOptions(
+      baseUrl: workingUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+    ));
+
+    print('✅ Connected to: $_workingBaseUrl');
+    return _dio!;
+  }
+
+  static Future<String?> _findWorkingUrl() async {
+    List<String> urlsToTest = kIsWeb 
+        ? [ApiConfig.baseUrl] 
+        : ApiConfig.fallbackUrls;
+
+    for (String url in urlsToTest) {
+      try {
+        print('🔍 Testing: $url');
+        
+        final dio = Dio(BaseOptions(
+          baseUrl: url,
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ));
+
+        final response = await dio.get('/');
+        
+        if (response.statusCode == 200) {
+          print('✅ Success with: $url');
+          return url;
+        }
+      } catch (e) {
+        print('❌ Failed: $url - $e');
+        continue;
+      }
+    }
+    
+    return null;
+  }
+
+  static void reset() {
+    _dio = null;
+    _workingBaseUrl = null;
+  }
+}

@@ -6,6 +6,7 @@ import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/receipt_service.dart';
 import '../../widgets/receipt_preview_dialog.dart';
+import '../../utils/laporan_refresh_helper.dart';
 
 class KasirPage extends ConsumerStatefulWidget {
   final int cabangId;
@@ -141,6 +142,10 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
         final transaksiId = response.data['id'] ?? DateTime.now().millisecondsSinceEpoch;
 
+        print('✅ === TRANSAKSI BERHASIL ===');
+        print('Transaksi ID: $transaksiId');
+        print('Response data: ${response.data}');
+
         scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
         );
@@ -151,6 +156,11 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           totalHarga: totalHarga, 
           transaksiId: transaksiId,
         );
+
+        // Refresh laporan after successful online transaction
+        print('🔄 === CALLING LAPORAN REFRESH ===');
+        LaporanRefreshHelper.refreshLaporanAfterTransaction(ref);
+        print('🔄 === LAPORAN REFRESH CALLED ===');
 
       } else {
         // Offline mode - save to local database
@@ -181,6 +191,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           totalHarga: totalHarga, 
           transaksiId: transaksiId,
         );
+
+        // Note: Untuk offline mode, laporan akan di-refresh saat sync terjadi
       }
 
       // Clear cart and refresh
@@ -217,6 +229,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           totalHarga: totalHarga, 
           transaksiId: transaksiId,
         );
+
+        // Note: Untuk fallback offline mode, laporan akan di-refresh saat sync terjadi
 
         ref.read(AppProviders.cartProvider.notifier).state = [];
       } catch (offlineError) {
