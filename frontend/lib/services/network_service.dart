@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/api_config.dart';
 
 class NetworkService {
@@ -26,6 +27,18 @@ class NetworkService {
       baseUrl: workingUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
+    ));
+
+    // Tambahkan interceptor untuk authentication
+    _dio!.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('accessToken');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
     ));
 
     print('✅ Connected to: $_workingBaseUrl');

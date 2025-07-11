@@ -32,7 +32,8 @@ final dioAsyncProvider = FutureProvider<Dio>((ref) async {
 
 // Provider sync untuk backward compatibility dengan existing code
 final dioProvider = Provider<Dio>((ref) {
-  final dio = Dio(BaseOptions(baseUrl: 'http://192.168.1.25:3000'));
+  // Gunakan ApiConfig untuk mendapatkan baseURL yang tepat
+  final dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
   final token = ref.watch(accessTokenProvider);
   
   dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
@@ -87,7 +88,7 @@ final produkListWithOfflineProvider =
   if (isConnected) {
     try {
       ref.read(offlineModeProvider.notifier).state = false;
-      final dio = await NetworkService.getDio();
+      // Gunakan dioProvider yang sudah ada authentication token
       final response = await dio.get('/produk', queryParameters: {'cabangId': cabangId});
       final produkList = response.data as List<dynamic>;
       await OfflineDatabase.OfflineDatabase.saveProdukToOffline(produkList, cabangId);
