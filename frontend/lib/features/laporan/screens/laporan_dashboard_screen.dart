@@ -1,18 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO; // 1. Import socket_io_client
 import '../../../providers/laporan_provider.dart';
 import '../../../utils/laporan_refresh_helper.dart';
+import '../../../utils/api_config.dart'; // Import ApiConfig
 import '../widgets/summary_cards.dart';
 import '../widgets/charts.dart';
 import '../widgets/filter_widgets.dart';
-import '../widgets/ai_chat_widget.dart'; // Import AI chat widget
+import '../widgets/ai_chat_widget.dart';
 
-class LaporanDashboardScreen extends ConsumerWidget {
+// 2. Ubah menjadi ConsumerStatefulWidget agar bisa menggunakan initState dan dispose
+class LaporanDashboardScreen extends ConsumerStatefulWidget {
   const LaporanDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LaporanDashboardScreen> createState() => _LaporanDashboardScreenState();
+}
+
+class _LaporanDashboardScreenState extends ConsumerState<LaporanDashboardScreen> {
+  IO.Socket? socket; // 3. Deklarasikan variabel socket
+
+  @override
+  void initState() {
+    super.initState();
+    // 4. Panggil fungsi untuk menginisialisasi koneksi WebSocket
+    _initSocket();
+  }
+
+  // 5. Fungsi untuk setup dan koneksi ke server WebSocket
+  void _initSocket() {
+    // Gunakan URL dari ApiConfig agar konsisten
+    final url = ApiConfig.baseUrl; 
+    
+    // Buat koneksi socket
+    socket = IO.io(url, <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': true,
+    });
+
+    // Handle saat berhasil terhubung
+    socket!.onConnect((_) {
+      print('✅ Real-time terhubung ke server laporan!');
+    });
+
+    // 6. INI BAGIAN PALING PENTING: Mendengarkan event 'laporan_updated' dari server
+    socket!.on('laporan_updated', (data) {
+      print('⚡️ Menerima update laporan real-time dari server: $data');
+      
+      // Saat ada update, panggil helper untuk me-refresh semua data laporan
+      LaporanRefreshHelper.refreshAllLaporanData(ref);
+    });
+
+    // Handle saat koneksi terputus
+    socket!.onDisconnect((_) => print('❌ Koneksi real-time terputus.'));
+  }
+
+  @override
+  void dispose() {
+    // 7. Putuskan koneksi socket saat halaman ditutup untuk mencegah memory leak
+    socket?.dispose();
+    super.dispose();
+  }
+
+  // --- Sisa kode build tidak ada yang berubah ---
+  @override
+  Widget build(BuildContext context) {
     // Initialize global auto-refresh timer
     ref.watch(globalAutoRefreshProvider);
     
@@ -32,7 +85,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
         backgroundColor: Colors.blue,
         elevation: 0,
         actions: [
-          // Auto-refresh toggle
           IconButton(
             icon: Icon(
               autoRefreshEnabled ? Icons.autorenew : Icons.pause_circle_outline,
@@ -66,7 +118,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           LaporanRefreshHelper.refreshAllLaporanData(ref);
-          // Wait for the refresh to complete
           await Future.delayed(const Duration(milliseconds: 500));
         },
         child: SingleChildScrollView(
@@ -75,11 +126,8 @@ class LaporanDashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Filter Info
               _buildFilterInfo(dateRange),
               const SizedBox(height: 16),
-              
-              // Dashboard Content
               dashboardAsync.when(
                 data: (dashboardData) => _buildDashboardContent(dashboardData),
                 loading: () => _buildLoadingState(),
@@ -98,6 +146,7 @@ class LaporanDashboardScreen extends ConsumerWidget {
     );
   }
 
+  // ... (semua fungsi _build... tetap sama, tidak perlu diubah)
   Widget _buildFilterInfo(DateRange dateRange) {
     return Consumer(
       builder: (context, ref, child) {
@@ -163,7 +212,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Summary Cards
         const Text(
           'Ringkasan Penjualan',
           style: TextStyle(
@@ -175,8 +223,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         _buildSummaryCards(dashboardData.ringkasan),
         const SizedBox(height: 24),
-
-        // Charts Section
         const Text(
           'Grafik Penjualan',
           style: TextStyle(
@@ -196,8 +242,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
           title: 'Top 5 Produk Terlaris',
         ),
         const SizedBox(height: 24),
-
-        // Detailed Stats
         const Text(
           'Detail Analisis',
           style: TextStyle(
@@ -209,8 +253,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         _buildDetailedStats(dashboardData),
         const SizedBox(height: 24),
-
-        // AI Assistant Section
         const Text(
           'Asisten AI',
           style: TextStyle(
@@ -247,7 +289,7 @@ class LaporanDashboardScreen extends ConsumerWidget {
                 value: CurrencyFormatter.format(ringkasan.totalLaba),
                 icon: Icons.trending_up,
                 color: Colors.blue,
-                subtitle: 'Margin ${((ringkasan.totalLaba / ringkasan.totalOmzet) * 100).toStringAsFixed(1)}%',
+                subtitle: 'Margin ${((ringkasan.totalLaba / (ringkasan.totalOmzet == 0 ? 1 : ringkasan.totalOmzet)) * 100).toStringAsFixed(1)}%',
               ),
             ),
           ],
@@ -326,7 +368,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
   Widget _buildLoadingState() {
     return Column(
       children: [
-        // Loading shimmer untuk cards
         Row(
           children: [
             Expanded(child: _buildLoadingCard()),
@@ -343,8 +384,6 @@ class LaporanDashboardScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 24),
-        
-        // Loading untuk chart
         Container(
           height: 250,
           width: double.infinity,
@@ -419,7 +458,7 @@ class LaporanDashboardScreen extends ConsumerWidget {
   void _showFilterDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => FilterDialog(),
+      builder: (context) => const FilterDialog(),
     );
   }
 }

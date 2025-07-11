@@ -18,6 +18,10 @@ dependencies:
   dio: ^5.4.3+1
   http: ^1.4.0
 
+  # --- TAMBAHKAN BARIS INI ---
+  # Untuk komunikasi real-time (WebSocket)
+  socket_io_client: ^2.0.3
+
   # Untuk memilih gambar dari galeri/kamera
   image_picker: ^1.1.2
 

@@ -25,20 +25,17 @@ export class LaporanService {
     const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const end = endDate ? new Date(endDate) : new Date();
     
-    // Adjust to WIB timezone (UTC+7)
-    // Set start to beginning of day in WIB (subtract 7 hours from UTC)
+    // Set start to beginning of day (00:00:00) 
     start.setHours(0, 0, 0, 0);
-    start.setHours(start.getHours() - 7); // Convert to UTC for WIB 00:00
     
-    // Set end to end of day in WIB (subtract 7 hours from UTC)
+    // Set end to end of day (23:59:59)
     end.setHours(23, 59, 59, 999);
-    end.setHours(end.getHours() - 7); // Convert to UTC for WIB 23:59
 
-    console.log('📅 Date range adjusted for WIB (UTC+7):', {
+    console.log('📅 Date range (Local Time):', {
       start: start.toISOString(),
       end: end.toISOString(),
-      startWIB: new Date(start.getTime() + 7*60*60*1000).toString(),
-      endWIB: new Date(end.getTime() + 7*60*60*1000).toString()
+      startLocal: start.toLocaleString('id-ID'),
+      endLocal: end.toLocaleString('id-ID')
     });
 
     // Query untuk mendapatkan data transaksi dengan filter akses user
@@ -59,6 +56,7 @@ export class LaporanService {
     console.log('🔍 Cabang filter result:', JSON.stringify(cabangFilter, null, 2));
     
     // Apply cabang filter to ensure multi-tenancy
+    // Gunakan nested where clause untuk relasi cabang
     whereCondition.cabang = cabangFilter;
 
     console.log('🔍 === RINGKASAN PENJUALAN QUERY ===');
@@ -194,6 +192,7 @@ export class LaporanService {
           gte: start,
           lte: end,
         },
+        // Gunakan nested where clause untuk relasi cabang
         cabang: await this.getCabangFilter(userId),
       },
     };
@@ -238,6 +237,7 @@ export class LaporanService {
               lte: end,
             },
             ...(cabangId && { cabangId }),
+            // Gunakan nested where clause untuk relasi cabang
             cabang: await this.getCabangFilter(userId),
           },
         },
@@ -281,6 +281,7 @@ export class LaporanService {
         gte: start,
         lte: end,
       },
+      // Gunakan nested where clause untuk relasi cabang
       cabang: await this.getCabangFilter(userId),
     };
 

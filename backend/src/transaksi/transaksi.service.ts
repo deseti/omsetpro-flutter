@@ -1,10 +1,20 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateTransaksiDto } from './dto/create-transaksi.dto';
+import { LaporanGateway } from '../laporan/laporan.gateway'; // 1. Import LaporanGateway
 
 @Injectable()
 export class TransaksiService {
-  constructor(private prisma: PrismaService) {}
+  // 2. Inject LaporanGateway melalui constructor
+  constructor(
+    private prisma: PrismaService,
+    private laporanGateway: LaporanGateway,
+  ) {}
 
   private async verifyCabangAccess(cabangId: number, kasirId: number) {
     // 1. Cari cabang dan kasir
@@ -41,7 +51,9 @@ export class TransaksiService {
     });
 
     if (!akses) {
-      throw new ForbiddenException('Anda tidak memiliki akses untuk melakukan transaksi di cabang ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses untuk melakukan transaksi di cabang ini',
+      );
     }
 
     return { cabang, kasir };
@@ -68,17 +80,23 @@ export class TransaksiService {
 
     // Cek jika ada produk di keranjang yang tidak ada di database
     if (produkDiDb.length !== produkIds.length) {
-      throw new BadRequestException('Beberapa produk tidak ditemukan di cabang ini.');
+      throw new BadRequestException(
+        'Beberapa produk tidak ditemukan di cabang ini.',
+      );
     }
 
     // Hitung total harga dan siapkan data untuk detail transaksi
     let totalHarga = 0;
     const transaksiDetailData = produkDiDb.map((produk) => {
-      const itemDiKeranjang = items.find((item) => item.produkId === produk.id)!;
-      
+      const itemDiKeranjang = items.find(
+        (item) => item.produkId === produk.id,
+      )!;
+
       // Cek stok
       if (produk.stok < itemDiKeranjang.jumlah) {
-        throw new BadRequestException(`Stok untuk produk "${produk.nama}" tidak mencukupi.`);
+        throw new BadRequestException(
+          `Stok untuk produk "${produk.nama}" tidak mencukupi.`,
+        );
       }
 
       totalHarga += produk.harga * itemDiKeranjang.jumlah;
@@ -95,7 +113,7 @@ export class TransaksiService {
       console.log('Kasir ID:', kasirId);
       console.log('Cabang ID:', cabangId);
       console.log('Total harga:', totalHarga);
-      
+
       // 1. Buat catatan transaksi utama
       const transaksi = await tx.transaksi.create({
         data: {
@@ -117,7 +135,7 @@ export class TransaksiService {
         kasirId: transaksi.kasirId,
         cabangId: transaksi.cabangId,
         total: transaksi.total,
-        createdAt: transaksi.createdAt
+        createdAt: transaksi.createdAt,
       });
 
       // Debug: Cek total transaksi setelah create
@@ -129,7 +147,7 @@ export class TransaksiService {
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
+
       const transaksiHariIni = await tx.transaksi.count({
         where: {
           createdAt: {
@@ -152,6 +170,13 @@ export class TransaksiService {
           },
         });
       }
+
+      // 3. PANGGIL GATEWAY DI SINI SETELAH TRANSAKSI SUKSES!
+      // Ini akan mengirim notifikasi ke semua klien yang terhubung.
+      this.laporanGateway.kirimUpdateLaporan({
+        message: `Transaksi baru sebesar Rp ${totalHarga} telah dibuat!`,
+        cabangId: cabangId,
+      });
 
       return transaksi;
     });
