@@ -120,6 +120,27 @@ export class TransaksiService {
         createdAt: transaksi.createdAt
       });
 
+      // Debug: Cek total transaksi setelah create
+      const totalTransaksiAfter = await tx.transaksi.count();
+      console.log('📈 Total transaksi in DB after create:', totalTransaksiAfter);
+
+      // Debug: Cek transaksi hari ini
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const transaksiHariIni = await tx.transaksi.count({
+        where: {
+          createdAt: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      });
+      console.log('📅 Transaksi hari ini count:', transaksiHariIni);
+      console.log('📅 Today range:', { start: today, end: tomorrow });
+
       // 2. Update (kurangi) stok untuk setiap produk
       for (const item of items) {
         await tx.produk.update({

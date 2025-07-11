@@ -24,6 +24,22 @@ export class LaporanService {
     // Default ke bulan ini jika tidak ada tanggal
     const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const end = endDate ? new Date(endDate) : new Date();
+    
+    // Adjust to WIB timezone (UTC+7)
+    // Set start to beginning of day in WIB (subtract 7 hours from UTC)
+    start.setHours(0, 0, 0, 0);
+    start.setHours(start.getHours() - 7); // Convert to UTC for WIB 00:00
+    
+    // Set end to end of day in WIB (subtract 7 hours from UTC)
+    end.setHours(23, 59, 59, 999);
+    end.setHours(end.getHours() - 7); // Convert to UTC for WIB 23:59
+
+    console.log('📅 Date range adjusted for WIB (UTC+7):', {
+      start: start.toISOString(),
+      end: end.toISOString(),
+      startWIB: new Date(start.getTime() + 7*60*60*1000).toString(),
+      endWIB: new Date(end.getTime() + 7*60*60*1000).toString()
+    });
 
     // Query untuk mendapatkan data transaksi dengan filter akses user
     const whereCondition: any = {
@@ -83,6 +99,24 @@ export class LaporanService {
       },
     });
     console.log('📊 Total transaksi in date range (no filter):', allTransaksi.length);
+
+    // Debug: cek semua transaksi untuk owner ini (tanpa filter tanggal)
+    const allOwnerTransaksi = await this.prisma.transaksi.findMany({
+      where: {
+        cabang: { ownerId: userId },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
+    console.log('📊 Latest 5 transaksi for owner (no date filter):', 
+      allOwnerTransaksi.map(t => ({
+        id: t.id,
+        total: t.total,
+        cabangId: t.cabangId,
+        kasirId: t.kasirId,
+        createdAt: t.createdAt.toISOString()
+      }))
+    );
 
     // Debug: cek semua transaksi untuk cabang owner ini
     const ownerCabangTransaksi = await this.prisma.transaksi.findMany({
