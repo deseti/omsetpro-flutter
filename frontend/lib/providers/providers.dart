@@ -32,7 +32,7 @@ final dioAsyncProvider = FutureProvider<Dio>((ref) async {
 
 // Provider sync untuk backward compatibility dengan existing code
 final dioProvider = Provider<Dio>((ref) {
-  final dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  final dio = Dio(BaseOptions(baseUrl: 'http://192.168.1.25:3000'));
   final token = ref.watch(accessTokenProvider);
   
   dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {

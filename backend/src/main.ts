@@ -1,3 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
@@ -13,6 +16,6 @@ async function bootstrap() {
   // Untuk produksi, ini harus lebih spesifik, tapi untuk pengembangan ini sudah cukup.
   app.enableCors();
 
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
 }
 bootstrap();
