@@ -9,12 +9,43 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { LaporanService } from './laporan.service';
+import { InsightService } from './insight.service';
 import { GetLaporanDto } from './dto/laporan.dto';
+import { GetInsightDto } from './dto/insight.dto';
 
 @Controller('laporan')
 @UseGuards(AuthGuard('jwt'))
 export class LaporanController {
-  constructor(private readonly laporanService: LaporanService) {}
+  constructor(
+    private readonly laporanService: LaporanService,
+    private readonly insightService: InsightService,
+  ) {}
+
+  /**
+   * GET /laporan/insights
+   * Mendapatkan dashboard insights dengan analisa otomatis
+   */
+  @Get('insights')
+  async getDashboardInsights(@Request() req, @Query() query: GetInsightDto) {
+    try {
+      const userId = req.user.id;
+      
+      // Set default period jika tidak ada
+      const dto: GetInsightDto = {
+        period: query.period || 'monthly',
+        cabangId: query.cabangId ? parseInt(String(query.cabangId)) : undefined,
+        comparisonPeriod: query.comparisonPeriod || 'previous'
+      };
+
+      return await this.insightService.getDashboardInsights(userId, dto);
+    } catch (error) {
+      console.error('Error getting dashboard insights:', error);
+      throw new HttpException(
+        error.message || 'Gagal mendapatkan dashboard insights',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 
   /**
    * GET /laporan/ringkasan-penjualan
@@ -98,9 +129,9 @@ export class LaporanController {
       console.log('User ID:', userId);
       console.log('Query params:', query);
       console.log('Timestamp:', new Date().toISOString());
-      
+
       // Ambil semua data secara paralel
-      const [ringkasan, produkTerlaris, statistikTransaksi, labaRugi] = 
+      const [ringkasan, produkTerlaris, statistikTransaksi, labaRugi] =
         await Promise.all([
           this.laporanService.getRingkasanPenjualan(userId, query),
           this.laporanService.getProdukTerlaris(userId, query, 5),
@@ -115,10 +146,10 @@ export class LaporanController {
         labaRugi,
         generatedAt: new Date().toISOString(),
       };
-      
+
       console.log('📊 Dashboard data generated at:', dashboardData.generatedAt);
       console.log('📊 Ringkasan total omzet:', ringkasan.totalOmzet);
-      
+
       return dashboardData;
     } catch (error) {
       throw new HttpException(

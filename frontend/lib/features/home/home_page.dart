@@ -175,6 +175,22 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
 
+              // === SMART AI INSIGHTS (OWNER & ADMIN) ===
+              if (userRole == Role.OWNER || userRole == Role.ADMIN)
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.lightbulb),
+                  label: const Text('Smart AI Insights'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    textStyle: const TextStyle(fontSize: 16),
+                    backgroundColor: Colors.indigo,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/insights');
+                  },
+                ),
+              if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
+
               ElevatedButton.icon(
                 icon: const Icon(Icons.point_of_sale),
                 label: const Text('Buka Kasir'),

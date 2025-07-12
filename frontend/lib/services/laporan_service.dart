@@ -242,6 +242,45 @@ class LaporanService {
     }
   }
 
+  /// GET /laporan/insights
+  /// Mendapatkan dashboard insights dengan analisa otomatis
+  Future<Map<String, dynamic>> getDashboardInsights({
+    String period = 'monthly',
+    int? cabangId,
+    String comparisonPeriod = 'previous',
+  }) async {
+    try {
+      print('🔍 Getting dashboard insights...');
+      
+      final queryParams = <String, dynamic>{
+        'period': period,
+        'comparisonPeriod': comparisonPeriod,
+      };
+      
+      if (cabangId != null) {
+        queryParams['cabangId'] = cabangId;
+      }
+
+      final response = await _dio.get(
+        '/laporan/insights',
+        queryParameters: queryParams,
+      );
+
+      print('✅ Dashboard insights response: ${response.statusCode}');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      print('❌ Error getting dashboard insights: ${e.message}');
+      if (e.response != null) {
+        print('Response data: ${e.response?.data}');
+        print('Response status: ${e.response?.statusCode}');
+      }
+      throw Exception('Gagal mendapatkan dashboard insights: ${e.message}');
+    } catch (e) {
+      print('❌ Unexpected error getting dashboard insights: $e');
+      throw Exception('Terjadi kesalahan tak terduga: $e');
+    }
+  }
+
   /// Helper method untuk format tanggal ke string ISO
   String _formatDate(DateTime date) {
     return date.toIso8601String().split('T')[0]; // Format: YYYY-MM-DD
