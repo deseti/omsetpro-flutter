@@ -7,9 +7,18 @@ import { ProdukModule } from './produk/produk.module';
 import { TransaksiModule } from './transaksi/transaksi.module';
 import { TimModule } from './tim/tim.module';
 import { LaporanModule } from './laporan/laporan.module';
+import { PelangganModule } from './pelanggan/pelanggan.module'; // <-- IMPORT MODUL BARU
 
 @Module({
-  imports: [AuthModule, CabangModule, ProdukModule, TransaksiModule, TimModule, LaporanModule],
+  imports: [
+    AuthModule,
+    CabangModule,
+    ProdukModule,
+    TransaksiModule,
+    TimModule,
+    LaporanModule,
+    PelangganModule, // <-- DAFTARKAN DI SINI
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

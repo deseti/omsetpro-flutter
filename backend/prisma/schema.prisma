@@ -10,106 +10,124 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// --- TAMBAHKAN ENUM BARU UNTUK PERAN ---
+// ============== AUTH & USER MODELS ==============
+model User {
+  id              Int           @id @default(autoincrement())
+  email           String        @unique
+  namaLengkap     String
+  password        String
+  role            Role          @default(OWNER)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  // Relasi untuk multi-tenancy (OWNER mengelola tim)
+  dikelolaOlehId  Int?
+  dikelolaOleh    User?         @relation("OwnerMengelolaTim", fields: [dikelolaOlehId], references: [id])
+  tim             User[]        @relation("OwnerMengelolaTim")
+  // Relasi ke data yang dimiliki oleh OWNER
+  cabangDimiliki  Cabang[]      @relation("OwnerMilikiCabang")
+  pelanggan       Pelanggan[]   @relation("OwnerMilikiPelanggan") // OWNER memiliki data pelanggan
+  // Relasi untuk hak akses sebagai kasir/admin
+  aksesCabang     AksesCabang[]
+  transaksiKasir  Transaksi[]   @relation("KasirBuatTransaksi")
+}
+
 enum Role {
   OWNER
   ADMIN
   KASIR
 }
 
-model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  namaLengkap String
-  password    String
-  role        Role     @default(OWNER) // <-- TAMBAHKAN KOLOM PERAN INI
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // --- PERUBAHAN LOGIKA DI SINI ---
-  // Relasi untuk menunjukkan siapa Owner dari user ini.
-  // Kolom ini akan kosong jika rolenya adalah OWNER.
-  dikelolaOleh   User?  @relation("OwnerKeAnggota", fields: [dikelolaOlehId], references: [id])
-  dikelolaOlehId Int?   // Ini adalah ID dari si OWNER
-
-  // Relasi untuk menunjukkan siapa saja anggota tim dari user ini (jika dia OWNER).
-  anggotaTim     User[] @relation("OwnerKeAnggota")
-
-  cabang      Cabang[]
-  transaksi   Transaksi[]
-  
-  // Relasi baru ke tabel akses
-  aksesCabang AksesCabang[]
-}
-
+// ============== CABANG & AKSES ==============
 model Cabang {
-  id        Int      @id @default(autoincrement())
-  nama      String
-  alamat    String
-  industri  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  owner     User     @relation(fields: [ownerId], references: [id])
-  ownerId   Int
-
-  produk        Produk[]
-  transaksi     Transaksi[]
-  aksesPengguna AksesCabang[]
+  id              Int           @id @default(autoincrement())
+  nama            String
+  alamat          String
+  industri        String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  // Relasi ke Owner
+  ownerId         Int
+  owner           User          @relation("OwnerMilikiCabang", fields: [ownerId], references: [id])
+  // Relasi ke data di dalam cabang
+  produk          Produk[]
+  transaksi       Transaksi[]
+  aksesPengguna   AksesCabang[]
 }
 
-model Produk {
-  id        Int      @id @default(autoincrement())
-  nama      String
-  kategori  String?
-  hargaBeli Int      @default(0)
-  harga     Int
-  stok      Int      @default(0)
-  barcode   String?  @unique
-  fotoUrl   String?
-  isArsip   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  cabang    Cabang   @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+model AksesCabang {
+  userId    Int
   cabangId  Int
+  user      User    @relation(fields: [userId], references: [id])
+  cabang    Cabang  @relation(fields: [cabangId], references: [id], onDelete: Cascade)
 
+  @@id([userId, cabangId])
+}
+
+// ============== PRODUK ==============
+model Produk {
+  id              Int               @id @default(autoincrement())
+  nama            String
+  kategori        String?
+  hargaBeli       Int               @default(0)
+  harga           Int
+  stok            Int               @default(0)
+  barcode         String?           @unique
+  fotoUrl         String?
+  isArsip         Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  // Relasi ke Cabang
+  cabangId        Int
+  cabang          Cabang            @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+  // Relasi ke detail transaksi
   transaksiDetail TransaksiDetail[]
 }
 
+// ============== TRANSAKSI ==============
 model Transaksi {
-  id            Int      @id @default(autoincrement())
-  total         Int
-  metodeBayar   String
-  createdAt     DateTime @default(now())
-
-  cabang        Cabang   @relation(fields: [cabangId], references: [id], onDelete: Cascade)
-  cabangId      Int
-
-  kasir         User     @relation(fields: [kasirId], references: [id])
-  kasirId       Int
-
-  detail        TransaksiDetail[]
+  id           Int               @id @default(autoincrement())
+  total        Int
+  metodeBayar  String
+  createdAt    DateTime          @default(now())
+  // Relasi ke Cabang & Kasir
+  cabangId     Int
+  cabang       Cabang            @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+  kasirId      Int
+  kasir        User              @relation("KasirBuatTransaksi", fields: [kasirId], references: [id])
+  // Relasi ke Detail
+  detail       TransaksiDetail[]
+  // [BARU] Relasi ke Pelanggan (opsional)
+  pelangganId  Int?
+  pelanggan    Pelanggan?        @relation(fields: [pelangganId], references: [id])
 }
 
 model TransaksiDetail {
-  id            Int      @id @default(autoincrement())
-  jumlah        Int
-  hargaSaatItu  Int
-  transaksi     Transaksi @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
-  transaksiId   Int
-
-  produk        Produk    @relation(fields: [produkId], references: [id])
-  produkId      Int
+  id           Int       @id @default(autoincrement())
+  jumlah       Int
+  hargaSaatItu Int
+  // Relasi ke Transaksi & Produk
+  transaksiId  Int
+  transaksi    Transaksi @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
+  produkId     Int
+  produk       Produk    @relation(fields: [produkId], references: [id])
 }
 
-// --- TAMBAHKAN MODEL BARU DI BAWAH INI ---
-// Tabel penghubung untuk mencatat akses Admin/Kasir ke Cabang
-model AksesCabang {
-  user      User   @relation(fields: [userId], references: [id])
-  userId    Int
-  cabang    Cabang @relation(fields: [cabangId], references: [id], onDelete: Cascade)
-  cabangId  Int
+// ============== [BARU] PELANGGAN (CRM) ==============
+model Pelanggan {
+  id          Int         @id @default(autoincrement())
+  nama        String
+  noHp        String
+  email       String?
+  alamat      String?
+  totalPoin   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  // Relasi ke Owner yang memiliki data pelanggan ini
+  ownerId     Int
+  owner       User        @relation("OwnerMilikiPelanggan", fields: [ownerId], references: [id])
+  // Relasi ke transaksi yang dilakukan pelanggan
+  transaksi   Transaksi[]
 
-  @@id([userId, cabangId]) // Kunci utama gabungan
+  // Pastikan nomor HP unik untuk setiap owner
+  @@unique([ownerId, noHp])
 }

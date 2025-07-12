@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../../models/user_model.dart';
 import '../produk/produk_page.dart';
 import '../kasir/kasir_page.dart';
+import '../pelanggan/pelanggan_page.dart'; // <-- IMPORT HALAMAN BARU
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -178,6 +179,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               const SizedBox(height: 40),
               
+
+              // === MANAJEMEN PELANGGAN (HANYA OWNER) ===
+              if (userRole == Role.OWNER)
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.contacts),
+                  label: const Text('Manajemen Pelanggan'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    textStyle: const TextStyle(fontSize: 16),
+                    backgroundColor: Colors.purple,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/pelanggan'); // <-- NAVIGASI KE HALAMAN BARU
+                  },
+                ),
+              if (userRole == Role.OWNER) const SizedBox(height: 20),
+
               // === MANAJEMEN CABANG (HANYA OWNER) ===
               if (userRole == Role.OWNER)
                 ElevatedButton.icon(

@@ -12,6 +12,7 @@ import 'features/tim/tim_page.dart'; // Import halaman tim
 // import 'features/laporan/screens/detail_laporan_screen.dart'; // DINONAKTIFKAN - Import detail laporan
 import 'pages/insight_dashboard_page.dart'; // Import insight dashboard
 import 'services/offline_database_proxy.dart' as OfflineDatabase; // Import offline database
+import 'features/pelanggan/pelanggan_page.dart'; // <-- IMPORT HALAMAN BARU
 
 // Ubah fungsi main menjadi async
 Future<void> main() async {
@@ -60,10 +61,9 @@ class OmsetProApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/cabang': (context) => const CabangPage(),
         '/import-produk': (context) => const ImportProdukPage(),
-        '/tim': (context) => const TimPage(), // <-- TAMBAHKAN RUTE INI
-        // '/laporan': (context) => const LaporanDashboardScreen(), // DINONAKTIFKAN - Route untuk dashboard laporan
-        // '/laporan-detail': (context) => const DetailLaporanScreen(), // DINONAKTIFKAN - Route untuk detail laporan
-        '/insights': (context) => const InsightDashboardPage(), // Route untuk smart insights
+        '/tim': (context) => const TimPage(),
+        '/insights': (context) => const InsightDashboardPage(),
+        '/pelanggan': (context) => const PelangganPage(), // <-- DAFTARKAN RUTE BARU
       },
       initialRoute: '/',
     );
