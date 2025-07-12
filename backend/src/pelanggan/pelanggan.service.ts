@@ -1,7 +1,7 @@
-import { Injectable, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, ForbiddenException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreatePelangganDto } from './dto/create-pelanggan.dto';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 
 @Injectable()
 export class PelangganService {
@@ -14,15 +14,18 @@ export class PelangganService {
    * @param user User yang melakukan request (OWNER)
    */
   async create(createPelangganDto: CreatePelangganDto, user: User) {
-    if (user.role !== 'OWNER') {
-      throw new ForbiddenException('Hanya OWNER yang dapat menambah pelanggan.');
+    // Owner bisa membuat pelanggan baru
+    // Admin dan Kasir juga bisa, tapi mereka terikat pada Owner dari user yang mengundang mereka
+    const ownerId = user.role === 'OWNER' ? user.id : user.dikelolaOlehId;
+
+    if (!ownerId) {
+        throw new UnauthorizedException('Tidak dapat menentukan ID Owner untuk pengguna ini.');
     }
 
-    // Cek apakah nomor HP sudah terdaftar untuk owner ini
     const existingPelanggan = await this.prisma.pelanggan.findUnique({
       where: {
         ownerId_noHp: {
-          ownerId: user.id,
+          ownerId: ownerId,
           noHp: createPelangganDto.noHp,
         },
       },
@@ -35,7 +38,7 @@ export class PelangganService {
     return this.prisma.pelanggan.create({
       data: {
         ...createPelangganDto,
-        ownerId: user.id, // Menghubungkan pelanggan dengan OWNER
+        ownerId: ownerId,
       },
     });
   }
@@ -44,7 +47,9 @@ export class PelangganService {
    * Menemukan semua pelanggan yang dimiliki oleh seorang OWNER.
    * @param user User yang melakukan request (OWNER)
    */
+
   async findAll(user: User) {
+    // Hanya OWNER yang bisa melihat semua pelanggan
     if (user.role !== 'OWNER') {
       throw new ForbiddenException('Hanya OWNER yang dapat melihat daftar pelanggan.');
     }
@@ -56,6 +61,41 @@ export class PelangganService {
       orderBy: {
         nama: 'asc',
       },
+    });
+  }
+
+  /**
+   * [BARU] Mencari pelanggan berdasarkan nama atau nomor HP.
+   * Bisa diakses oleh semua role (Owner, Admin, Kasir).
+   * @param query Kata kunci pencarian
+   * @param user User yang melakukan request
+   */
+  async search(query: string, user: User) {
+    const ownerId = user.role === 'OWNER' ? user.id : user.dikelolaOlehId;
+
+     if (!ownerId) {
+        throw new UnauthorizedException('Tidak dapat menentukan ID Owner untuk pengguna ini.');
+    }
+    
+    return this.prisma.pelanggan.findMany({
+      where: {
+        ownerId: ownerId,
+        OR: [
+          {
+            nama: {
+              contains: query,
+              // mode: 'insensitive' dihapus karena tidak didukung oleh SQLite.
+              // Pencarian nama akan menjadi case-sensitive.
+            },
+          },
+          {
+            noHp: {
+              contains: query,
+            },
+          },
+        ],
+      },
+      take: 10, // Batasi hasil pencarian
     });
   }
 

@@ -60,39 +60,34 @@ export class TransaksiService {
   }
 
   async create(createTransaksiDto: CreateTransaksiDto, kasirId: number) {
-    const { cabangId, metodeBayar, items } = createTransaksiDto;
+    const { cabangId, metodeBayar, items, pelangganId } = createTransaksiDto; // Ambil pelangganId
 
-    // === VALIDASI AKSES CABANG BARU ===
     await this.verifyCabangAccess(cabangId, kasirId);
 
     if (!items || items.length === 0) {
       throw new BadRequestException('Keranjang belanja tidak boleh kosong.');
     }
 
-    // Ambil semua ID produk dari keranjang untuk divalidasi
     const produkIds = items.map((item) => item.produkId);
     const produkDiDb = await this.prisma.produk.findMany({
       where: {
         id: { in: produkIds },
-        cabangId: cabangId, // Pastikan semua produk dari cabang yang sama
+        cabangId: cabangId,
       },
     });
 
-    // Cek jika ada produk di keranjang yang tidak ada di database
     if (produkDiDb.length !== produkIds.length) {
       throw new BadRequestException(
         'Beberapa produk tidak ditemukan di cabang ini.',
       );
     }
 
-    // Hitung total harga dan siapkan data untuk detail transaksi
     let totalHarga = 0;
     const transaksiDetailData = produkDiDb.map((produk) => {
       const itemDiKeranjang = items.find(
         (item) => item.produkId === produk.id,
       )!;
 
-      // Cek stok
       if (produk.stok < itemDiKeranjang.jumlah) {
         throw new BadRequestException(
           `Stok untuk produk "${produk.nama}" tidak mencukupi.`,
@@ -107,59 +102,23 @@ export class TransaksiService {
       };
     });
 
-    // Gunakan Prisma Transaction untuk memastikan semua operasi berhasil atau semua gagal
     return this.prisma.$transaction(async (tx) => {
-      console.log('💳 === CREATING TRANSAKSI ===');
-      console.log('Kasir ID:', kasirId);
-      console.log('Cabang ID:', cabangId);
-      console.log('Total harga:', totalHarga);
-
-      // 1. Buat catatan transaksi utama
       const transaksi = await tx.transaksi.create({
         data: {
           total: totalHarga,
           metodeBayar,
           cabangId,
           kasirId,
+          pelangganId: pelangganId, // [BARU] Simpan ID pelanggan
           detail: {
-            create: transaksiDetailData, // Buat semua detail transaksi sekaligus
+            create: transaksiDetailData,
           },
         },
         include: {
-          detail: true, // Sertakan detail dalam respons
+          detail: true,
         },
       });
 
-      console.log('✅ Transaksi created:', {
-        id: transaksi.id,
-        kasirId: transaksi.kasirId,
-        cabangId: transaksi.cabangId,
-        total: transaksi.total,
-        createdAt: transaksi.createdAt,
-      });
-
-      // Debug: Cek total transaksi setelah create
-      const totalTransaksiAfter = await tx.transaksi.count();
-      console.log('📈 Total transaksi in DB after create:', totalTransaksiAfter);
-
-      // Debug: Cek transaksi hari ini
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const transaksiHariIni = await tx.transaksi.count({
-        where: {
-          createdAt: {
-            gte: today,
-            lt: tomorrow,
-          },
-        },
-      });
-      console.log('📅 Transaksi hari ini count:', transaksiHariIni);
-      console.log('📅 Today range:', { start: today, end: tomorrow });
-
-      // 2. Update (kurangi) stok untuk setiap produk
       for (const item of items) {
         await tx.produk.update({
           where: { id: item.produkId },
@@ -171,8 +130,6 @@ export class TransaksiService {
         });
       }
 
-      // 3. PANGGIL GATEWAY DI SINI SETELAH TRANSAKSI SUKSES!
-      // Ini akan mengirim notifikasi ke semua klien yang terhubung.
       this.laporanGateway.kirimUpdateLaporan({
         message: `Transaksi baru sebesar Rp ${totalHarga} telah dibuat!`,
         cabangId: cabangId,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart'; // <-- PERBAIKAN: Import yang hilang ditambahkan
+import '../../models/pelanggan_model.dart';
 import '../../providers/providers.dart' as AppProviders;
 import '../../services/offline_database_proxy.dart' as OfflineDatabase;
 import '../../services/connectivity_service.dart';
@@ -7,6 +9,7 @@ import '../../services/sync_service.dart';
 import '../../services/receipt_service.dart';
 import '../../widgets/receipt_preview_dialog.dart';
 import '../../utils/laporan_refresh_helper.dart';
+import './widgets/pilih_pelanggan_dialog.dart';
 
 class KasirPage extends ConsumerStatefulWidget {
   final int cabangId;
@@ -31,11 +34,10 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     super.initState();
     _searchController.addListener(() {
       setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
+        _searchQuery = _searchController.text;
       });
     });
-    
-    // Start auto sync when page loads
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SyncService.startAutoSync(ref);
     });
@@ -47,14 +49,11 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     super.dispose();
   }
 
-  // === FUNGSI HELPER UNTUK MANAJEMEN KERANJANG ===
   void _updateCartItemQuantity(int index, int newQuantity) {
     if (newQuantity <= 0) {
-      // Jika jumlah 0 atau kurang, hapus item
       _removeCartItem(index);
       return;
     }
-
     final currentCart = ref.read(AppProviders.cartProvider);
     final updatedCart = List<Map<String, dynamic>>.from(currentCart);
     updatedCart[index]['jumlah'] = newQuantity;
@@ -68,47 +67,43 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     ref.read(AppProviders.cartProvider.notifier).state = updatedCart;
   }
 
-  // === FUNGSI HELPER UNTUK FILTER PRODUK ===
   List<dynamic> _filterProducts(List<dynamic> products) {
     if (_searchQuery.isEmpty) {
       return products;
     }
+    final query = _searchQuery.toLowerCase();
     return products.where((produk) {
       final nama = produk['nama'].toString().toLowerCase();
-      return nama.contains(_searchQuery);
+      final barcode = produk['barcode']?.toString().toLowerCase() ?? '';
+      return nama.contains(query) || barcode.contains(query);
     }).toList();
   }
 
-  // === FUNGSI HELPER UNTUK PREVIEW STRUK ===
   void _showReceiptPreview({
     required List<Map<String, dynamic>> cart,
     required int totalHarga,
     required int transaksiId,
   }) {
-    // Ambil data user dan cabang untuk struk
     final user = ref.read(AppProviders.userProfileProvider);
-    final namaKasir = user?['nama'] ?? 'Kasir';
-    
-    // Format items untuk struk
+    final namaKasir = user?['namaLengkap'] ?? 'Kasir';
+
     final items = cart.map((item) => {
       'nama': item['produk']['nama'],
       'jumlah': item['jumlah'],
       'harga': item['produk']['harga'],
     }).toList();
-    
-    // Generate receipt text
+
     final receiptText = ReceiptService.formatReceiptText(
       namaToko: 'OmsetPro POS',
       namaCabang: widget.cabangNama,
-      alamatCabang: 'Alamat Cabang', // TODO: Ambil dari data cabang
+      alamatCabang: 'Alamat Cabang',
       namaKasir: namaKasir,
       transaksiId: transaksiId,
       items: items,
       subtotal: totalHarga,
       totalHarga: totalHarga,
     );
-    
-    // Tampilkan preview dialog
+
     ReceiptPreviewDialog.show(
       context,
       receiptText: receiptText,
@@ -116,56 +111,40 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     );
   }
 
-  // === FUNGSI HELPER UNTUK PROSES TRANSAKSI ===
   Future<void> _processTransaction({
     required List<Map<String, dynamic>> cart,
     required int totalHarga,
   }) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
+    final selectedPelanggan = ref.read(AppProviders.selectedPelangganProvider);
+
     try {
       final dio = ref.read(AppProviders.dioProvider);
       final isConnected = await ConnectivityService.isConnected();
-      
+
       final itemsDto = cart.map((item) => {
         'produkId': item['produk']['id'],
         'jumlah': item['jumlah'],
       }).toList();
 
+      final requestData = {
+        'cabangId': widget.cabangId,
+        'metodeBayar': 'Tunai',
+        'items': itemsDto,
+        'pelangganId': selectedPelanggan?.id,
+      };
+
       if (isConnected) {
-        // Online mode - send to server directly
-        final response = await dio.post('/transaksi', data: {
-          'cabangId': widget.cabangId,
-          'metodeBayar': 'Tunai',
-          'items': itemsDto,
-        });
-
+        final response = await dio.post('/transaksi', data: requestData);
         final transaksiId = response.data['id'] ?? DateTime.now().millisecondsSinceEpoch;
-
-        print('✅ === TRANSAKSI BERHASIL ===');
-        print('Transaksi ID: $transaksiId');
-        print('Response data: ${response.data}');
-
+        if (!mounted) return;
         scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
         );
-
-        // Tampilkan preview struk
-        _showReceiptPreview(
-          cart: cart, 
-          totalHarga: totalHarga, 
-          transaksiId: transaksiId,
-        );
-
-        // Refresh laporan after successful online transaction
-        print('🔄 === CALLING LAPORAN REFRESH ===');
+        _showReceiptPreview(cart: cart, totalHarga: totalHarga, transaksiId: transaksiId);
         LaporanRefreshHelper.refreshLaporanAfterTransaction(ref);
-        print('🔄 === LAPORAN REFRESH CALLED ===');
-
       } else {
-        // Offline mode - save to local database
-        final transaksiId = DateTime.now().millisecondsSinceEpoch; // Generate unique ID untuk offline
-        
+        final transaksiId = DateTime.now().millisecondsSinceEpoch;
         await OfflineDatabase.OfflineDatabase.saveTransaksiOffline(
           cabangId: widget.cabangId,
           metodeBayar: 'Tunai',
@@ -177,71 +156,74 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             'harga': item['produk']['harga'],
           }).toList(),
         );
-
+        if (!mounted) return;
         scaffoldMessenger.showSnackBar(
           const SnackBar(
             content: Text('Transaksi disimpan offline - akan disync saat online'),
             backgroundColor: Colors.orange,
           ),
         );
-        
-        // Tampilkan preview struk untuk offline mode juga
-        _showReceiptPreview(
-          cart: cart, 
-          totalHarga: totalHarga, 
-          transaksiId: transaksiId,
-        );
-
-        // Note: Untuk offline mode, laporan akan di-refresh saat sync terjadi
+        _showReceiptPreview(cart: cart, totalHarga: totalHarga, transaksiId: transaksiId);
       }
 
-      // Clear cart and refresh
       ref.read(AppProviders.cartProvider.notifier).state = [];
+      ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
       ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
 
+    } on DioException catch (e) { // <-- PERBAIKAN: Menggunakan tipe DioException yang benar
+      final errorMessage = e.response?.data['message'] ?? 'Terjadi kesalahan saat transaksi.';
+      if (!mounted) return;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
+      );
     } catch (e) {
-      // Fallback to offline mode on any error
-      try {
-        final transaksiId = DateTime.now().millisecondsSinceEpoch; // Generate unique ID untuk fallback
-
-        await OfflineDatabase.OfflineDatabase.saveTransaksiOffline(
-          cabangId: widget.cabangId,
-          metodeBayar: 'Tunai',
-          totalHarga: totalHarga,
-          items: cart.map((item) => {
-            'produkId': item['produk']['id'],
-            'jumlah': item['jumlah'],
-            'nama': item['produk']['nama'],
-            'harga': item['produk']['harga'],
-          }).toList(),
-        );
-
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('Server error - transaksi disimpan offline'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-
-        // Tampilkan preview struk untuk fallback offline mode
-        _showReceiptPreview(
-          cart: cart, 
-          totalHarga: totalHarga, 
-          transaksiId: transaksiId,
-        );
-
-        // Note: Untuk fallback offline mode, laporan akan di-refresh saat sync terjadi
-
-        ref.read(AppProviders.cartProvider.notifier).state = [];
-      } catch (offlineError) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Error: $offlineError'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+      );
     }
+  }
+
+  // [PERBAIKAN] Widget ini dipindahkan ke dalam class _KasirPageState
+  Widget _buildPelangganInfo(Pelanggan? pelanggan) {
+    return Card(
+      color: Colors.blue.shade50,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: pelanggan == null
+            ? ListTile(
+                leading: const Icon(Icons.person_add_alt_1, color: Colors.blue),
+                title: const Text('Tanpa Pelanggan'),
+                subtitle: const Text('Klik untuk mencari atau menambah'),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => const PilihPelangganDialog(),
+                  );
+                },
+              )
+            : ListTile(
+                leading: CircleAvatar(child: Text(pelanggan.nama.substring(0, 1))),
+                title: Text(pelanggan.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(pelanggan.noHp),
+                trailing: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.red),
+                  tooltip: 'Hapus Pelanggan dari Transaksi',
+                  onPressed: () {
+                    ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
+                  },
+                ),
+                onTap: () {
+                   showDialog(
+                    context: context,
+                    builder: (_) => const PilihPelangganDialog(),
+                  );
+                },
+              ),
+      ),
+    );
   }
 
   @override
@@ -250,29 +232,22 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     final totalHarga = cart.fold<double>(0, (sum, item) {
       return sum + (item['produk']['harga'] * item['jumlah']);
     }).toInt();
-
-    // Watch connectivity status
     final connectivityAsync = ref.watch(AppProviders.connectivityProvider);
     final isOfflineMode = ref.watch(AppProviders.offlineModeProvider);
+    final selectedPelanggan = ref.watch(AppProviders.selectedPelangganProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Kasir di ${widget.cabangNama}'),
-        backgroundColor: isOfflineMode ? Colors.orange : null,
+        backgroundColor: isOfflineMode ? Colors.orange.shade700 : null,
         actions: [
-          // Manual sync button untuk testing
           IconButton(
             onPressed: () async {
-              // Manual sync button pressed - removed print for production
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
               final result = await SyncService.manualSync(ref);
-              final message = result 
-                ? 'Sync berhasil!' 
-                : 'Sync gagal atau tidak ada data untuk disync';
-              
-              scaffoldMessenger.showSnackBar(
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(message),
+                  content: Text(result ? 'Sync berhasil!' : 'Sync gagal atau tidak ada data baru.'),
                   backgroundColor: result ? Colors.green : Colors.orange,
                 ),
               );
@@ -280,15 +255,14 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             icon: const Icon(Icons.sync),
             tooltip: 'Manual Sync',
           ),
-          // Offline mode indicator
           connectivityAsync.when(
             data: (isOnline) => isOnline 
               ? const Icon(Icons.wifi, color: Colors.green)
               : const Icon(Icons.wifi_off, color: Colors.red),
-            loading: () => const Icon(Icons.sync, color: Colors.yellow),
+            loading: () => const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white)),
             error: (_, __) => const Icon(Icons.error, color: Colors.red),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
       ),
       body: Row(
@@ -297,37 +271,31 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             flex: 2,
             child: Column(
               children: [
-                // Search Bar
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Cari produk...',
+                      hintText: 'Cari produk atau scan barcode...',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                              },
+                              onPressed: () => _searchController.clear(),
                             )
                           : null,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
                   ),
                 ),
-                // Product Grid
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: () async {
                       ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
                       ref.read(AppProviders.cartProvider.notifier).state = [];
-                      await Future.delayed(const Duration(milliseconds: 300));
+                      ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
                     },
                     child: Consumer(
                       builder: (context, ref, _) {
@@ -335,8 +303,6 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                         return produkAsync.when(
                           data: (produkList) {
                             final filteredProducts = _filterProducts(produkList);
-                            
-                            // Show offline banner if in offline mode
                             return Column(
                               children: [
                                 if (isOfflineMode)
@@ -348,10 +314,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                                       children: [
                                         Icon(Icons.offline_bolt, color: Colors.orange),
                                         SizedBox(width: 8),
-                                        Text(
-                                          'Mode Offline - Data dari cache lokal',
-                                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
-                                        ),
+                                        Text('Mode Offline - Data dari cache lokal', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
@@ -365,33 +328,14 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                                       mainAxisSpacing: 8,
                                     ),
                                     itemCount: filteredProducts.length,
-                                    itemBuilder: (context, index) {
-                                      final produk = filteredProducts[index];
-                                      return _buildProdukCard(produk);
-                                    },
+                                    itemBuilder: (context, index) => _buildProdukCard(filteredProducts[index]),
                                   ),
                                 ),
                               ],
                             );
                           },
                           loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                                const SizedBox(height: 16),
-                                Text('Error: $err'),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
-                                  },
-                                  child: const Text('Coba Lagi'),
-                                ),
-                              ],
-                            ),
-                          ),
+                          error: (err, stack) => Center(child: Text('Error: $err')),
                         );
                       },
                     ),
@@ -403,7 +347,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           const VerticalDivider(width: 1),
           Expanded(
             flex: 1,
-            child: _buildCartView(cart, totalHarga),
+            child: _buildCartView(cart, totalHarga, selectedPelanggan),
           ),
         ],
       ),
@@ -468,7 +412,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     );
   }
 
-  Widget _buildCartView(List<Map<String, dynamic>> cart, int totalHarga) {
+  Widget _buildCartView(List<Map<String, dynamic>> cart, int totalHarga, Pelanggan? selectedPelanggan) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -476,6 +420,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         children: [
           Text('Keranjang', style: Theme.of(context).textTheme.headlineSmall),
           const Divider(),
+          _buildPelangganInfo(selectedPelanggan),
           Expanded(
             child: cart.isEmpty
                 ? const Center(child: Text('Keranjang kosong'))
@@ -489,63 +434,27 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
                             children: [
-                              // Info produk
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      item['produk']['nama'],
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    Text(
-                                      'Rp ${item['produk']['harga']}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
+                                    Text(item['produk']['nama'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text('Rp ${item['produk']['harga']}', style: TextStyle(color: Colors.grey[600])),
                                   ],
                                 ),
                               ),
-                              // Kontrol jumlah
                               Row(
                                 children: [
-                                  // Tombol kurang
                                   IconButton(
-                                    onPressed: () {
-                                      _updateCartItemQuantity(index, item['jumlah'] - 1);
-                                    },
+                                    onPressed: () => _updateCartItemQuantity(index, item['jumlah'] - 1),
                                     icon: const Icon(Icons.remove_circle_outline),
                                     color: Colors.red,
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   ),
-                                  // Tampilan jumlah
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey[300]!),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      '${item['jumlah']}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  // Tombol tambah
+                                  Text('${item['jumlah']}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                   IconButton(
-                                    onPressed: () {
-                                      _updateCartItemQuantity(index, item['jumlah'] + 1);
-                                    },
+                                    onPressed: () => _updateCartItemQuantity(index, item['jumlah'] + 1),
                                     icon: const Icon(Icons.add_circle_outline),
                                     color: Colors.green,
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                  ),
-                                  // Tombol hapus
-                                  IconButton(
-                                    onPressed: () {
-                                      _removeCartItem(index);
-                                    },
-                                    icon: const Icon(Icons.delete_outline),
-                                    color: Colors.red,
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   ),
                                 ],
                               ),
@@ -566,22 +475,12 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: cart.isEmpty ? null : () async {
-              _processTransaction(cart: cart, totalHarga: totalHarga);
-            },
+            onPressed: cart.isEmpty ? null : () => _processTransaction(cart: cart, totalHarga: totalHarga),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: ref.watch(AppProviders.offlineModeProvider) ? Colors.orange : Colors.green,
             ),
-            child: Consumer(
-              builder: (context, ref, child) {
-                final isOffline = ref.watch(AppProviders.offlineModeProvider);
-                return Text(
-                  isOffline ? 'Bayar (Offline)' : 'Bayar (Tunai)', 
-                  style: const TextStyle(color: Colors.white),
-                );
-              },
-            ),
+            child: const Text('Bayar (Tunai)', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

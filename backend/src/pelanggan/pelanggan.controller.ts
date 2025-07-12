@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { PelangganService } from './pelanggan.service';
 import { CreatePelangganDto } from './dto/create-pelanggan.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -14,8 +14,15 @@ export class PelangganController {
     return this.pelangganService.create(createPelangganDto, req.user);
   }
 
+
   @Get()
   findAll(@Request() req) {
     return this.pelangganService.findAll(req.user);
+  }
+
+  // [BARU] Endpoint untuk pencarian pelanggan
+  @Get('search')
+  search(@Query('q') query: string, @Request() req) {
+    return this.pelangganService.search(query || '', req.user);
   }
 }

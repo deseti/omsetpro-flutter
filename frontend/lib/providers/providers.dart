@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart'; // Import model baru
+import '../models/user_model.dart';
+import '../models/pelanggan_model.dart'; // <-- IMPORT MODEL PELANGGAN
 import '../services/connectivity_service.dart';
 import '../services/offline_database_proxy.dart' as OfflineDatabase;
 import 'package:flutter/foundation.dart'; // For kIsWeb
@@ -131,7 +132,10 @@ final connectivityProvider = FutureProvider<bool>((ref) async {
   return await ConnectivityService.isConnected();
 });
 
-// Provider untuk network service dengan auto-retry (untuk AI dan laporan)
+
 final networkDioProvider = FutureProvider<Dio>((ref) async {
   return await NetworkService.getDio();
 });
+
+// [BARU] Provider untuk pelanggan yang dipilih di kasir
+final selectedPelangganProvider = StateProvider.autoDispose<Pelanggan?>((ref) => null);
