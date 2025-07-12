@@ -8,7 +8,8 @@ import { TransaksiModule } from './transaksi/transaksi.module';
 import { TimModule } from './tim/tim.module';
 import { LaporanModule } from './laporan/laporan.module';
 import { PelangganModule } from './pelanggan/pelanggan.module';
-import { LoyaltyModule } from './loyalty/loyalty.module'; // <-- IMPORT MODUL BARU
+import { LoyaltyModule } from './loyalty/loyalty.module';
+import { PromoModule } from './promo/promo.module'; // <-- IMPORT MODUL BARU
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { LoyaltyModule } from './loyalty/loyalty.module'; // <-- IMPORT MODUL BA
     LaporanModule,
     PelangganModule,
     LoyaltyModule, // <-- DAFTARKAN DI SINI
+    PromoModule, // <-- DAFTARKAN DI SINI
   ],
   controllers: [AppController],
   providers: [AppService],

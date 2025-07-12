@@ -165,122 +165,139 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Selamat Datang,',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              if (profile != null)
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Text(
-                  profile['namaLengkap'] ?? 'Pengguna',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                  'Selamat Datang,',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-              const SizedBox(height: 40),
-              
+                if (profile != null)
+                  Text(
+                    profile['namaLengkap'] ?? 'Pengguna',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                const SizedBox(height: 40),
 
-              // === MANAJEMEN PELANGGAN (HANYA OWNER) ===
-              if (userRole == Role.OWNER)
+                // === MANAJEMEN PELANGGAN (HANYA OWNER) ===
+                if (userRole == Role.OWNER)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.contacts),
+                    label: const Text('Manajemen Pelanggan'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      textStyle: const TextStyle(fontSize: 16),
+                      backgroundColor: Colors.purple,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/pelanggan'); // <-- NAVIGASI KE HALAMAN BARU
+                    },
+                  ),
+                if (userRole == Role.OWNER) const SizedBox(height: 20),
+
+                // === MANAJEMEN CABANG (HANYA OWNER) ===
+                if (userRole == Role.OWNER)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.store),
+                    label: const Text('Manajemen Cabang'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/cabang');
+                    },
+                  ),
+                if (userRole == Role.OWNER) const SizedBox(height: 20),
+
+                // === MANAJEMEN PROMO (HANYA OWNER) ===
+                if (userRole == Role.OWNER)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.discount),
+                    label: const Text('Manajemen Promo'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      textStyle: const TextStyle(fontSize: 16),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/promo'); // <-- NAVIGASI KE HALAMAN BARU
+                    },
+                  ),
+                if (userRole == Role.OWNER) const SizedBox(height: 20),
+
+                // === MANAJEMEN PRODUK (OWNER & ADMIN) ===
+                if (userRole == Role.OWNER || userRole == Role.ADMIN)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.inventory),
+                    label: const Text('Manajemen Produk'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      textStyle: const TextStyle(fontSize: 16),
+                      backgroundColor: Colors.green,
+                    ),
+                    onPressed: () {
+                      _showPilihCabangDialog(context, mode: 'produk');
+                    },
+                  ),
+                if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
+
+                // === MANAJEMEN TIM (HANYA OWNER) ===
+                if (userRole == Role.OWNER)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.people),
+                    label: const Text('Manajemen Tim'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      textStyle: const TextStyle(fontSize: 16),
+                      backgroundColor: Colors.teal,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/tim');
+                    },
+                  ),
+                if (userRole == Role.OWNER) const SizedBox(height: 20),
+
+                // === SMART AI INSIGHTS (OWNER & ADMIN) ===
+                if (userRole == Role.OWNER || userRole == Role.ADMIN)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.lightbulb),
+                    label: const Text('Smart AI Insights'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      textStyle: const TextStyle(fontSize: 16),
+                      backgroundColor: Colors.indigo,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/insights');
+                    },
+                  ),
+                if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
+
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.contacts),
-                  label: const Text('Manajemen Pelanggan'),
+                  icon: const Icon(Icons.point_of_sale),
+                  label: const Text('Buka Kasir'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     textStyle: const TextStyle(fontSize: 16),
-                    backgroundColor: Colors.purple,
+                    backgroundColor: Colors.orange,
                   ),
+                  // --- LOGIKA BARU DI SINI ---
                   onPressed: () {
-                    Navigator.of(context).pushNamed('/pelanggan'); // <-- NAVIGASI KE HALAMAN BARU
+                    final cabangList = ref.read(cabangListProvider);
+                    if (cabangList.isNotEmpty) {
+                      // Panggil dialog untuk memilih cabang untuk kasir
+                      _showPilihCabangDialog(context, mode: 'kasir');
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Anda belum punya cabang. Silakan buat dulu.')),
+                      );
+                    }
                   },
                 ),
-              if (userRole == Role.OWNER) const SizedBox(height: 20),
-
-              // === MANAJEMEN CABANG (HANYA OWNER) ===
-              if (userRole == Role.OWNER)
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.store),
-                  label: const Text('Manajemen Cabang'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/cabang');
-                  },
-                ),
-              if (userRole == Role.OWNER) const SizedBox(height: 20),
-
-              // === MANAJEMEN PRODUK (OWNER & ADMIN) ===
-              if (userRole == Role.OWNER || userRole == Role.ADMIN)
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.inventory),
-                  label: const Text('Manajemen Produk'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: const TextStyle(fontSize: 16),
-                    backgroundColor: Colors.green,
-                  ),
-                  onPressed: () {
-                    _showPilihCabangDialog(context, mode: 'produk');
-                  },
-                ),
-              if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
-
-              // === MANAJEMEN TIM (HANYA OWNER) ===
-              if (userRole == Role.OWNER)
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.people),
-                  label: const Text('Manajemen Tim'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: const TextStyle(fontSize: 16),
-                    backgroundColor: Colors.teal,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/tim');
-                  },
-                ),
-              if (userRole == Role.OWNER) const SizedBox(height: 20),
-
-              // === SMART AI INSIGHTS (OWNER & ADMIN) ===
-              if (userRole == Role.OWNER || userRole == Role.ADMIN)
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.lightbulb),
-                  label: const Text('Smart AI Insights'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: const TextStyle(fontSize: 16),
-                    backgroundColor: Colors.indigo,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/insights');
-                  },
-                ),
-              if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
-
-              ElevatedButton.icon(
-                icon: const Icon(Icons.point_of_sale),
-                label: const Text('Buka Kasir'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  textStyle: const TextStyle(fontSize: 16),
-                  backgroundColor: Colors.orange,
-                ),
-                // --- LOGIKA BARU DI SINI ---
-                onPressed: () {
-                  final cabangList = ref.read(cabangListProvider);
-                  if (cabangList.isNotEmpty) {
-                    // Panggil dialog untuk memilih cabang untuk kasir
-                    _showPilihCabangDialog(context, mode: 'kasir');
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Anda belum punya cabang. Silakan buat dulu.')),
-                    );
-                  }
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

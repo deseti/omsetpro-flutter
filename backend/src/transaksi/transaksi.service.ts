@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { PromoTipe } from '@prisma/client'; // [BARU] Import PromoTipe
 import { PrismaService } from '../prisma.service';
 import { CreateTransaksiDto } from './dto/create-transaksi.dto';
 import { LaporanGateway } from '../laporan/laporan.gateway';
@@ -64,6 +65,7 @@ export class TransaksiService {
     const { cabangId, metodeBayar, items, pelangganId } = createTransaksiDto;
 
     const { cabang } = await this.verifyCabangAccess(cabangId, kasirId);
+    const ownerId = cabang.ownerId;
 
     if (!items || items.length === 0) {
       throw new BadRequestException('Keranjang belanja tidak boleh kosong.');
@@ -82,32 +84,70 @@ export class TransaksiService {
         'Beberapa produk tidak ditemukan di cabang ini.',
       );
     }
+    // ============== [LOGIKA BARU] APLIKASI PROMO & DISKON ==============
+    // 1. Ambil semua promo aktif milik owner
+    const promos = await this.prisma.promo.findMany({
+      where: {
+        ownerId,
+        isActive: true,
+        // Optional: Anda bisa menambahkan filter tanggal di sini nanti
+        // startDate: { lte: new Date() },
+        // endDate: { gte: new Date() },
+      },
+      include: {
+        produk: { select: { produkId: true } }, // Ambil ID produk yang terkait promo
+      },
+    });
 
-    let totalHarga = 0;
-    const transaksiDetailData = produkDiDb.map((produk) => {
-      const itemDiKeranjang = items.find(
-        (item) => item.produkId === produk.id,
-      )!;
+    let totalHargaAsli = 0;
+    let totalPotongan = 0;
+    const transaksiDetailData: Array<{ produkId: number; jumlah: number; hargaSaatItu: number; potonganItem: number }> = [];
 
+    for (const produk of produkDiDb) {
+      const itemDiKeranjang = items.find((item) => item.produkId === produk.id)!;
+      
       if (produk.stok < itemDiKeranjang.jumlah) {
-        throw new BadRequestException(
-          `Stok untuk produk "${produk.nama}" tidak mencukupi.`,
-        );
+        throw new BadRequestException(`Stok untuk produk "${produk.nama}" tidak mencukupi.`);
       }
 
-      totalHarga += produk.harga * itemDiKeranjang.jumlah;
-      return {
+      const hargaTotalItem = produk.harga * itemDiKeranjang.jumlah;
+      totalHargaAsli += hargaTotalItem;
+      let potonganItem = 0;
+
+      // 2. Cek apakah produk ini ada di dalam promo
+      const promoUntukProdukIni = promos.find((p) =>
+        p.produk.some((pp) => pp.produkId === produk.id),
+      );
+
+      if (promoUntukProdukIni) {
+        if (promoUntukProdukIni.tipe === PromoTipe.PERCENTAGE) {
+          potonganItem = hargaTotalItem * (promoUntukProdukIni.nilai / 100);
+        } else if (promoUntukProdukIni.tipe === PromoTipe.NOMINAL) {
+          // Potongan nominal per item, dikalikan jumlah
+          potonganItem = promoUntukProdukIni.nilai * itemDiKeranjang.jumlah;
+        }
+        potonganItem = Math.floor(potonganItem); // Bulatkan ke bawah
+      }
+      
+      totalPotongan += potonganItem;
+
+      transaksiDetailData.push({
         produkId: produk.id,
         jumlah: itemDiKeranjang.jumlah,
         hargaSaatItu: produk.harga,
-      };
-    });
+        potonganItem: potonganItem, // Simpan potongan per item
+      });
+    }
+    
+    const totalAkhir = totalHargaAsli - totalPotongan;
+    // =================================================================
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Buat transaksi utama
       const transaksi = await tx.transaksi.create({
         data: {
-          total: totalHarga,
+          total: totalAkhir, // Gunakan total akhir setelah diskon
+          potongan: totalPotongan, // Simpan total diskon
           metodeBayar,
           cabangId,
           kasirId,
@@ -125,34 +165,21 @@ export class TransaksiService {
       for (const item of items) {
         await tx.produk.update({
           where: { id: item.produkId },
-          data: {
-            stok: {
-              decrement: item.jumlah,
-            },
-          },
+          data: { stok: { decrement: item.jumlah } },
         });
       }
       
       // ============== [LOGIKA BARU] PENAMBAHAN POIN OTOMATIS ==============
       if (pelangganId) {
-        const ownerId = cabang.ownerId;
         const rule = await tx.loyaltyRule.findUnique({ where: { ownerId } });
-
         if (rule && rule.kelipatanRp > 0) {
-          const poinDidapat = Math.floor(totalHarga / rule.kelipatanRp) * rule.dapatPoin;
-
+          // Poin dihitung dari total akhir setelah diskon
+          const poinDidapat = Math.floor(totalAkhir / rule.kelipatanRp) * rule.dapatPoin;
           if (poinDidapat > 0) {
-            // Tambah poin ke pelanggan
             await tx.pelanggan.update({
               where: { id: pelangganId },
-              data: {
-                totalPoin: {
-                  increment: poinDidapat,
-                },
-              },
+              data: { totalPoin: { increment: poinDidapat } },
             });
-
-            // Catat di riwayat poin
             await tx.pointHistory.create({
               data: {
                 pelangganId: pelangganId,
@@ -169,7 +196,7 @@ export class TransaksiService {
 
       // 3. Kirim notifikasi real-time
       this.laporanGateway.kirimUpdateLaporan({
-        message: `Transaksi baru sebesar Rp ${totalHarga} telah dibuat!`,
+        message: `Transaksi baru sebesar Rp ${totalAkhir} telah dibuat!`,
         cabangId: cabangId,
       });
 

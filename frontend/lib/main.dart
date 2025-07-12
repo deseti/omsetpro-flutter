@@ -14,6 +14,7 @@ import 'pages/insight_dashboard_page.dart'; // Import insight dashboard
 import 'services/offline_database_proxy.dart' as OfflineDatabase; // Import offline database
 import 'features/pelanggan/pelanggan_page.dart';
 import 'features/loyalty/loyalty_settings_page.dart'; // <-- IMPORT HALAMAN BARU
+import 'features/promo/promo_page.dart'; // <-- IMPORT HALAMAN BARU
 
 // Ubah fungsi main menjadi async
 Future<void> main() async {
@@ -65,7 +66,8 @@ class OmsetProApp extends StatelessWidget {
         '/tim': (context) => const TimPage(),
         '/insights': (context) => const InsightDashboardPage(),
         '/pelanggan': (context) => const PelangganPage(),
-        '/loyalty-settings': (context) => const LoyaltySettingsPage(), // <-- DAFTARKAN RUTE BARU
+        '/loyalty-settings': (context) => const LoyaltySettingsPage(),
+        '/promo': (context) => const PromoPage(), // <-- DAFTARKAN RUTE BARU
       },
       initialRoute: '/',
     );
