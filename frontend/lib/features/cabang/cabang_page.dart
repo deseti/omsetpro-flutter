@@ -54,6 +54,7 @@ class _CabangPageState extends ConsumerState<CabangPage> {
   void _showEditCabangDialog(Map<String, dynamic> cabang) {
     final namaController = TextEditingController(text: cabang['nama']);
     final alamatController = TextEditingController(text: cabang['alamat']);
+    final industriController = TextEditingController(text: cabang['industri'] ?? '');
 
     showDialog(
       context: context,
@@ -65,6 +66,7 @@ class _CabangPageState extends ConsumerState<CabangPage> {
             children: [
               TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Cabang')),
               TextField(controller: alamatController, decoration: const InputDecoration(labelText: 'Alamat')),
+              TextField(controller: industriController, decoration: const InputDecoration(labelText: 'Industri (Opsional)')),
             ],
           ),
           actions: [
@@ -76,6 +78,7 @@ class _CabangPageState extends ConsumerState<CabangPage> {
                   await dio.patch('/cabang/${cabang['id']}', data: {
                     'nama': namaController.text,
                     'alamat': alamatController.text,
+                    'industri': industriController.text.isEmpty ? null : industriController.text,
                   });
                   Navigator.of(context).pop();
                   _fetchCabang();
@@ -127,6 +130,7 @@ class _CabangPageState extends ConsumerState<CabangPage> {
   void _showAddCabangDialog() {
     final namaController = TextEditingController();
     final alamatController = TextEditingController();
+    final industriController = TextEditingController();
 
     showDialog(
       context: context,
@@ -138,6 +142,7 @@ class _CabangPageState extends ConsumerState<CabangPage> {
             children: [
               TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Cabang')),
               TextField(controller: alamatController, decoration: const InputDecoration(labelText: 'Alamat')),
+              TextField(controller: industriController, decoration: const InputDecoration(labelText: 'Industri (Opsional)')),
             ],
           ),
           actions: [
@@ -151,6 +156,7 @@ class _CabangPageState extends ConsumerState<CabangPage> {
                   await dio.post('/cabang', data: {
                     'nama': namaController.text,
                     'alamat': alamatController.text,
+                    'industri': industriController.text.isEmpty ? null : industriController.text,
                   });
                   Navigator.of(context).pop();
                   _fetchCabang();
@@ -212,7 +218,15 @@ class _CabangPageState extends ConsumerState<CabangPage> {
                               child: ListTile(
                                 leading: const Icon(Icons.store_mall_directory, color: Colors.indigo),
                                 title: Text(cabang['nama'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text(cabang['alamat']),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(cabang['alamat']),
+                                    if (cabang['industri'] != null && cabang['industri'].toString().isNotEmpty)
+                                      Text('Industri: ${cabang['industri']}', 
+                                           style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                  ],
+                                ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [

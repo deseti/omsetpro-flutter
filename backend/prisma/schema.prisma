@@ -46,6 +46,7 @@ model Cabang {
   id        Int      @id @default(autoincrement())
   nama      String
   alamat    String
+  industri  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -60,6 +61,7 @@ model Cabang {
 model Produk {
   id        Int      @id @default(autoincrement())
   nama      String
+  kategori  String?
   hargaBeli Int      @default(0)
   harga     Int
   stok      Int      @default(0)

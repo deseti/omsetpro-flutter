@@ -51,6 +51,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
   void _showProdukDialog({Map<String, dynamic>? produk}) {
     final bool isEditing = produk != null;
     final namaController = TextEditingController(text: produk?['nama'] ?? '');
+    final kategoriController = TextEditingController(text: produk?['kategori'] ?? '');
     final hargaBeliController = TextEditingController(text: produk?['hargaBeli']?.toString() ?? '');
     final hargaController = TextEditingController(text: produk?['harga']?.toString() ?? '');
     final stokController = TextEditingController(text: produk?['stok']?.toString() ?? '');
@@ -66,6 +67,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Produk')),
+                TextField(controller: kategoriController, decoration: const InputDecoration(labelText: 'Kategori (Opsional)')),
                 TextField(controller: hargaBeliController, decoration: const InputDecoration(labelText: 'Harga Beli (Modal)'), keyboardType: TextInputType.number),
                 TextField(controller: hargaController, decoration: const InputDecoration(labelText: 'Harga Jual'), keyboardType: TextInputType.number),
                 TextField(controller: stokController, decoration: const InputDecoration(labelText: 'Stok'), keyboardType: TextInputType.number),
@@ -96,6 +98,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                 final dio = ref.read(dioProvider);
                 final data = {
                   'nama': namaController.text,
+                  'kategori': kategoriController.text.isEmpty ? null : kategoriController.text,
                   'hargaBeli': int.tryParse(hargaBeliController.text) ?? 0,
                   'harga': int.tryParse(hargaController.text) ?? 0,
                   'stok': int.tryParse(stokController.text) ?? 0,
@@ -183,7 +186,6 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                     itemBuilder: (context, index) {
                       final produk = produkList[index];
                       final fotoUrl = produk['fotoUrl'];
-                      final barcode = produk['barcode'];
 
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -195,9 +197,17 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                             child: fotoUrl == null ? const Icon(Icons.inventory_2, color: Colors.grey) : null,
                           ),
                           title: Text(produk['nama'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(
-                            'Jual: Rp ${produk['harga']} | Beli: Rp ${produk['hargaBeli']}\n'
-                            'Stok: ${produk['stok']} | Barcode: ${barcode ?? '-'}',
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (produk['kategori'] != null && produk['kategori'].toString().isNotEmpty)
+                                Text('Kategori: ${produk['kategori']}', 
+                                     style: const TextStyle(color: Colors.blue, fontSize: 12)),
+                              Text(
+                                'Jual: Rp ${produk['harga']} | Beli: Rp ${produk['hargaBeli']}\n'
+                                'Stok: ${produk['stok']} | Barcode: ${produk['barcode'] ?? '-'}',
+                              ),
+                            ],
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
