@@ -6,14 +6,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateTransaksiDto } from './dto/create-transaksi.dto';
-import { LaporanGateway } from '../laporan/laporan.gateway'; // 1. Import LaporanGateway
+import { LaporanGateway } from '../laporan/laporan.gateway';
+import { LoyaltyService } from '../loyalty/loyalty.service'; // [BARU] Import LoyaltyService
 
 @Injectable()
 export class TransaksiService {
-  // 2. Inject LaporanGateway melalui constructor
   constructor(
     private prisma: PrismaService,
     private laporanGateway: LaporanGateway,
+    private loyaltyService: LoyaltyService, // [BARU] Inject LoyaltyService
   ) {}
 
   private async verifyCabangAccess(cabangId: number, kasirId: number) {
@@ -60,9 +61,9 @@ export class TransaksiService {
   }
 
   async create(createTransaksiDto: CreateTransaksiDto, kasirId: number) {
-    const { cabangId, metodeBayar, items, pelangganId } = createTransaksiDto; // Ambil pelangganId
+    const { cabangId, metodeBayar, items, pelangganId } = createTransaksiDto;
 
-    await this.verifyCabangAccess(cabangId, kasirId);
+    const { cabang } = await this.verifyCabangAccess(cabangId, kasirId);
 
     if (!items || items.length === 0) {
       throw new BadRequestException('Keranjang belanja tidak boleh kosong.');
@@ -103,13 +104,14 @@ export class TransaksiService {
     });
 
     return this.prisma.$transaction(async (tx) => {
+      // 1. Buat transaksi utama
       const transaksi = await tx.transaksi.create({
         data: {
           total: totalHarga,
           metodeBayar,
           cabangId,
           kasirId,
-          pelangganId: pelangganId, // [BARU] Simpan ID pelanggan
+          pelangganId: pelangganId,
           detail: {
             create: transaksiDetailData,
           },
@@ -119,6 +121,7 @@ export class TransaksiService {
         },
       });
 
+      // 2. Update stok produk
       for (const item of items) {
         await tx.produk.update({
           where: { id: item.produkId },
@@ -129,7 +132,42 @@ export class TransaksiService {
           },
         });
       }
+      
+      // ============== [LOGIKA BARU] PENAMBAHAN POIN OTOMATIS ==============
+      if (pelangganId) {
+        const ownerId = cabang.ownerId;
+        const rule = await tx.loyaltyRule.findUnique({ where: { ownerId } });
 
+        if (rule && rule.kelipatanRp > 0) {
+          const poinDidapat = Math.floor(totalHarga / rule.kelipatanRp) * rule.dapatPoin;
+
+          if (poinDidapat > 0) {
+            // Tambah poin ke pelanggan
+            await tx.pelanggan.update({
+              where: { id: pelangganId },
+              data: {
+                totalPoin: {
+                  increment: poinDidapat,
+                },
+              },
+            });
+
+            // Catat di riwayat poin
+            await tx.pointHistory.create({
+              data: {
+                pelangganId: pelangganId,
+                poin: poinDidapat,
+                tipe: 'EARNED',
+                deskripsi: `Poin dari transaksi #${transaksi.id}`,
+                transaksiId: transaksi.id,
+              },
+            });
+          }
+        }
+      }
+      // =================================================================
+
+      // 3. Kirim notifikasi real-time
       this.laporanGateway.kirimUpdateLaporan({
         message: `Transaksi baru sebesar Rp ${totalHarga} telah dibuat!`,
         cabangId: cabangId,

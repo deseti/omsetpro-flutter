@@ -7,7 +7,8 @@ import { ProdukModule } from './produk/produk.module';
 import { TransaksiModule } from './transaksi/transaksi.module';
 import { TimModule } from './tim/tim.module';
 import { LaporanModule } from './laporan/laporan.module';
-import { PelangganModule } from './pelanggan/pelanggan.module'; // <-- IMPORT MODUL BARU
+import { PelangganModule } from './pelanggan/pelanggan.module';
+import { LoyaltyModule } from './loyalty/loyalty.module'; // <-- IMPORT MODUL BARU
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { PelangganModule } from './pelanggan/pelanggan.module'; // <-- IMPORT MO
     TransaksiModule,
     TimModule,
     LaporanModule,
-    PelangganModule, // <-- DAFTARKAN DI SINI
+    PelangganModule,
+    LoyaltyModule, // <-- DAFTARKAN DI SINI
   ],
   controllers: [AppController],
   providers: [AppService],

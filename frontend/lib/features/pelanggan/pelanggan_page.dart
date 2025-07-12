@@ -81,11 +81,21 @@ class PelangganPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return RoleGuard.protect(
-      allowedRoles: [Role.OWNER], // Hanya OWNER yang bisa akses halaman ini
+      allowedRoles: [Role.OWNER],
       ref: ref,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Manajemen Pelanggan (CRM)'),
+          // [BARU] Tambahkan tombol aksi ini
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Pengaturan Loyalitas',
+              onPressed: () {
+                Navigator.of(context).pushNamed('/loyalty-settings');
+              },
+            ),
+          ],
         ),
         body: Consumer(
           builder: (context, ref, _) {
