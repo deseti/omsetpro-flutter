@@ -46,7 +46,7 @@ class ReceiptPreviewDialog extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Preview area dengan background seperti kertas
             Expanded(
               child: Container(
@@ -77,9 +77,9 @@ class ReceiptPreviewDialog extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Action buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -95,9 +95,9 @@ class ReceiptPreviewDialog extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // Tombol print (placeholder untuk future implementation)
                 Expanded(
                   child: OutlinedButton.icon(
@@ -109,9 +109,9 @@ class ReceiptPreviewDialog extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // Tombol OK/Tutup
                 Expanded(
                   child: ElevatedButton.icon(
@@ -147,7 +147,7 @@ class ReceiptPreviewDialog extends StatelessWidget {
 
   /// Print receipt (placeholder untuk implementasi printer)
   void _printReceipt(BuildContext context) {
-    // TODO: Implementasi print ke thermal printer
+    // FUTURE: Implementasi print ke thermal printer akan ditambahkan
     // Untuk saat ini hanya menampilkan pesan
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

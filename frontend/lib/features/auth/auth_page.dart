@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -6,7 +5,7 @@ import '../../providers/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({Key? key}) : super(key: key);
+  const AuthPage({super.key});
 
   @override
   _AuthPageState createState() => _AuthPageState();
@@ -43,7 +42,8 @@ class _AuthPageState extends State<AuthPage> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 32.0),
                   child: AnimatedCrossFade(
                     firstChild: LoginForm(onToggle: _togglePage),
                     secondChild: RegisterForm(onToggle: _togglePage),
@@ -64,7 +64,7 @@ class _AuthPageState extends State<AuthPage> {
 
 class LoginForm extends ConsumerStatefulWidget {
   final VoidCallback onToggle;
-  const LoginForm({Key? key, required this.onToggle}) : super(key: key);
+  const LoginForm({super.key, required this.onToggle});
 
   @override
   _LoginFormState createState() => _LoginFormState();
@@ -78,12 +78,16 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   Future<void> _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email dan Password tidak boleh kosong!'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Email dan Password tidak boleh kosong!'),
+            backgroundColor: Colors.red),
       );
       return;
     }
 
-    setState(() { _isLoading = true; });
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final dio = ref.read(dioProvider);
@@ -102,20 +106,23 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       // 2. Update state di Riverpod
       ref.read(accessTokenProvider.notifier).state = accessToken;
       ref.read(authStateProvider.notifier).state = true;
-      
+
       // Navigasi setelah state diupdate
-      if(mounted) {
+      if (mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       }
-
     } on DioException catch (e) {
-      final errorMessage = e.response?.data['message'] ?? 'Terjadi kesalahan jaringan.';
+      final errorMessage =
+          e.response?.data['message'] ?? 'Terjadi kesalahan jaringan.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -132,11 +139,22 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Selamat Datang Kembali', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Selamat Datang Kembali',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 32),
-        _buildTextField(label: 'Email', icon: Icons.email_outlined, controller: _emailController),
+        _buildTextField(
+            label: 'Email',
+            icon: Icons.email_outlined,
+            controller: _emailController),
         const SizedBox(height: 16),
-        _buildTextField(label: 'Password', icon: Icons.lock_outline, obscureText: true, controller: _passwordController),
+        _buildTextField(
+            label: 'Password',
+            icon: Icons.lock_outline,
+            obscureText: true,
+            controller: _passwordController),
         const SizedBox(height: 32),
         SizedBox(
           width: double.infinity,
@@ -147,12 +165,18 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               backgroundColor: Colors.indigo.shade600,
             ),
             child: _isLoading
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                : const Text('Login', style: TextStyle(fontSize: 16, color: Colors.white)),
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 3))
+                : const Text('Login',
+                    style: TextStyle(fontSize: 16, color: Colors.white)),
           ),
         ),
         const SizedBox(height: 24),
-        _buildToggleText(context, 'Belum punya akun? ', 'Daftar Sekarang', widget.onToggle),
+        _buildToggleText(
+            context, 'Belum punya akun? ', 'Daftar Sekarang', widget.onToggle),
       ],
     );
   }
@@ -160,7 +184,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
 class RegisterForm extends ConsumerStatefulWidget {
   final VoidCallback onToggle;
-  const RegisterForm({Key? key, required this.onToggle}) : super(key: key);
+  const RegisterForm({super.key, required this.onToggle});
 
   @override
   _RegisterFormState createState() => _RegisterFormState();
@@ -173,14 +197,20 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   bool _isLoading = false;
 
   Future<void> _handleRegister() async {
-    if (_namaController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
+    if (_namaController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua kolom tidak boleh kosong!'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Semua kolom tidak boleh kosong!'),
+            backgroundColor: Colors.red),
       );
       return;
     }
 
-    setState(() { _isLoading = true; });
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final dio = ref.read(dioProvider);
@@ -193,19 +223,24 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
       final response = await dio.post('/auth/register', data: data);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.data['message'] ?? 'Registrasi Berhasil!'), backgroundColor: Colors.green),
+        SnackBar(
+            content: Text(response.data['message'] ?? 'Registrasi Berhasil!'),
+            backgroundColor: Colors.green),
       );
-      
-      widget.onToggle();
 
+      widget.onToggle();
     } on DioException catch (e) {
-      final errorMessage = e.response?.data['message'] ?? 'Terjadi kesalahan jaringan.';
+      final errorMessage =
+          e.response?.data['message'] ?? 'Terjadi kesalahan jaringan.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -223,13 +258,27 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Buat Akun Baru', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Buat Akun Baru',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 32),
-        _buildTextField(label: 'Nama Lengkap', icon: Icons.person_outline, controller: _namaController),
+        _buildTextField(
+            label: 'Nama Lengkap',
+            icon: Icons.person_outline,
+            controller: _namaController),
         const SizedBox(height: 16),
-        _buildTextField(label: 'Email', icon: Icons.email_outlined, controller: _emailController),
+        _buildTextField(
+            label: 'Email',
+            icon: Icons.email_outlined,
+            controller: _emailController),
         const SizedBox(height: 16),
-        _buildTextField(label: 'Password', icon: Icons.lock_outline, obscureText: true, controller: _passwordController),
+        _buildTextField(
+            label: 'Password',
+            icon: Icons.lock_outline,
+            obscureText: true,
+            controller: _passwordController),
         const SizedBox(height: 32),
         SizedBox(
           width: double.infinity,
@@ -240,18 +289,28 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               backgroundColor: Colors.indigo.shade600,
             ),
             child: _isLoading
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                : const Text('Daftar', style: TextStyle(fontSize: 16, color: Colors.white)),
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 3))
+                : const Text('Daftar',
+                    style: TextStyle(fontSize: 16, color: Colors.white)),
           ),
         ),
         const SizedBox(height: 24),
-        _buildToggleText(context, 'Sudah punya akun? ', 'Login di sini', widget.onToggle),
+        _buildToggleText(
+            context, 'Sudah punya akun? ', 'Login di sini', widget.onToggle),
       ],
     );
   }
 }
 
-Widget _buildTextField({required String label, required IconData icon, bool obscureText = false, TextEditingController? controller}) {
+Widget _buildTextField(
+    {required String label,
+    required IconData icon,
+    bool obscureText = false,
+    TextEditingController? controller}) {
   return TextField(
     controller: controller,
     obscureText: obscureText,
@@ -265,7 +324,8 @@ Widget _buildTextField({required String label, required IconData icon, bool obsc
   );
 }
 
-Widget _buildToggleText(BuildContext context, String normalText, String linkText, VoidCallback onTap) {
+Widget _buildToggleText(BuildContext context, String normalText,
+    String linkText, VoidCallback onTap) {
   return GestureDetector(
     onTap: onTap,
     child: RichText(
@@ -273,7 +333,11 @@ Widget _buildToggleText(BuildContext context, String normalText, String linkText
         style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
         children: [
           TextSpan(text: normalText),
-          TextSpan(text: linkText, style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
+          TextSpan(
+              text: linkText,
+              style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     ),

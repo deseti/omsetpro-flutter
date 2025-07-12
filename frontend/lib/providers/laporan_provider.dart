@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/laporan/laporan_models.dart';
 import '../services/laporan_service.dart';
 import 'providers.dart';
 import 'dart:async';
@@ -126,7 +125,7 @@ class DateRange {
 // Provider untuk preset filter tanggal
 final dateRangePresetsProvider = Provider<List<DateRangePreset>>((ref) {
   final now = DateTime.now();
-  
+
   return [
     DateRangePreset(
       name: 'Hari Ini',
@@ -177,7 +176,7 @@ final autoRefreshEnabledProvider = StateProvider<bool>((ref) => true);
 // Provider untuk global timer auto-refresh
 final globalAutoRefreshProvider = Provider<void>((ref) {
   Timer? timer;
-  
+
   void startTimer() {
     timer?.cancel();
     timer = Timer.periodic(const Duration(seconds: 30), (timer) {
@@ -188,14 +187,15 @@ final globalAutoRefreshProvider = Provider<void>((ref) {
         // ref.invalidate(produkTerlarisProvider);
         // ref.invalidate(statistikTransaksiProvider);
         // ref.invalidate(laporanLabaRugiProvider);
-        print('Auto-refresh dinonaktifkan - fitur laporan manual telah dihapus');
+        print(
+            'Auto-refresh dinonaktifkan - fitur laporan manual telah dihapus');
       }
     });
   }
-  
+
   // Start timer immediately
   startTimer();
-  
+
   // Restart timer when auto-refresh is re-enabled
   ref.listen(autoRefreshEnabledProvider, (previous, next) {
     if (next && !(previous ?? false)) {
@@ -204,7 +204,7 @@ final globalAutoRefreshProvider = Provider<void>((ref) {
       timer?.cancel();
     }
   });
-  
+
   ref.onDispose(() => timer?.cancel());
 });
 

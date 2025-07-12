@@ -12,10 +12,10 @@ class ProdukPage extends ConsumerStatefulWidget {
   final String cabangNama;
 
   const ProdukPage({
-    Key? key,
+    super.key,
     required this.cabangId,
     required this.cabangNama,
-  }) : super(key: key);
+  });
 
   @override
   _ProdukPageState createState() => _ProdukPageState();
@@ -51,14 +51,20 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
   void _showProdukDialog({Map<String, dynamic>? produk}) {
     final bool isEditing = produk != null;
     final namaController = TextEditingController(text: produk?['nama'] ?? '');
-    final kategoriController = TextEditingController(text: produk?['kategori'] ?? '');
-    final hargaBeliController = TextEditingController(text: produk?['hargaBeli']?.toString() ?? '');
-    final hargaController = TextEditingController(text: produk?['harga']?.toString() ?? '');
-    final stokController = TextEditingController(text: produk?['stok']?.toString() ?? '');
-    final barcodeController = TextEditingController(text: produk?['barcode'] ?? '');
+    final kategoriController =
+        TextEditingController(text: produk?['kategori'] ?? '');
+    final hargaBeliController =
+        TextEditingController(text: produk?['hargaBeli']?.toString() ?? '');
+    final hargaController =
+        TextEditingController(text: produk?['harga']?.toString() ?? '');
+    final stokController =
+        TextEditingController(text: produk?['stok']?.toString() ?? '');
+    final barcodeController =
+        TextEditingController(text: produk?['barcode'] ?? '');
     // Ambil profile user dari provider
     final profile = ref.read(userProfileProvider);
-    print('[ProdukPage] Tambah/Edit Produk - cabangId: ${widget.cabangId}, user: ${profile != null ? profile['namaLengkap'] : '-'}, role: ${profile != null ? profile['role'] : '-'}');
+    print(
+        '[ProdukPage] Tambah/Edit Produk - cabangId: ${widget.cabangId}, user: ${profile != null ? profile['namaLengkap'] : '-'}, role: ${profile != null ? profile['role'] : '-'}');
 
     showDialog(
       context: context,
@@ -69,11 +75,27 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Produk')),
-                TextField(controller: kategoriController, decoration: const InputDecoration(labelText: 'Kategori (Opsional)')),
-                TextField(controller: hargaBeliController, decoration: const InputDecoration(labelText: 'Harga Beli (Modal)'), keyboardType: TextInputType.number),
-                TextField(controller: hargaController, decoration: const InputDecoration(labelText: 'Harga Jual'), keyboardType: TextInputType.number),
-                TextField(controller: stokController, decoration: const InputDecoration(labelText: 'Stok'), keyboardType: TextInputType.number),
+                TextField(
+                    controller: namaController,
+                    decoration:
+                        const InputDecoration(labelText: 'Nama Produk')),
+                TextField(
+                    controller: kategoriController,
+                    decoration: const InputDecoration(
+                        labelText: 'Kategori (Opsional)')),
+                TextField(
+                    controller: hargaBeliController,
+                    decoration:
+                        const InputDecoration(labelText: 'Harga Beli (Modal)'),
+                    keyboardType: TextInputType.number),
+                TextField(
+                    controller: hargaController,
+                    decoration: const InputDecoration(labelText: 'Harga Jual'),
+                    keyboardType: TextInputType.number),
+                TextField(
+                    controller: stokController,
+                    decoration: const InputDecoration(labelText: 'Stok'),
+                    keyboardType: TextInputType.number),
                 TextField(
                   controller: barcodeController,
                   decoration: InputDecoration(
@@ -81,8 +103,10 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.qr_code_scanner),
                       onPressed: () async {
-                        final String? barcodeResult = await Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const ScannerPage()),
+                        final String? barcodeResult =
+                            await Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => const ScannerPage()),
                         );
                         if (barcodeResult != null) {
                           barcodeController.text = barcodeResult;
@@ -95,17 +119,23 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal')),
             ElevatedButton(
               onPressed: () async {
                 final dio = ref.read(dioProvider);
                 final data = {
                   'nama': namaController.text,
-                  'kategori': kategoriController.text.isEmpty ? null : kategoriController.text,
+                  'kategori': kategoriController.text.isEmpty
+                      ? null
+                      : kategoriController.text,
                   'hargaBeli': int.tryParse(hargaBeliController.text) ?? 0,
                   'harga': int.tryParse(hargaController.text) ?? 0,
                   'stok': int.tryParse(stokController.text) ?? 0,
-                  'barcode': barcodeController.text.isNotEmpty ? barcodeController.text : null,
+                  'barcode': barcodeController.text.isNotEmpty
+                      ? barcodeController.text
+                      : null,
                   'cabangId': widget.cabangId,
                 };
                 print('[ProdukPage] Request data: $data');
@@ -138,7 +168,9 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
           title: const Text('Hapus Produk'),
           content: const Text('Apakah Anda yakin ingin menghapus produk ini?'),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal')),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               onPressed: () async {
@@ -171,7 +203,8 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
 
   Widget _buildProdukPage(BuildContext context) {
     // Gunakan provider baru untuk mengambil data
-    final produkAsyncValue = ref.watch(produkListFutureProvider(widget.cabangId));
+    final produkAsyncValue =
+        ref.watch(produkListFutureProvider(widget.cabangId));
 
     return Scaffold(
       appBar: AppBar(
@@ -192,21 +225,30 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                       final fotoUrl = produk['fotoUrl'];
 
                       return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         child: ListTile(
                           leading: CircleAvatar(
                             radius: 30,
                             backgroundColor: Colors.grey.shade200,
-                            backgroundImage: fotoUrl != null ? NetworkImage(fotoUrl) : null,
-                            child: fotoUrl == null ? const Icon(Icons.inventory_2, color: Colors.grey) : null,
+                            backgroundImage:
+                                fotoUrl != null ? NetworkImage(fotoUrl) : null,
+                            child: fotoUrl == null
+                                ? const Icon(Icons.inventory_2,
+                                    color: Colors.grey)
+                                : null,
                           ),
-                          title: Text(produk['nama'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                          title: Text(produk['nama'],
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (produk['kategori'] != null && produk['kategori'].toString().isNotEmpty)
-                                Text('Kategori: ${produk['kategori']}', 
-                                     style: const TextStyle(color: Colors.blue, fontSize: 12)),
+                              if (produk['kategori'] != null &&
+                                  produk['kategori'].toString().isNotEmpty)
+                                Text('Kategori: ${produk['kategori']}',
+                                    style: const TextStyle(
+                                        color: Colors.blue, fontSize: 12)),
                               Text(
                                 'Jual: Rp ${produk['harga']} | Beli: Rp ${produk['hargaBeli']}\n'
                                 'Stok: ${produk['stok']} | Barcode: ${produk['barcode'] ?? '-'}',
@@ -217,18 +259,24 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.photo_camera, color: Colors.green),
-                                onPressed: () => _handleFotoUpload(produk['id']),
+                                icon: const Icon(Icons.photo_camera,
+                                    color: Colors.green),
+                                onPressed: () =>
+                                    _handleFotoUpload(produk['id']),
                                 tooltip: 'Upload Foto',
                               ),
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _showProdukDialog(produk: produk),
+                                icon:
+                                    const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () =>
+                                    _showProdukDialog(produk: produk),
                                 tooltip: 'Edit Produk',
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _showDeleteConfirmationDialog(produk['id']),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () =>
+                                    _showDeleteConfirmationDialog(produk['id']),
                                 tooltip: 'Hapus Produk',
                               ),
                             ],
@@ -242,8 +290,8 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showProdukDialog(),
-        child: const Icon(Icons.add),
         tooltip: 'Tambah Produk',
+        child: const Icon(Icons.add),
       ),
     );
   }

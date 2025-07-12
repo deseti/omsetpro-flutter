@@ -11,7 +11,8 @@ import 'features/tim/tim_page.dart'; // Import halaman tim
 // import 'features/laporan/screens/laporan_dashboard_screen.dart'; // DINONAKTIFKAN - Import halaman laporan
 // import 'features/laporan/screens/detail_laporan_screen.dart'; // DINONAKTIFKAN - Import detail laporan
 import 'pages/insight_dashboard_page.dart'; // Import insight dashboard
-import 'services/offline_database_proxy.dart' as OfflineDatabase; // Import offline database
+import 'services/offline_database_proxy.dart'
+    as OfflineDatabase; // Import offline database
 import 'features/pelanggan/pelanggan_page.dart';
 import 'features/loyalty/loyalty_settings_page.dart'; // <-- IMPORT HALAMAN BARU
 import 'features/promo/promo_page.dart'; // <-- IMPORT HALAMAN BARU
@@ -20,15 +21,15 @@ import 'features/promo/promo_page.dart'; // <-- IMPORT HALAMAN BARU
 Future<void> main() async {
   // Pastikan semua binding Flutter sudah siap sebelum menjalankan kode async
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Inisialisasi database offline hanya untuk mobile
   if (!kIsWeb) {
     await OfflineDatabase.OfflineDatabase.database;
   }
-  
+
   // Buat instance SharedPreferences
   final prefs = await SharedPreferences.getInstance();
-  
+
   // Baca token dari penyimpanan
   final token = prefs.getString('accessToken');
 
@@ -45,7 +46,7 @@ Future<void> main() async {
 }
 
 class OmsetProApp extends StatelessWidget {
-  const OmsetProApp({Key? key}) : super(key: key);
+  const OmsetProApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +76,7 @@ class OmsetProApp extends StatelessWidget {
 }
 
 class AuthChecker extends ConsumerWidget {
-  const AuthChecker({Key? key}) : super(key: key);
+  const AuthChecker({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -7,7 +7,7 @@ import '../../models/user_model.dart';
 import '../../utils/role_guard.dart';
 
 class ImportProdukPage extends ConsumerStatefulWidget {
-  const ImportProdukPage({Key? key}) : super(key: key);
+  const ImportProdukPage({super.key});
 
   @override
   _ImportProdukPageState createState() => _ImportProdukPageState();
@@ -34,12 +34,16 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
   Future<void> _handleUpload() async {
     if (_selectedFile == null || _selectedCabang == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap pilih cabang dan file Excel.'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Harap pilih cabang dan file Excel.'),
+            backgroundColor: Colors.red),
       );
       return;
     }
 
-    setState(() { _isUploading = true; });
+    setState(() {
+      _isUploading = true;
+    });
 
     try {
       final dio = ref.read(dioProvider);
@@ -54,20 +58,25 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
       final response = await dio.post('/produk/upload-massal', data: formData);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.data['message'] ?? 'Upload berhasil!'), backgroundColor: Colors.green),
+        SnackBar(
+            content: Text(response.data['message'] ?? 'Upload berhasil!'),
+            backgroundColor: Colors.green),
       );
-      
+
       // Kembali ke halaman sebelumnya setelah sukses
       if (mounted) Navigator.of(context).pop();
-
     } on DioException catch (e) {
-      final errorMessage = e.response?.data['message'] ?? 'Terjadi kesalahan saat upload.';
+      final errorMessage =
+          e.response?.data['message'] ?? 'Terjadi kesalahan saat upload.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
-        setState(() { _isUploading = false; });
+        setState(() {
+          _isUploading = false;
+        });
       }
     }
   }
@@ -133,7 +142,10 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
             ElevatedButton.icon(
               icon: _isUploading ? Container() : const Icon(Icons.upload_file),
               label: _isUploading
-                  ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white))
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(color: Colors.white))
                   : const Text('Upload Sekarang'),
               onPressed: _isUploading ? null : _handleUpload,
               style: ElevatedButton.styleFrom(

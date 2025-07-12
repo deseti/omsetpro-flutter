@@ -5,19 +5,22 @@ import '../../providers/providers.dart';
 import 'package:multiselect_formfield/multiselect_formfield.dart';
 
 class PromoPage extends ConsumerWidget {
-  const PromoPage({Key? key}) : super(key: key);
+  const PromoPage({super.key});
 
   void _showPromoDialog(BuildContext context, WidgetRef ref, {Promo? promo}) {
     final isEditing = promo != null;
     final formKey = GlobalKey<FormState>();
-    
+
     // State
     final namaController = TextEditingController(text: promo?.nama ?? '');
-    final deskripsiController = TextEditingController(text: promo?.deskripsi ?? '');
+    final deskripsiController =
+        TextEditingController(text: promo?.deskripsi ?? '');
     PromoTipe? tipe = promo?.tipe;
-    final nilaiController = TextEditingController(text: promo?.nilai.toString() ?? '');
+    final nilaiController =
+        TextEditingController(text: promo?.nilai.toString() ?? '');
     // Gunakan tipe yang lebih spesifik dan aman
-    List<Object?> selectedProdukIds = promo?.produk.map((p) => p.id as Object).toList() ?? [];
+    List<Object?> selectedProdukIds =
+        promo?.produk.map((p) => p.id as Object).toList() ?? [];
 
     showDialog(
       context: context,
@@ -40,12 +43,19 @@ class PromoPage extends ConsumerWidget {
                         children: [
                           TextFormField(
                             controller: namaController,
-                            decoration: const InputDecoration(labelText: 'Nama Promo'),
-                            validator: (value) => value == null || value.isEmpty ? 'Nama tidak boleh kosong' : null,
+                            decoration:
+                                const InputDecoration(labelText: 'Nama Promo'),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Nama tidak boleh kosong'
+                                : null,
                           ),
-                          TextFormField(controller: deskripsiController, decoration: const InputDecoration(labelText: 'Deskripsi')),
+                          TextFormField(
+                              controller: deskripsiController,
+                              decoration: const InputDecoration(
+                                  labelText: 'Deskripsi')),
                           StatefulBuilder(
-                            builder: (BuildContext context, StateSetter setState) {
+                            builder:
+                                (BuildContext context, StateSetter setState) {
                               return DropdownButtonFormField<PromoTipe>(
                                 value: tipe,
                                 hint: const Text('Pilih Tipe Promo'),
@@ -58,24 +68,35 @@ class PromoPage extends ConsumerWidget {
                                 onChanged: (newValue) {
                                   setState(() => tipe = newValue);
                                 },
-                                validator: (value) => value == null ? 'Tipe promo tidak boleh kosong' : null,
+                                validator: (value) => value == null
+                                    ? 'Tipe promo tidak boleh kosong'
+                                    : null,
                               );
                             },
                           ),
                           TextFormField(
                             controller: nilaiController,
-                            decoration: const InputDecoration(labelText: 'Nilai (persen atau nominal)'),
+                            decoration: const InputDecoration(
+                                labelText: 'Nilai (persen atau nominal)'),
                             keyboardType: TextInputType.number,
-                            validator: (value) => value == null || value.isEmpty ? 'Nilai tidak boleh kosong' : null,
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Nilai tidak boleh kosong'
+                                : null,
                           ),
                           MultiSelectFormField(
-                            title: const Text("Produk Berlaku"),
-                            dataSource: produkList.map((p) => {'display': '${p.nama} (${p.cabangNama})', 'value': p.id}).toList(),
+                            title: const Text('Produk Berlaku'),
+                            dataSource: produkList
+                                .map((p) => {
+                                      'display': '${p.nama} (${p.cabangNama})',
+                                      'value': p.id
+                                    })
+                                .toList(),
                             textField: 'display',
                             valueField: 'value',
                             okButtonLabel: 'OK',
                             cancelButtonLabel: 'BATAL',
-                            hintWidget: const Text('Pilih satu atau lebih produk'),
+                            hintWidget:
+                                const Text('Pilih satu atau lebih produk'),
                             initialValue: selectedProdukIds,
                             onSaved: (value) {
                               // [PERBAIKAN] Mengatasi nilai null dengan aman
@@ -97,16 +118,20 @@ class PromoPage extends ConsumerWidget {
             },
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Batal')),
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState?.validate() ?? false) {
                   formKey.currentState?.save();
-                  
+
                   if (tipe == null) {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tipe promo harus dipilih'), backgroundColor: Colors.red),
+                      const SnackBar(
+                          content: Text('Tipe promo harus dipilih'),
+                          backgroundColor: Colors.red),
                     );
                     return;
                   }
@@ -118,25 +143,30 @@ class PromoPage extends ConsumerWidget {
                       'deskripsi': deskripsiController.text,
                       'tipe': tipe.toString().split('.').last,
                       'nilai': double.parse(nilaiController.text),
-                      'produkIds': selectedProdukIds.map((e) => e as int).toList(),
+                      'produkIds':
+                          selectedProdukIds.map((e) => e as int).toList(),
                     };
 
-                    if (isEditing && promo != null) {
+                    if (isEditing) {
                       await dio.patch('/promo/${promo.id}', data: data);
                     } else {
                       await dio.post('/promo', data: data);
                     }
-                    
+
                     if (!context.mounted) return;
                     Navigator.of(dialogContext).pop();
                     ref.invalidate(promoListProvider);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Promo berhasil disimpan!'), backgroundColor: Colors.green),
+                      const SnackBar(
+                          content: Text('Promo berhasil disimpan!'),
+                          backgroundColor: Colors.green),
                     );
                   } catch (e) {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Gagal menyimpan promo: $e'), backgroundColor: Colors.red),
+                      SnackBar(
+                          content: Text('Gagal menyimpan promo: $e'),
+                          backgroundColor: Colors.red),
                     );
                   }
                 }
@@ -170,7 +200,8 @@ class PromoPage extends ConsumerWidget {
                 final promo = promos[index];
                 return Card(
                   child: ListTile(
-                    title: Text(promo.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(promo.nama,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(
                       'Tipe: ${promo.tipe.name} | Nilai: ${promo.nilai}${promo.tipe == PromoTipe.PERCENTAGE ? '%' : ''}\n'
                       'Produk: ${promo.produk.map((p) => p.nama).join(', ')}',
@@ -180,12 +211,15 @@ class PromoPage extends ConsumerWidget {
                       onChanged: (value) async {
                         try {
                           final dio = ref.read(dioProvider);
-                          await dio.patch('/promo/${promo.id}', data: {'isActive': value});
+                          await dio.patch('/promo/${promo.id}',
+                              data: {'isActive': value});
                           ref.invalidate(promoListProvider);
                         } catch (e) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Gagal mengubah status: $e'), backgroundColor: Colors.red),
+                            SnackBar(
+                                content: Text('Gagal mengubah status: $e'),
+                                backgroundColor: Colors.red),
                           );
                         }
                       },
@@ -200,8 +234,8 @@ class PromoPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showPromoDialog(context, ref),
-        child: const Icon(Icons.add),
         tooltip: 'Buat Promo Baru',
+        child: const Icon(Icons.add),
       ),
     );
   }

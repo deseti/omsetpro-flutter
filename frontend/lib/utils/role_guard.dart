@@ -18,7 +18,8 @@ class RoleGuard {
     Widget? fallback,
   }) {
     final profile = ref.watch(userProfileProvider);
-    final userRole = profile != null ? Role.values.byName(profile['role']) : null;
+    final userRole =
+        profile != null ? Role.values.byName(profile['role']) : null;
 
     if (canAccess(userRole, allowedRoles)) {
       return child;
@@ -29,7 +30,7 @@ class RoleGuard {
 }
 
 class _UnauthorizedPage extends StatelessWidget {
-  const _UnauthorizedPage({Key? key}) : super(key: key);
+  const _UnauthorizedPage();
 
   @override
   Widget build(BuildContext context) {

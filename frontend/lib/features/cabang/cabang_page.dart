@@ -7,7 +7,7 @@ import '../../models/user_model.dart';
 import '../produk/produk_page.dart'; // Import halaman produk
 
 class CabangPage extends ConsumerStatefulWidget {
-  const CabangPage({Key? key}) : super(key: key);
+  const CabangPage({super.key});
 
   @override
   _CabangPageState createState() => _CabangPageState();
@@ -54,7 +54,8 @@ class _CabangPageState extends ConsumerState<CabangPage> {
   void _showEditCabangDialog(Map<String, dynamic> cabang) {
     final namaController = TextEditingController(text: cabang['nama']);
     final alamatController = TextEditingController(text: cabang['alamat']);
-    final industriController = TextEditingController(text: cabang['industri'] ?? '');
+    final industriController =
+        TextEditingController(text: cabang['industri'] ?? '');
 
     showDialog(
       context: context,
@@ -64,13 +65,22 @@ class _CabangPageState extends ConsumerState<CabangPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Cabang')),
-              TextField(controller: alamatController, decoration: const InputDecoration(labelText: 'Alamat')),
-              TextField(controller: industriController, decoration: const InputDecoration(labelText: 'Industri (Opsional)')),
+              TextField(
+                  controller: namaController,
+                  decoration: const InputDecoration(labelText: 'Nama Cabang')),
+              TextField(
+                  controller: alamatController,
+                  decoration: const InputDecoration(labelText: 'Alamat')),
+              TextField(
+                  controller: industriController,
+                  decoration:
+                      const InputDecoration(labelText: 'Industri (Opsional)')),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal')),
             ElevatedButton(
               onPressed: () async {
                 try {
@@ -78,13 +88,17 @@ class _CabangPageState extends ConsumerState<CabangPage> {
                   await dio.patch('/cabang/${cabang['id']}', data: {
                     'nama': namaController.text,
                     'alamat': alamatController.text,
-                    'industri': industriController.text.isEmpty ? null : industriController.text,
+                    'industri': industriController.text.isEmpty
+                        ? null
+                        : industriController.text,
                   });
                   Navigator.of(context).pop();
                   _fetchCabang();
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gagal mengupdate cabang'), backgroundColor: Colors.red),
+                    const SnackBar(
+                        content: Text('Gagal mengupdate cabang'),
+                        backgroundColor: Colors.red),
                   );
                 }
               },
@@ -102,9 +116,12 @@ class _CabangPageState extends ConsumerState<CabangPage> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Hapus Cabang'),
-          content: const Text('Apakah Anda yakin ingin menghapus cabang ini? Tindakan ini tidak bisa dibatalkan.'),
+          content: const Text(
+              'Apakah Anda yakin ingin menghapus cabang ini? Tindakan ini tidak bisa dibatalkan.'),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal')),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               onPressed: () async {
@@ -115,7 +132,9 @@ class _CabangPageState extends ConsumerState<CabangPage> {
                   _fetchCabang();
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gagal menghapus cabang'), backgroundColor: Colors.red),
+                    const SnackBar(
+                        content: Text('Gagal menghapus cabang'),
+                        backgroundColor: Colors.red),
                   );
                 }
               },
@@ -140,29 +159,45 @@ class _CabangPageState extends ConsumerState<CabangPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Cabang')),
-              TextField(controller: alamatController, decoration: const InputDecoration(labelText: 'Alamat')),
-              TextField(controller: industriController, decoration: const InputDecoration(labelText: 'Industri (Opsional)')),
+              TextField(
+                  controller: namaController,
+                  decoration: const InputDecoration(labelText: 'Nama Cabang')),
+              TextField(
+                  controller: alamatController,
+                  decoration: const InputDecoration(labelText: 'Alamat')),
+              TextField(
+                  controller: industriController,
+                  decoration:
+                      const InputDecoration(labelText: 'Industri (Opsional)')),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal')),
             ElevatedButton(
               onPressed: () async {
-                if (namaController.text.isEmpty || alamatController.text.isEmpty) return;
-                
+                if (namaController.text.isEmpty ||
+                    alamatController.text.isEmpty) {
+                  return;
+                }
+
                 try {
                   final dio = ref.read(dioProvider);
                   await dio.post('/cabang', data: {
                     'nama': namaController.text,
                     'alamat': alamatController.text,
-                    'industri': industriController.text.isEmpty ? null : industriController.text,
+                    'industri': industriController.text.isEmpty
+                        ? null
+                        : industriController.text,
                   });
                   Navigator.of(context).pop();
                   _fetchCabang();
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gagal menambah cabang'), backgroundColor: Colors.red),
+                    const SnackBar(
+                        content: Text('Gagal menambah cabang'),
+                        backgroundColor: Colors.red),
                   );
                 }
               },
@@ -204,40 +239,58 @@ class _CabangPageState extends ConsumerState<CabangPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text('Error: $_error', style: const TextStyle(color: Colors.red)))
+              ? Center(
+                  child: Text('Error: $_error',
+                      style: const TextStyle(color: Colors.red)))
               : RefreshIndicator(
                   onRefresh: _fetchCabang,
                   child: cabangList.isEmpty
-                      ? const Center(child: Text('Anda belum memiliki cabang. Silakan tambahkan.'))
+                      ? const Center(
+                          child: Text(
+                              'Anda belum memiliki cabang. Silakan tambahkan.'))
                       : ListView.builder(
                           itemCount: cabangList.length,
                           itemBuilder: (context, index) {
                             final cabang = cabangList[index];
                             return Card(
-                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               child: ListTile(
-                                leading: const Icon(Icons.store_mall_directory, color: Colors.indigo),
-                                title: Text(cabang['nama'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                leading: const Icon(Icons.store_mall_directory,
+                                    color: Colors.indigo),
+                                title: Text(cabang['nama'],
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(cabang['alamat']),
-                                    if (cabang['industri'] != null && cabang['industri'].toString().isNotEmpty)
-                                      Text('Industri: ${cabang['industri']}', 
-                                           style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                    if (cabang['industri'] != null &&
+                                        cabang['industri']
+                                            .toString()
+                                            .isNotEmpty)
+                                      Text('Industri: ${cabang['industri']}',
+                                          style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12)),
                                   ],
                                 ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue),
-                                      onPressed: () => _showEditCabangDialog(cabang),
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.blue),
+                                      onPressed: () =>
+                                          _showEditCabangDialog(cabang),
                                       tooltip: 'Edit',
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () => _showDeleteConfirmationDialog(cabang['id']),
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
+                                      onPressed: () =>
+                                          _showDeleteConfirmationDialog(
+                                              cabang['id']),
                                       tooltip: 'Hapus',
                                     ),
                                   ],
@@ -253,7 +306,8 @@ class _CabangPageState extends ConsumerState<CabangPage> {
                                     ),
                                   );
                                   // Setelah kembali dari ProdukPage, refresh produk di kasir
-                                  ref.invalidate(produkListFutureProvider(cabang['id']));
+                                  ref.invalidate(
+                                      produkListFutureProvider(cabang['id']));
                                 },
                               ),
                             );
@@ -262,8 +316,8 @@ class _CabangPageState extends ConsumerState<CabangPage> {
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddCabangDialog,
-        child: const Icon(Icons.add),
         tooltip: 'Tambah Cabang',
+        child: const Icon(Icons.add),
       ),
     );
   }

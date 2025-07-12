@@ -6,7 +6,7 @@ import '../../../models/pelanggan_model.dart';
 import '../../../providers/providers.dart';
 
 class PilihPelangganDialog extends ConsumerStatefulWidget {
-  const PilihPelangganDialog({Key? key}) : super(key: key);
+  const PilihPelangganDialog({super.key});
 
   @override
   _PilihPelangganDialogState createState() => _PilihPelangganDialogState();
@@ -53,7 +53,8 @@ class _PilihPelangganDialogState extends ConsumerState<PilihPelangganDialog> {
 
     try {
       final dio = ref.read(dioProvider);
-      final response = await dio.get('/pelanggan/search', queryParameters: {'q': query});
+      final response =
+          await dio.get('/pelanggan/search', queryParameters: {'q': query});
       final List<dynamic> data = response.data;
       setState(() {
         _searchResults = data.map((json) => Pelanggan.fromJson(json)).toList();
@@ -78,12 +79,19 @@ class _PilihPelangganDialogState extends ConsumerState<PilihPelangganDialog> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama')),
-            TextField(controller: noHpController, decoration: const InputDecoration(labelText: 'No. HP'), keyboardType: TextInputType.phone),
+            TextField(
+                controller: namaController,
+                decoration: const InputDecoration(labelText: 'Nama')),
+            TextField(
+                controller: noHpController,
+                decoration: const InputDecoration(labelText: 'No. HP'),
+                keyboardType: TextInputType.phone),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Batal')),
+          TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Batal')),
           ElevatedButton(
             onPressed: () async {
               try {
@@ -93,7 +101,8 @@ class _PilihPelangganDialogState extends ConsumerState<PilihPelangganDialog> {
                   'noHp': noHpController.text,
                 });
                 final newPelanggan = Pelanggan.fromJson(response.data);
-                ref.read(selectedPelangganProvider.notifier).state = newPelanggan;
+                ref.read(selectedPelangganProvider.notifier).state =
+                    newPelanggan;
                 Navigator.of(dialogContext).pop(); // Tutup dialog tambah
                 Navigator.of(context).pop(); // Tutup dialog utama
               } catch (e) {
@@ -116,7 +125,8 @@ class _PilihPelangganDialogState extends ConsumerState<PilihPelangganDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Cari atau Tambah Pelanggan', style: Theme.of(context).textTheme.titleLarge),
+            Text('Cari atau Tambah Pelanggan',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             TextField(
               controller: _searchController,
@@ -145,7 +155,9 @@ class _PilihPelangganDialogState extends ConsumerState<PilihPelangganDialog> {
                               title: Text(pelanggan.nama),
                               subtitle: Text(pelanggan.noHp),
                               onTap: () {
-                                ref.read(selectedPelangganProvider.notifier).state = pelanggan;
+                                ref
+                                    .read(selectedPelangganProvider.notifier)
+                                    .state = pelanggan;
                                 Navigator.of(context).pop();
                               },
                             );

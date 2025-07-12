@@ -7,7 +7,8 @@ import '../../providers/providers.dart';
 import '../../utils/role_guard.dart';
 
 // Provider untuk mengambil daftar pelanggan dari API
-final pelangganListFutureProvider = FutureProvider.autoDispose<List<Pelanggan>>((ref) async {
+final pelangganListFutureProvider =
+    FutureProvider.autoDispose<List<Pelanggan>>((ref) async {
   final dio = ref.watch(dioProvider);
   final response = await dio.get('/pelanggan');
   final List<dynamic> data = response.data;
@@ -15,7 +16,7 @@ final pelangganListFutureProvider = FutureProvider.autoDispose<List<Pelanggan>>(
 });
 
 class PelangganPage extends ConsumerWidget {
-  const PelangganPage({Key? key}) : super(key: key);
+  const PelangganPage({super.key});
 
   void _showPelangganDialog(BuildContext context, WidgetRef ref) {
     final namaController = TextEditingController();
@@ -32,20 +33,38 @@ class PelangganPage extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Pelanggan')),
-                TextField(controller: noHpController, decoration: const InputDecoration(labelText: 'Nomor HP'), keyboardType: TextInputType.phone),
-                TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email (Opsional)'), keyboardType: TextInputType.emailAddress),
-                TextField(controller: alamatController, decoration: const InputDecoration(labelText: 'Alamat (Opsional)')),
+                TextField(
+                    controller: namaController,
+                    decoration:
+                        const InputDecoration(labelText: 'Nama Pelanggan')),
+                TextField(
+                    controller: noHpController,
+                    decoration: const InputDecoration(labelText: 'Nomor HP'),
+                    keyboardType: TextInputType.phone),
+                TextField(
+                    controller: emailController,
+                    decoration:
+                        const InputDecoration(labelText: 'Email (Opsional)'),
+                    keyboardType: TextInputType.emailAddress),
+                TextField(
+                    controller: alamatController,
+                    decoration:
+                        const InputDecoration(labelText: 'Alamat (Opsional)')),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal')),
             ElevatedButton(
               onPressed: () async {
-                if (namaController.text.isEmpty || noHpController.text.isEmpty) {
+                if (namaController.text.isEmpty ||
+                    noHpController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Nama dan No. HP tidak boleh kosong'), backgroundColor: Colors.red),
+                    const SnackBar(
+                        content: Text('Nama dan No. HP tidak boleh kosong'),
+                        backgroundColor: Colors.red),
                   );
                   return;
                 }
@@ -55,18 +74,27 @@ class PelangganPage extends ConsumerWidget {
                   await dio.post('/pelanggan', data: {
                     'nama': namaController.text,
                     'noHp': noHpController.text,
-                    'email': emailController.text.isEmpty ? null : emailController.text,
-                    'alamat': alamatController.text.isEmpty ? null : alamatController.text,
+                    'email': emailController.text.isEmpty
+                        ? null
+                        : emailController.text,
+                    'alamat': alamatController.text.isEmpty
+                        ? null
+                        : alamatController.text,
                   });
                   Navigator.of(context).pop();
                   ref.invalidate(pelangganListFutureProvider); // Refresh daftar
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Pelanggan berhasil ditambahkan!'), backgroundColor: Colors.green),
+                    const SnackBar(
+                        content: Text('Pelanggan berhasil ditambahkan!'),
+                        backgroundColor: Colors.green),
                   );
                 } on DioException catch (e) {
-                  final errorMessage = e.response?.data['message'] ?? 'Gagal menambah pelanggan';
-                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+                  final errorMessage =
+                      e.response?.data['message'] ?? 'Gagal menambah pelanggan';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text(errorMessage),
+                        backgroundColor: Colors.red),
                   );
                 }
               },
@@ -105,7 +133,8 @@ class PelangganPage extends ConsumerWidget {
               error: (err, stack) => Center(child: Text('Error: $err')),
               data: (pelangganList) {
                 return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(pelangganListFutureProvider),
+                  onRefresh: () async =>
+                      ref.invalidate(pelangganListFutureProvider),
                   child: pelangganList.isEmpty
                       ? const Center(child: Text('Belum ada data pelanggan.'))
                       : ListView.builder(
@@ -113,16 +142,22 @@ class PelangganPage extends ConsumerWidget {
                           itemBuilder: (context, index) {
                             final pelanggan = pelangganList[index];
                             return Card(
-                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               child: ListTile(
                                 leading: CircleAvatar(
                                   child: Text(pelanggan.nama.substring(0, 1)),
                                 ),
-                                title: Text(pelanggan.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text('No HP: ${pelanggan.noHp}\nEmail: ${pelanggan.email ?? '-'}'),
+                                title: Text(pelanggan.nama,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                subtitle: Text(
+                                    'No HP: ${pelanggan.noHp}\nEmail: ${pelanggan.email ?? '-'}'),
                                 trailing: Text(
                                   '${pelanggan.totalPoin} Poin',
-                                  style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      color: Colors.amber,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ),
                             );
@@ -135,8 +170,8 @@ class PelangganPage extends ConsumerWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showPelangganDialog(context, ref),
-          child: const Icon(Icons.add),
           tooltip: 'Tambah Pelanggan',
+          child: const Icon(Icons.add),
         ),
       ),
     );

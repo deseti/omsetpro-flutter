@@ -9,16 +9,19 @@ import '../../pelanggan/pelanggan_page.dart'; // <-- [PERBAIKAN] Import yang hil
 class RedeemRewardDialog extends ConsumerWidget {
   final Pelanggan pelanggan;
 
-  const RedeemRewardDialog({Key? key, required this.pelanggan}) : super(key: key);
+  const RedeemRewardDialog({super.key, required this.pelanggan});
 
   void _redeem(BuildContext context, WidgetRef ref, Reward reward) {
     showDialog(
       context: context,
       builder: (confirmContext) => AlertDialog(
         title: const Text('Konfirmasi Penukaran'),
-        content: Text('Anda yakin ingin menukar ${reward.poinDibutuhkan} poin dengan "${reward.namaHadiah}"?'),
+        content: Text(
+            'Anda yakin ingin menukar ${reward.poinDibutuhkan} poin dengan "${reward.namaHadiah}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(confirmContext).pop(), child: const Text('Batal')),
+          TextButton(
+              onPressed: () => Navigator.of(confirmContext).pop(),
+              child: const Text('Batal')),
           ElevatedButton(
             onPressed: () async {
               final dio = ref.read(dioProvider);
@@ -29,24 +32,29 @@ class RedeemRewardDialog extends ConsumerWidget {
                 });
 
                 // Update data pelanggan yang dipilih di halaman kasir
-                final updatedPelanggan = Pelanggan.fromJson(response.data['pelanggan']);
-                ref.read(selectedPelangganProvider.notifier).state = updatedPelanggan;
+                final updatedPelanggan =
+                    Pelanggan.fromJson(response.data['pelanggan']);
+                ref.read(selectedPelangganProvider.notifier).state =
+                    updatedPelanggan;
 
                 // Tutup semua dialog dan tampilkan notifikasi
                 Navigator.of(confirmContext).pop(); // Tutup dialog konfirmasi
                 Navigator.of(context).pop(); // Tutup dialog redeem
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Poin berhasil ditukar!'), backgroundColor: Colors.green),
+                  const SnackBar(
+                      content: Text('Poin berhasil ditukar!'),
+                      backgroundColor: Colors.green),
                 );
-                
+
                 // Refresh daftar pelanggan di halaman utama manajemen pelanggan
                 ref.invalidate(pelangganListFutureProvider);
-
               } on DioException catch (e) {
-                final errorMessage = e.response?.data['message'] ?? 'Gagal menukar poin.';
+                final errorMessage =
+                    e.response?.data['message'] ?? 'Gagal menukar poin.';
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+                  SnackBar(
+                      content: Text(errorMessage), backgroundColor: Colors.red),
                 );
               }
             },
@@ -69,7 +77,8 @@ class RedeemRewardDialog extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text('Tukar Poin', style: Theme.of(context).textTheme.titleLarge),
-            Text('${pelanggan.nama} - ${pelanggan.totalPoin} Poin', style: Theme.of(context).textTheme.titleMedium),
+            Text('${pelanggan.nama} - ${pelanggan.totalPoin} Poin',
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             SizedBox(
               height: 300,
@@ -79,10 +88,14 @@ class RedeemRewardDialog extends ConsumerWidget {
                 error: (err, stack) => Center(child: Text('Error: $err')),
                 data: (rewards) {
                   // Filter hadiah yang bisa ditukar
-                  final availableRewards = rewards.where((r) => pelanggan.totalPoin >= r.poinDibutuhkan && r.isActive).toList();
-                  
+                  final availableRewards = rewards
+                      .where((r) =>
+                          pelanggan.totalPoin >= r.poinDibutuhkan && r.isActive)
+                      .toList();
+
                   if (availableRewards.isEmpty) {
-                    return const Center(child: Text('Tidak ada hadiah yang bisa ditukar.'));
+                    return const Center(
+                        child: Text('Tidak ada hadiah yang bisa ditukar.'));
                   }
 
                   return ListView.builder(
@@ -95,7 +108,9 @@ class RedeemRewardDialog extends ConsumerWidget {
                           subtitle: Text(reward.deskripsi ?? ''),
                           trailing: Text(
                             '${reward.poinDibutuhkan} Poin',
-                            style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                color: Colors.amber,
+                                fontWeight: FontWeight.bold),
                           ),
                           onTap: () => _redeem(context, ref, reward),
                         ),

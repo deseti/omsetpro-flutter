@@ -7,18 +7,18 @@ import 'package:sqflite/sqflite.dart' if (dart.library.html) '';
 import 'package:path_provider/path_provider.dart' if (dart.library.html) '';
 
 class OfflineDatabase {
-  static const _databaseName = "omsetpro_offline.db";
+  static const _databaseName = 'omsetpro_offline.db';
   static const _databaseVersion = 1;
 
   // Singleton pattern - hanya untuk mobile
   static Database? _database;
-  
+
   static Future<Database?> get database async {
     if (kIsWeb) {
       print('OfflineDatabase: Web platform - no database');
       return null;
     }
-    
+
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
@@ -26,8 +26,9 @@ class OfflineDatabase {
 
   static Future<Database> _initDatabase() async {
     if (kIsWeb) throw UnsupportedError('Database not supported on web');
-    
-    final Directory documentsDirectory = await getApplicationDocumentsDirectory();
+
+    final Directory documentsDirectory =
+        await getApplicationDocumentsDirectory();
     final String path = join(documentsDirectory.path, _databaseName);
     return await openDatabase(
       path,
@@ -38,7 +39,7 @@ class OfflineDatabase {
 
   static Future<void> _onCreate(Database db, int version) async {
     if (kIsWeb) return;
-    
+
     // Tabel untuk menyimpan produk offline
     await db.execute('''
       CREATE TABLE produk (
@@ -82,18 +83,19 @@ class OfflineDatabase {
   }
 
   // === PRODUK METHODS ===
-  static Future<void> saveProdukToOffline(List<dynamic> produkList, int cabangId) async {
+  static Future<void> saveProdukToOffline(
+      List<dynamic> produkList, int cabangId) async {
     if (kIsWeb) {
       print('OfflineDatabase: saveProdukToOffline called on web - ignoring');
       return;
     }
-    
+
     final db = await database;
     if (db == null) return;
-    
+
     // Clear existing data for this cabang
     await db.delete('produk', where: 'cabang_id = ?', whereArgs: [cabangId]);
-    
+
     // Insert new data
     for (var produk in produkList) {
       await db.insert('produk', {
@@ -110,15 +112,17 @@ class OfflineDatabase {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getOfflineProduk(int cabangId) async {
+  static Future<List<Map<String, dynamic>>> getOfflineProduk(
+      int cabangId) async {
     if (kIsWeb) {
-      print('OfflineDatabase: getOfflineProduk called on web - returning empty list');
+      print(
+          'OfflineDatabase: getOfflineProduk called on web - returning empty list');
       return [];
     }
-    
+
     final db = await database;
     if (db == null) return [];
-    
+
     return await db.query(
       'produk',
       where: 'cabang_id = ? AND is_arsip = 0',
@@ -137,10 +141,10 @@ class OfflineDatabase {
       print('OfflineDatabase: saveTransaksiOffline called on web - ignoring');
       return;
     }
-    
+
     final db = await database;
     if (db == null) return;
-    
+
     // Insert transaksi
     final transaksiId = await db.insert('transaksi_offline', {
       'cabang_id': cabangId,
@@ -163,13 +167,14 @@ class OfflineDatabase {
 
   static Future<List<Map<String, dynamic>>> getPendingTransaksi() async {
     if (kIsWeb) {
-      print('OfflineDatabase: getPendingTransaksi called on web - returning empty list');
+      print(
+          'OfflineDatabase: getPendingTransaksi called on web - returning empty list');
       return [];
     }
-    
+
     final db = await database;
     if (db == null) return [];
-    
+
     return await db.query(
       'transaksi_offline',
       where: 'is_synced = 0',
@@ -181,10 +186,10 @@ class OfflineDatabase {
       print('OfflineDatabase: markTransaksiAsSynced called on web - ignoring');
       return;
     }
-    
+
     final db = await database;
     if (db == null) return;
-    
+
     await db.update(
       'transaksi_offline',
       {'is_synced': 1},
@@ -194,7 +199,8 @@ class OfflineDatabase {
   }
 
   // === LEGACY METHODS FOR COMPATIBILITY ===
-  static Future<void> saveProdukToCache(int cabangId, List<dynamic> produkList) async {
+  static Future<void> saveProdukToCache(
+      int cabangId, List<dynamic> produkList) async {
     await saveProdukToOffline(produkList, cabangId);
   }
 

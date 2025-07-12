@@ -4,12 +4,12 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
 
 class OfflineDatabase {
-  static const _databaseName = "omsetpro_offline.db";
+  static const _databaseName = 'omsetpro_offline.db';
   static const _databaseVersion = 1;
 
   // Singleton pattern
   static Database? _database;
-  
+
   static Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
@@ -19,7 +19,7 @@ class OfflineDatabase {
   static Future<Database> _initDatabase() async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, _databaseName);
-    
+
     return await openDatabase(
       path,
       version: _databaseVersion,
@@ -68,13 +68,15 @@ class OfflineDatabase {
   }
 
   // === PRODUK OFFLINE OPERATIONS ===
-  
-  static Future<void> saveProdukToOffline(List<dynamic> produkList, int cabangId) async {
+
+  static Future<void> saveProdukToOffline(
+      List<dynamic> produkList, int cabangId) async {
     final db = await database;
-    
+
     // Hapus produk lama untuk cabang ini
-    await db.delete('produk_offline', where: 'cabangId = ?', whereArgs: [cabangId]);
-    
+    await db
+        .delete('produk_offline', where: 'cabangId = ?', whereArgs: [cabangId]);
+
     // Simpan produk baru
     for (var produk in produkList) {
       await db.insert('produk_offline', {
@@ -90,12 +92,13 @@ class OfflineDatabase {
         'lastUpdated': DateTime.now().toIso8601String(),
       });
     }
-    
+
     // Update sync status
     await _updateSyncStatus('produk_offline');
   }
 
-  static Future<List<Map<String, dynamic>>> getOfflineProduk(int cabangId) async {
+  static Future<List<Map<String, dynamic>>> getOfflineProduk(
+      int cabangId) async {
     final db = await database;
     return await db.query(
       'produk_offline',
@@ -113,7 +116,7 @@ class OfflineDatabase {
     required List<Map<String, dynamic>> items,
   }) async {
     final db = await database;
-    
+
     return await db.insert('transaksi_offline', {
       'cabangId': cabangId,
       'metodeBayar': metodeBayar,
@@ -150,7 +153,7 @@ class OfflineDatabase {
       where: 'isSynced = ?',
       whereArgs: [0],
     );
-    
+
     print('OfflineDatabase: Found ${result.length} pending transactions');
     return result;
   }
@@ -178,7 +181,7 @@ class OfflineDatabase {
       orderBy: 'lastSyncTime DESC',
       limit: 1,
     );
-    
+
     return result.isNotEmpty ? result.first['lastSyncTime'] as String : null;
   }
 
@@ -186,12 +189,14 @@ class OfflineDatabase {
 
   static String _encodeItems(List<Map<String, dynamic>> items) {
     // Convert items to proper JSON string
-    final itemsJson = items.map((item) => {
-      'produkId': item['produkId'],
-      'jumlah': item['jumlah'],
-      'nama': item['nama'],
-      'harga': item['harga'],
-    }).toList();
+    final itemsJson = items
+        .map((item) => {
+              'produkId': item['produkId'],
+              'jumlah': item['jumlah'],
+              'nama': item['nama'],
+              'harga': item['harga'],
+            })
+        .toList();
     return jsonEncode(itemsJson);
   }
 
@@ -200,14 +205,14 @@ class OfflineDatabase {
   static Future<void> clearOldData() async {
     final db = await database;
     final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
-    
+
     // Hapus data cache produk yang lebih dari 1 minggu
     await db.delete(
       'produk_cache',
       where: 'created_at < ?',
       whereArgs: [oneWeekAgo.toIso8601String()],
     );
-    
+
     // Hapus transaksi yang sudah sync dan lebih dari 1 minggu
     await db.delete(
       'transaksi_offline',
@@ -225,29 +230,33 @@ class OfflineDatabase {
   }
 
   // Additional methods needed by sync service
-  static Future<List<Map<String, dynamic>>> getTransaksiWithDecodedItems() async {
+  static Future<List<Map<String, dynamic>>>
+      getTransaksiWithDecodedItems() async {
     final db = await database;
     final result = await db.query(
       'transaksi_offline',
       where: 'isSynced = ?',
       whereArgs: [0],
     );
-    
+
     // Decode items JSON for each transaction
     return result.map((transaksi) {
       try {
         final itemsString = transaksi['items'] as String;
         final decodedItems = jsonDecode(itemsString);
-        
+
         // Ensure it's a List of Maps
         List<Map<String, dynamic>> itemsList;
         if (decodedItems is List) {
-          itemsList = decodedItems.map((item) => Map<String, dynamic>.from(item)).toList();
+          itemsList = decodedItems
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
         } else {
-          print('Warning: items is not a List, treating as empty: $decodedItems');
+          print(
+              'Warning: items is not a List, treating as empty: $decodedItems');
           itemsList = [];
         }
-        
+
         return {
           ...transaksi,
           'decodedItems': itemsList,

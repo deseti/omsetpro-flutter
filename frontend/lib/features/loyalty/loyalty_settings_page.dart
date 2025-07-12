@@ -5,7 +5,7 @@ import '../../providers/loyalty_provider.dart';
 import '../../providers/providers.dart';
 
 class LoyaltySettingsPage extends ConsumerStatefulWidget {
-  const LoyaltySettingsPage({Key? key}) : super(key: key);
+  const LoyaltySettingsPage({super.key});
 
   @override
   _LoyaltySettingsPageState createState() => _LoyaltySettingsPageState();
@@ -39,7 +39,8 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
     final poin = int.tryParse(_poinController.text);
 
     if (kelipatan == null || poin == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap isi semua kolom dengan angka.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Harap isi semua kolom dengan angka.')));
       return;
     }
 
@@ -49,18 +50,25 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
         'kelipatanRp': kelipatan,
         'dapatPoin': poin,
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aturan berhasil disimpan!'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Aturan berhasil disimpan!'),
+          backgroundColor: Colors.green));
       ref.invalidate(loyaltyRuleProvider);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menyimpan aturan.'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Gagal menyimpan aturan.'),
+          backgroundColor: Colors.red));
     }
   }
 
   void _showRewardDialog({Reward? reward}) {
     final isEditing = reward != null;
-    final namaController = TextEditingController(text: reward?.namaHadiah ?? '');
-    final poinController = TextEditingController(text: reward?.poinDibutuhkan.toString() ?? '');
-    final deskripsiController = TextEditingController(text: reward?.deskripsi ?? '');
+    final namaController =
+        TextEditingController(text: reward?.namaHadiah ?? '');
+    final poinController =
+        TextEditingController(text: reward?.poinDibutuhkan.toString() ?? '');
+    final deskripsiController =
+        TextEditingController(text: reward?.deskripsi ?? '');
 
     showDialog(
       context: context,
@@ -70,14 +78,25 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: namaController, decoration: const InputDecoration(labelText: 'Nama Hadiah')),
-              TextField(controller: poinController, decoration: const InputDecoration(labelText: 'Poin Dibutuhkan'), keyboardType: TextInputType.number),
-              TextField(controller: deskripsiController, decoration: const InputDecoration(labelText: 'Deskripsi (Opsional)')),
+              TextField(
+                  controller: namaController,
+                  decoration: const InputDecoration(labelText: 'Nama Hadiah')),
+              TextField(
+                  controller: poinController,
+                  decoration:
+                      const InputDecoration(labelText: 'Poin Dibutuhkan'),
+                  keyboardType: TextInputType.number),
+              TextField(
+                  controller: deskripsiController,
+                  decoration:
+                      const InputDecoration(labelText: 'Deskripsi (Opsional)')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal')),
           ElevatedButton(
             onPressed: () async {
               final dio = ref.read(dioProvider);
@@ -109,7 +128,7 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
   @override
   Widget build(BuildContext context) {
     final rewardsAsync = ref.watch(rewardsProvider);
-    
+
     return Scaffold(
       appBar: AppBar(title: const Text('Pengaturan Loyalitas')),
       body: RefreshIndicator(
@@ -128,15 +147,22 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Aturan Perolehan Poin', style: Theme.of(context).textTheme.titleLarge),
+                    Text('Aturan Perolehan Poin',
+                        style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
-                    const Text('Atur berapa poin yang didapat pelanggan untuk setiap nominal pembelanjaan.'),
+                    const Text(
+                        'Atur berapa poin yang didapat pelanggan untuk setiap nominal pembelanjaan.'),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         const Text('Setiap belanja Rp'),
                         const SizedBox(width: 8),
-                        Expanded(child: TextField(controller: _kelipatanController, keyboardType: TextInputType.number, decoration: const InputDecoration(border: OutlineInputBorder()))),
+                        Expanded(
+                            child: TextField(
+                                controller: _kelipatanController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                    border: OutlineInputBorder()))),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -144,7 +170,12 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
                       children: [
                         const Text('Mendapatkan'),
                         const SizedBox(width: 8),
-                        Expanded(child: TextField(controller: _poinController, keyboardType: TextInputType.number, decoration: const InputDecoration(border: OutlineInputBorder()))),
+                        Expanded(
+                            child: TextField(
+                                controller: _poinController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                    border: OutlineInputBorder()))),
                         const SizedBox(width: 8),
                         const Text('Poin'),
                       ],
@@ -152,7 +183,9 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(onPressed: _simpanAturan, child: const Text('Simpan Aturan')),
+                      child: ElevatedButton(
+                          onPressed: _simpanAturan,
+                          child: const Text('Simpan Aturan')),
                     ),
                   ],
                 ),
@@ -160,7 +193,8 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
             ),
             const SizedBox(height: 24),
             // Card untuk Katalog Hadiah
-            Text('Katalog Hadiah', style: Theme.of(context).textTheme.titleLarge),
+            Text('Katalog Hadiah',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             rewardsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -175,7 +209,10 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
                     child: ListTile(
                       title: Text(reward.namaHadiah),
                       subtitle: Text(reward.deskripsi ?? ''),
-                      trailing: Text('${reward.poinDibutuhkan} Poin', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                      trailing: Text('${reward.poinDibutuhkan} Poin',
+                          style: const TextStyle(
+                              color: Colors.amber,
+                              fontWeight: FontWeight.bold)),
                       onTap: () => _showRewardDialog(reward: reward),
                     ),
                   );
@@ -187,8 +224,8 @@ class _LoyaltySettingsPageState extends ConsumerState<LoyaltySettingsPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showRewardDialog(),
-        child: const Icon(Icons.add),
         tooltip: 'Tambah Hadiah',
+        child: const Icon(Icons.add),
       ),
     );
   }

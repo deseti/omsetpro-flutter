@@ -11,7 +11,7 @@ class InsightCard extends StatelessWidget {
   final IconData icon;
 
   const InsightCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.value,
     required this.trend,
@@ -19,7 +19,7 @@ class InsightCard extends StatelessWidget {
     required this.description,
     required this.type,
     required this.icon,
-  }) : super(key: key);
+  });
 
   Color get _cardColor {
     switch (type) {
@@ -142,12 +142,12 @@ class SalesComparisonChart extends StatelessWidget {
   final String previousLabel;
 
   const SalesComparisonChart({
-    Key? key,
+    super.key,
     required this.currentValue,
     required this.previousValue,
     required this.currentLabel,
     required this.previousLabel,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -220,9 +220,11 @@ class SalesComparisonChart extends StatelessWidget {
                         getTitlesWidget: (value, meta) {
                           switch (value.toInt()) {
                             case 0:
-                              return Text(previousLabel, style: const TextStyle(fontSize: 12));
+                              return Text(previousLabel,
+                                  style: const TextStyle(fontSize: 12));
                             case 1:
-                              return Text(currentLabel, style: const TextStyle(fontSize: 12));
+                              return Text(currentLabel,
+                                  style: const TextStyle(fontSize: 12));
                             default:
                               return const Text('');
                           }
@@ -261,9 +263,9 @@ class TrendChart extends StatelessWidget {
   final List<Map<String, dynamic>> trendData;
 
   const TrendChart({
-    Key? key,
+    super.key,
     required this.trendData,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -323,7 +325,8 @@ class TrendChart extends StatelessWidget {
                         getTitlesWidget: (value, meta) {
                           final index = value.toInt();
                           if (index >= 0 && index < trendData.length) {
-                            final date = DateTime.parse(trendData[index]['date']);
+                            final date =
+                                DateTime.parse(trendData[index]['date']);
                             return Text(
                               '${date.day}/${date.month}',
                               style: const TextStyle(fontSize: 10),
@@ -365,9 +368,9 @@ class ProductInsightCard extends StatelessWidget {
   final Map<String, dynamic> productInsights;
 
   const ProductInsightCard({
-    Key? key,
+    super.key,
     required this.productInsights,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -390,7 +393,7 @@ class ProductInsightCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Top Product
             _buildInsightRow(
               Icons.star,
@@ -399,7 +402,7 @@ class ProductInsightCard extends StatelessWidget {
               topProduct['name'],
               '${topProduct['sales']} terjual',
             ),
-            
+
             if (risingProduct != null) ...[
               const SizedBox(height: 12),
               _buildInsightRow(
@@ -410,7 +413,7 @@ class ProductInsightCard extends StatelessWidget {
                 '+${risingProduct['growthPercentage'].toStringAsFixed(1)}% pertumbuhan',
               ),
             ],
-            
+
             if (decliningProduct != null) ...[
               const SizedBox(height: 12),
               _buildInsightRow(

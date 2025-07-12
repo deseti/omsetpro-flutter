@@ -3,7 +3,7 @@ import '../widgets/insight_widgets.dart';
 import '../services/laporan_service.dart';
 
 class InsightDashboardPage extends StatefulWidget {
-  const InsightDashboardPage({Key? key}) : super(key: key);
+  const InsightDashboardPage({super.key});
 
   @override
   State<InsightDashboardPage> createState() => _InsightDashboardPageState();
@@ -18,7 +18,7 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
 
   final Map<String, String> periodLabels = {
     'daily': 'Harian',
-    'weekly': 'Mingguan', 
+    'weekly': 'Mingguan',
     'monthly': 'Bulanan',
     'yearly': 'Tahunan',
   };
@@ -40,7 +40,7 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
       final data = await _laporanService.getDashboardInsights(
         period: selectedPeriod,
       );
-      
+
       setState(() {
         insightData = data;
         isLoading = false;
@@ -160,8 +160,8 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
               Text(
                 'Dashboard Insights',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               if (isLoading)
                 const SizedBox(
@@ -242,7 +242,7 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
 
   Widget _buildSalesComparison() {
     final salesComparison = insightData!['salesComparison'];
-    
+
     return SalesComparisonChart(
       currentValue: salesComparison['currentPeriod']['value'].toDouble(),
       previousValue: salesComparison['previousPeriod']['value'].toDouble(),
@@ -253,7 +253,7 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
 
   Widget _buildProfitInsights() {
     final profitInsights = insightData!['profitInsights'];
-    
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -269,7 +269,6 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
               ),
             ),
             const SizedBox(height: 16),
-            
             Row(
               children: [
                 Expanded(
@@ -289,9 +288,7 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
                 ),
               ],
             ),
-            
             const SizedBox(height: 16),
-            
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -373,9 +370,9 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
 
   String _formatCurrency(double amount) {
     return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    )}';
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        )}';
   }
 
   String _formatLastUpdated(String timestamp) {
