@@ -56,6 +56,9 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
     final hargaController = TextEditingController(text: produk?['harga']?.toString() ?? '');
     final stokController = TextEditingController(text: produk?['stok']?.toString() ?? '');
     final barcodeController = TextEditingController(text: produk?['barcode'] ?? '');
+    // Ambil profile user dari provider
+    final profile = ref.read(userProfileProvider);
+    print('[ProdukPage] Tambah/Edit Produk - cabangId: ${widget.cabangId}, user: ${profile != null ? profile['namaLengkap'] : '-'}, role: ${profile != null ? profile['role'] : '-'}');
 
     showDialog(
       context: context,
@@ -105,7 +108,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                   'barcode': barcodeController.text.isNotEmpty ? barcodeController.text : null,
                   'cabangId': widget.cabangId,
                 };
-
+                print('[ProdukPage] Request data: $data');
                 try {
                   if (isEditing) {
                     await dio.patch('/produk/${produk['id']}', data: data);
@@ -115,6 +118,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
                   Navigator.of(context).pop();
                   _refreshProduk();
                 } catch (e) {
+                  print('[ProdukPage] ERROR saat tambah/edit produk: $e');
                   // Handle error
                 }
               },

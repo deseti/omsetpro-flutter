@@ -16,7 +16,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   // Fungsi ini akan otomatis dijalankan oleh Passport setelah token tervalidasi
   async validate(payload: { sub: number; email: string }) {
     // Kita cari pengguna di database berdasarkan ID dari payload token
-    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    // INCLUDE aksesCabang untuk mendapatkan data cabang yang bisa diakses
+    const user = await this.prisma.user.findUnique({ 
+      where: { id: payload.sub },
+      include: {
+        aksesCabang: {
+          include: {
+            cabang: true, // Include data cabang lengkap
+          },
+        },
+      },
+    });
     
     if (!user) {
       throw new UnauthorizedException('User tidak ditemukan.');

@@ -17,16 +17,21 @@ export class ProdukService {
   ) {}
 
   private async verifyCabangAccess(cabangId: number, userId: number) {
+    // LOG: Debug userId dan cabangId yang masuk
+    console.log('[verifyCabangAccess] userId:', userId, 'cabangId:', cabangId);
+
     // 1. Cek apakah cabang ada
     const cabang = await this.prisma.cabang.findUnique({
       where: { id: cabangId },
     });
     if (!cabang) {
+      console.log('[verifyCabangAccess] Cabang tidak ditemukan:', cabangId);
       throw new NotFoundException(`Cabang dengan ID ${cabangId} tidak ditemukan`);
     }
 
     // 2. Cek apakah user adalah owner cabang
     if (cabang.ownerId === userId) {
+      console.log('[verifyCabangAccess] User adalah owner cabang');
       return cabang; // Owner punya akses penuh
     }
 
@@ -41,9 +46,11 @@ export class ProdukService {
     });
 
     if (!akses) {
+      console.log('[verifyCabangAccess] Tidak ada akses di tabel AksesCabang:', { userId, cabangId });
       throw new ForbiddenException('Anda tidak memiliki akses ke cabang ini');
     }
 
+    console.log('[verifyCabangAccess] Akses ditemukan, lanjutkan.');
     return cabang;
   }
 
