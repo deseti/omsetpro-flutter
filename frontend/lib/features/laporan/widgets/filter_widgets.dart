@@ -299,8 +299,9 @@ class _FilterDialogState extends ConsumerState<FilterDialog> {
       ref.read(selectedCabangProvider.notifier).state = selectedCabangId;
     }
 
-    // Refresh data
-    ref.refresh(dashboardProvider);
+    // DINONAKTIFKAN - Refresh data
+    // ref.refresh(dashboardProvider);
+    print('Filter applied - refresh dinonaktifkan karena fitur laporan manual telah dihapus');
 
     // Close dialog
     Navigator.of(context).pop();

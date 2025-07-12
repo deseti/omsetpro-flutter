@@ -159,7 +159,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               const SizedBox(height: 20),
 
-              // === MENU LAPORAN & ANALISIS (OWNER & ADMIN) ===
+              // === MENU LAPORAN & ANALISIS - DINONAKTIFKAN ===
+              // Fitur laporan manual telah dinonaktifkan, gunakan Smart AI Insights
+              /*
               if (userRole == Role.OWNER || userRole == Role.ADMIN)
                 ElevatedButton.icon(
                   icon: const Icon(Icons.analytics),
@@ -174,6 +176,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   },
                 ),
               if (userRole == Role.OWNER || userRole == Role.ADMIN) const SizedBox(height: 20),
+              */
 
               // === SMART AI INSIGHTS (OWNER & ADMIN) ===
               if (userRole == Role.OWNER || userRole == Role.ADMIN)

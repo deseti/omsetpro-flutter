@@ -8,8 +8,8 @@ import 'features/home/home_page.dart';
 import 'providers/providers.dart';
 import 'features/produk/import_produk_page.dart'; // Import halaman import produk
 import 'features/tim/tim_page.dart'; // Import halaman tim
-import 'features/laporan/screens/laporan_dashboard_screen.dart'; // Import halaman laporan
-import 'features/laporan/screens/detail_laporan_screen.dart'; // Import detail laporan
+// import 'features/laporan/screens/laporan_dashboard_screen.dart'; // DINONAKTIFKAN - Import halaman laporan
+// import 'features/laporan/screens/detail_laporan_screen.dart'; // DINONAKTIFKAN - Import detail laporan
 import 'pages/insight_dashboard_page.dart'; // Import insight dashboard
 import 'services/offline_database_proxy.dart' as OfflineDatabase; // Import offline database
 
@@ -61,8 +61,8 @@ class OmsetProApp extends StatelessWidget {
         '/cabang': (context) => const CabangPage(),
         '/import-produk': (context) => const ImportProdukPage(),
         '/tim': (context) => const TimPage(), // <-- TAMBAHKAN RUTE INI
-        '/laporan': (context) => const LaporanDashboardScreen(), // Route untuk dashboard laporan
-        '/laporan-detail': (context) => const DetailLaporanScreen(), // Route untuk detail laporan
+        // '/laporan': (context) => const LaporanDashboardScreen(), // DINONAKTIFKAN - Route untuk dashboard laporan
+        // '/laporan-detail': (context) => const DetailLaporanScreen(), // DINONAKTIFKAN - Route untuk detail laporan
         '/insights': (context) => const InsightDashboardPage(), // Route untuk smart insights
       },
       initialRoute: '/',

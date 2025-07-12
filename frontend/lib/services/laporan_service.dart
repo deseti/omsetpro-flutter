@@ -45,12 +45,14 @@ class LaporanService {
   }
 
   /// GET /laporan/ringkasan-penjualan
-  /// Mendapatkan ringkasan penjualan dengan filter tanggal dan cabang
+  /// NONAKTIF - Fitur laporan manual dihapus, gunakan AI Insight
   Future<RingkasanPenjualan> getRingkasanPenjualan({
     DateTime? startDate,
     DateTime? endDate,
     int? cabangId,
   }) async {
+    throw Exception('Fitur laporan manual telah dinonaktifkan. Gunakan getDashboardInsights() untuk AI Insight.');
+    /*
     try {
       print('=== CALLING getRingkasanPenjualan ===');
       print('startDate: $startDate, endDate: $endDate, cabangId: $cabangId');
@@ -88,16 +90,19 @@ class LaporanService {
       print('Request headers: ${e.requestOptions.headers}');
       throw _handleError(e);
     }
+    */
   }
 
   /// GET /laporan/produk-terlaris
-  /// Mendapatkan daftar produk terlaris
+  /// NONAKTIF - Fitur laporan manual dihapus, gunakan AI Insight
   Future<List<ProdukTerlaris>> getProdukTerlaris({
     DateTime? startDate,
     DateTime? endDate,
     int? cabangId,
     int limit = 10,
   }) async {
+    throw Exception('Fitur laporan manual telah dinonaktifkan. Gunakan getDashboardInsights() untuk AI Insight.');
+    /*
     try {
       final queryParams = <String, dynamic>{
         'limit': limit.toString(),
@@ -127,15 +132,18 @@ class LaporanService {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+    */
   }
 
   /// GET /laporan/statistik-transaksi
-  /// Mendapatkan statistik transaksi harian
+  /// NONAKTIF - Fitur laporan manual dihapus, gunakan AI Insight
   Future<List<StatistikTransaksi>> getStatistikTransaksi({
     DateTime? startDate,
     DateTime? endDate,
     int? cabangId,
   }) async {
+    throw Exception('Fitur laporan manual telah dinonaktifkan. Gunakan getDashboardInsights() untuk AI Insight.');
+    /*
     try {
       final queryParams = <String, dynamic>{};
       
@@ -163,15 +171,18 @@ class LaporanService {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+    */
   }
 
   /// GET /laporan/laba-rugi
-  /// Mendapatkan laporan laba rugi
+  /// NONAKTIF - Fitur laporan manual dihapus, gunakan AI Insight
   Future<LaporanLabaRugi> getLaporanLabaRugi({
     DateTime? startDate,
     DateTime? endDate,
     int? cabangId,
   }) async {
+    throw Exception('Fitur laporan manual telah dinonaktifkan. Gunakan getDashboardInsights() untuk AI Insight.');
+    /*
     try {
       final queryParams = <String, dynamic>{};
       
@@ -197,15 +208,18 @@ class LaporanService {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+    */
   }
 
   /// GET /laporan/dashboard
-  /// Mendapatkan data dashboard lengkap
+  /// NONAKTIF - Fitur laporan manual dihapus, gunakan AI Insight
   Future<DashboardData> getDashboard({
     DateTime? startDate,
     DateTime? endDate,
     int? cabangId,
   }) async {
+    throw Exception('Fitur laporan manual telah dinonaktifkan. Gunakan getDashboardInsights() untuk AI Insight.');
+    /*
     try {
       print('=== CALLING getDashboard ===');
       print('startDate: $startDate, endDate: $endDate, cabangId: $cabangId');
@@ -240,6 +254,7 @@ class LaporanService {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+    */
   }
 
   /// GET /laporan/insights

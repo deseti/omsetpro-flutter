@@ -21,7 +21,9 @@ final dateRangeProvider = StateProvider<DateRange>((ref) {
 // Provider untuk cabang yang dipilih
 final selectedCabangProvider = StateProvider<int?>((ref) => null);
 
-// Provider untuk Dashboard Data
+// Provider untuk Dashboard Data - DINONAKTIFKAN
+// Fitur laporan manual telah dinonaktifkan, gunakan Smart AI Insights
+/*
 final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) async {
   final service = ref.read(laporanServiceProvider);
   final dateRange = ref.watch(dateRangeProvider);
@@ -33,8 +35,11 @@ final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) async 
     cabangId: cabangId,
   );
 });
+*/
 
-// Provider untuk Ringkasan Penjualan
+// Provider untuk Ringkasan Penjualan - DINONAKTIFKAN
+// Fitur laporan manual telah dinonaktifkan, gunakan Smart AI Insights
+/*
 final ringkasanPenjualanProvider = FutureProvider.autoDispose<RingkasanPenjualan>((ref) async {
   final service = ref.read(laporanServiceProvider);
   final dateRange = ref.watch(dateRangeProvider);
@@ -46,8 +51,11 @@ final ringkasanPenjualanProvider = FutureProvider.autoDispose<RingkasanPenjualan
     cabangId: cabangId,
   );
 });
+*/
 
-// Provider untuk Produk Terlaris
+// Provider untuk Produk Terlaris - DINONAKTIFKAN
+// Fitur laporan manual telah dinonaktifkan, gunakan Smart AI Insights
+/*
 final produkTerlarisProvider = FutureProvider.autoDispose<List<ProdukTerlaris>>((ref) async {
   final service = ref.read(laporanServiceProvider);
   final dateRange = ref.watch(dateRangeProvider);
@@ -60,8 +68,11 @@ final produkTerlarisProvider = FutureProvider.autoDispose<List<ProdukTerlaris>>(
     limit: 10,
   );
 });
+*/
 
-// Provider untuk Statistik Transaksi
+// Provider untuk Statistik Transaksi - DINONAKTIFKAN
+// Fitur laporan manual telah dinonaktifkan, gunakan Smart AI Insights
+/*
 final statistikTransaksiProvider = FutureProvider.autoDispose<List<StatistikTransaksi>>((ref) async {
   final service = ref.read(laporanServiceProvider);
   final dateRange = ref.watch(dateRangeProvider);
@@ -73,8 +84,11 @@ final statistikTransaksiProvider = FutureProvider.autoDispose<List<StatistikTran
     cabangId: cabangId,
   );
 });
+*/
 
-// Provider untuk Laporan Laba Rugi
+// Provider untuk Laporan Laba Rugi - DINONAKTIFKAN
+// Fitur laporan manual telah dinonaktifkan, gunakan Smart AI Insights
+/*
 final laporanLabaRugiProvider = FutureProvider.autoDispose<LaporanLabaRugi>((ref) async {
   final service = ref.read(laporanServiceProvider);
   final dateRange = ref.watch(dateRangeProvider);
@@ -86,6 +100,7 @@ final laporanLabaRugiProvider = FutureProvider.autoDispose<LaporanLabaRugi>((ref
     cabangId: cabangId,
   );
 });
+*/
 
 // Helper class untuk date range
 class DateRange {
@@ -167,12 +182,13 @@ final globalAutoRefreshProvider = Provider<void>((ref) {
     timer?.cancel();
     timer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (ref.read(autoRefreshEnabledProvider)) {
-        // Refresh semua laporan provider
-        ref.invalidate(dashboardProvider);
-        ref.invalidate(ringkasanPenjualanProvider);
-        ref.invalidate(produkTerlarisProvider);
-        ref.invalidate(statistikTransaksiProvider);
-        ref.invalidate(laporanLabaRugiProvider);
+        // DINONAKTIFKAN - Refresh semua laporan provider
+        // ref.invalidate(dashboardProvider);
+        // ref.invalidate(ringkasanPenjualanProvider);
+        // ref.invalidate(produkTerlarisProvider);
+        // ref.invalidate(statistikTransaksiProvider);
+        // ref.invalidate(laporanLabaRugiProvider);
+        print('Auto-refresh dinonaktifkan - fitur laporan manual telah dihapus');
       }
     });
   }
@@ -192,15 +208,16 @@ final globalAutoRefreshProvider = Provider<void>((ref) {
   ref.onDispose(() => timer?.cancel());
 });
 
-// Provider untuk manual refresh semua data
+// Provider untuk manual refresh semua data - DINONAKTIFKAN
+// Fitur laporan manual telah dinonaktifkan, gunakan Smart AI Insights
 final refreshAllLaporanProvider = Provider<void Function()>((ref) {
   return () {
-    print('🔃 === REFRESHING ALL LAPORAN PROVIDERS ===');
-    ref.invalidate(dashboardProvider);
-    ref.invalidate(ringkasanPenjualanProvider);
-    ref.invalidate(produkTerlarisProvider);
-    ref.invalidate(statistikTransaksiProvider);
-    ref.invalidate(laporanLabaRugiProvider);
-    print('🔃 All providers invalidated successfully');
+    print('🔃 === REFRESH LAPORAN DINONAKTIFKAN ===');
+    // ref.invalidate(dashboardProvider);
+    // ref.invalidate(ringkasanPenjualanProvider);
+    // ref.invalidate(produkTerlarisProvider);
+    // ref.invalidate(statistikTransaksiProvider);
+    // ref.invalidate(laporanLabaRugiProvider);
+    print('🔃 Refresh dinonaktifkan - fitur laporan manual telah dihapus');
   };
 });
