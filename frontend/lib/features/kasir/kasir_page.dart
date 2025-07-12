@@ -10,6 +10,7 @@ import '../../services/receipt_service.dart';
 import '../../widgets/receipt_preview_dialog.dart';
 import '../../utils/laporan_refresh_helper.dart';
 import './widgets/pilih_pelanggan_dialog.dart';
+import './widgets/redeem_reward_dialog.dart';
 
 class KasirPage extends ConsumerStatefulWidget {
   final int cabangId;
@@ -204,23 +205,61 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                   );
                 },
               )
-            : ListTile(
-                leading: CircleAvatar(child: Text(pelanggan.nama.substring(0, 1))),
-                title: Text(pelanggan.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(pelanggan.noHp),
-                trailing: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  tooltip: 'Hapus Pelanggan dari Transaksi',
-                  onPressed: () {
-                    ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
-                  },
-                ),
-                onTap: () {
-                   showDialog(
-                    context: context,
-                    builder: (_) => const PilihPelangganDialog(),
-                  );
-                },
+            : Column(
+                children: [
+                  ListTile(
+                    leading: CircleAvatar(child: Text(pelanggan.nama.substring(0, 1))),
+                    title: Text(pelanggan.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(pelanggan.noHp),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      tooltip: 'Hapus Pelanggan dari Transaksi',
+                      onPressed: () {
+                        ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
+                      },
+                    ),
+                    onTap: () {
+                       showDialog(
+                        context: context,
+                        builder: (_) => const PilihPelangganDialog(),
+                      );
+                    },
+                  ),
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Total Poin', style: TextStyle(fontSize: 12)),
+                            Text(
+                              '${pelanggan.totalPoin} Poin',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Colors.amber.shade800,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          icon: const Icon(Icons.card_giftcard),
+                          label: const Text('Tukar Poin'),
+                          onPressed: pelanggan.totalPoin > 0
+                              ? () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => RedeemRewardDialog(pelanggan: pelanggan),
+                                  );
+                                }
+                              : null, // Disable tombol jika poin 0
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
       ),
     );
