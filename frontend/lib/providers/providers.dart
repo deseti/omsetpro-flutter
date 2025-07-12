@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart'; // Import model baru
-import 'ai_insight_provider.dart'; // Import AI provider
 import '../services/connectivity_service.dart';
 import '../services/offline_database_proxy.dart' as OfflineDatabase;
 import 'package:flutter/foundation.dart'; // For kIsWeb

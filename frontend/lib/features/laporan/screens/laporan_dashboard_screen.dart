@@ -8,7 +8,6 @@ import '../../../utils/api_config.dart'; // Import ApiConfig
 import '../widgets/summary_cards.dart';
 import '../widgets/charts.dart';
 import '../widgets/filter_widgets.dart';
-import '../widgets/ai_chat_widget.dart';
 
 // 2. Ubah menjadi ConsumerStatefulWidget agar bisa menggunakan initState dan dispose
 class LaporanDashboardScreen extends ConsumerStatefulWidget {
@@ -253,17 +252,6 @@ class _LaporanDashboardScreenState extends ConsumerState<LaporanDashboardScreen>
         const SizedBox(height: 12),
         _buildDetailedStats(dashboardData),
         const SizedBox(height: 24),
-        const Text(
-          'Asisten AI',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 12),
-        const AiChatWidget(),
-        const SizedBox(height: 16),
       ],
     );
   }

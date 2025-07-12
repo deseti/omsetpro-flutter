@@ -7,10 +7,9 @@ import { ProdukModule } from './produk/produk.module';
 import { TransaksiModule } from './transaksi/transaksi.module';
 import { TimModule } from './tim/tim.module';
 import { LaporanModule } from './laporan/laporan.module';
-import { AiInsightModule } from './ai-insight/ai-insight.module';
 
 @Module({
-  imports: [AuthModule, CabangModule, ProdukModule, TransaksiModule, TimModule, LaporanModule, AiInsightModule],
+  imports: [AuthModule, CabangModule, ProdukModule, TransaksiModule, TimModule, LaporanModule],
   controllers: [AppController],
   providers: [AppService],
 })
