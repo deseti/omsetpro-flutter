@@ -149,3 +149,63 @@ final networkDioProvider = FutureProvider<Dio>((ref) async {
 // [BARU] Provider untuk pelanggan yang dipilih di kasir
 final selectedPelangganProvider =
     StateProvider.autoDispose<Pelanggan?>((ref) => null);
+
+// [BARU] Provider untuk promo aktif yang bisa diterapkan di kasir
+final activePromosProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final dio = ref.watch(dioProvider);
+  final response = await dio.get('/promo');
+  final List<dynamic> allPromos = response.data;
+  
+  // Filter hanya promo yang aktif
+  return allPromos.where((promo) => promo['isActive'] == true).toList();
+});
+
+// [BARU] Provider untuk menyimpan promo yang dipilih di kasir
+final selectedPromoProvider = StateProvider.autoDispose<Map<String, dynamic>?>((ref) => null);
+
+// [BARU] Provider untuk menghitung total setelah promo
+final cartTotalWithPromoProvider = Provider.autoDispose<Map<String, dynamic>>((ref) {
+  final cart = ref.watch(cartProvider);
+  final selectedPromo = ref.watch(selectedPromoProvider);
+  
+  // Hitung subtotal normal
+  final subtotal = cart.fold<double>(0, (sum, item) {
+    return sum + (item['produk']['harga'] * item['jumlah']);
+  }).toInt();
+  
+  int totalDiskon = 0;
+  int totalAkhir = subtotal;
+  
+  if (selectedPromo != null) {
+    // Hitung diskon berdasarkan produk yang ada di cart dan termasuk dalam promo
+    final List<dynamic> promoProdukIds = selectedPromo['produk']?.map((p) => p['produk']['id']).toList() ?? [];
+    
+    for (final item in cart) {
+      final produkId = item['produk']['id'];
+      if (promoProdukIds.contains(produkId)) {
+        final hargaItem = (item['produk']['harga'] as num).toInt();
+        final jumlahItem = (item['jumlah'] as num).toInt();
+        final subtotalItem = hargaItem * jumlahItem;
+        
+        if (selectedPromo['tipe'] == 'PERCENTAGE') {
+          final diskonItem = (subtotalItem * (selectedPromo['nilai'] as num) / 100).round();
+          totalDiskon += diskonItem;
+        } else if (selectedPromo['tipe'] == 'NOMINAL') {
+          // Untuk diskon nominal, terapkan per item
+          final diskonPerItem = (selectedPromo['nilai'] as num).toInt();
+          totalDiskon += (diskonPerItem * jumlahItem);
+        }
+      }
+    }
+    
+    totalAkhir = subtotal - totalDiskon;
+    if (totalAkhir < 0) totalAkhir = 0; // Pastikan tidak negatif
+  }
+  
+  return {
+    'subtotal': subtotal,
+    'totalDiskon': totalDiskon,
+    'totalAkhir': totalAkhir,
+    'namaPromo': selectedPromo?['nama'],
+  };
+});

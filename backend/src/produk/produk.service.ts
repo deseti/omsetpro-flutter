@@ -121,6 +121,40 @@ export class ProdukService {
     });
   }
 
+  // FUNGSI BARU: Mengambil semua produk dari semua cabang milik owner
+  async findAllOwnerProducts(userId: number) {
+    // 1. Ambil semua cabang milik owner
+    const cabangList = await this.prisma.cabang.findMany({
+      where: { ownerId: userId },
+      select: { id: true, nama: true }
+    });
+
+    if (cabangList.length === 0) {
+      return [];
+    }
+
+    // 2. Ambil semua produk dari cabang-cabang tersebut
+    const cabangIds = cabangList.map(cabang => cabang.id);
+    
+    const produkList = await this.prisma.produk.findMany({
+      where: {
+        cabangId: { in: cabangIds },
+        isArsip: false, // hanya produk yang tidak diarsip
+      },
+      include: {
+        cabang: {
+          select: { id: true, nama: true }
+        }
+      },
+      orderBy: [
+        { cabang: { nama: 'asc' } }, // urutkan berdasarkan nama cabang
+        { nama: 'asc' } // kemudian nama produk
+      ]
+    });
+
+    return produkList;
+  }
+
   // Fungsi mengupdate satu produk (tidak berubah)
   async update(id: number, updateProdukDto: UpdateProdukDto, userId: number) {
     const produk = await this.prisma.produk.findUnique({ where: { id } });

@@ -69,6 +69,13 @@ export class ProdukController {
     return this.produkService.findAllByCabang(cabangId, userId);
   }
 
+  // ENDPOINT BARU: Mengambil semua produk dari semua cabang milik owner
+  @Get('all-owner-products')
+  findAllOwnerProducts(@Request() req) {
+    const userId = req.user.id;
+    return this.produkService.findAllOwnerProducts(userId);
+  }
+
   // Endpoint untuk mengupdate satu produk (tidak berubah)
   @Patch(':id')
   update(

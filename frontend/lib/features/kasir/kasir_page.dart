@@ -268,9 +268,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(AppProviders.cartProvider);
-    final totalHarga = cart.fold<double>(0, (sum, item) {
-      return sum + (item['produk']['harga'] * item['jumlah']);
-    }).toInt();
+    final cartTotalInfo = ref.watch(AppProviders.cartTotalWithPromoProvider);
+    final totalHarga = cartTotalInfo['totalAkhir'];
     final connectivityAsync = ref.watch(AppProviders.connectivityProvider);
     final isOfflineMode = ref.watch(AppProviders.offlineModeProvider);
     final selectedPelanggan = ref.watch(AppProviders.selectedPelangganProvider);
@@ -505,13 +504,11 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                   ),
           ),
           const Divider(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Total', style: Theme.of(context).textTheme.titleLarge),
-              Text('Rp $totalHarga', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            ],
-          ),
+          // Widget Promo Selection
+          _buildPromoSection(ref),
+          const Divider(),
+          // Total Information with Promo
+          _buildTotalSection(ref, totalHarga),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: cart.isEmpty ? null : () => _processTransaction(cart: cart, totalHarga: totalHarga),
@@ -523,6 +520,83 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPromoSection(WidgetRef ref) {
+    final activePromosAsync = ref.watch(AppProviders.activePromosProvider);
+    final selectedPromo = ref.watch(AppProviders.selectedPromoProvider);
+    
+    return activePromosAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, s) => const SizedBox.shrink(),
+      data: (promos) {
+        if (promos.isEmpty) return const SizedBox.shrink();
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Promo Tersedia:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            DropdownButton<Map<String, dynamic>?>(
+              value: selectedPromo,
+              hint: const Text('Pilih Promo (Opsional)'),
+              isExpanded: true,
+              items: [
+                const DropdownMenuItem<Map<String, dynamic>?>(
+                  value: null,
+                  child: Text('Tanpa Promo'),
+                ),
+                ...promos.map((promo) {
+                  return DropdownMenuItem<Map<String, dynamic>>(
+                    value: promo,
+                    child: Text('${promo['nama']} - ${promo['nilai']}${promo['tipe'] == 'PERCENTAGE' ? '%' : ' Rupiah'}'),
+                  );
+                }).toList(),
+              ],
+              onChanged: (value) {
+                ref.read(AppProviders.selectedPromoProvider.notifier).state = value;
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  Widget _buildTotalSection(WidgetRef ref, int totalAkhir) {
+    final cartTotalInfo = ref.watch(AppProviders.cartTotalWithPromoProvider);
+    final subtotal = cartTotalInfo['subtotal'];
+    final totalDiskon = cartTotalInfo['totalDiskon'];
+    final namaPromo = cartTotalInfo['namaPromo'];
+    
+    return Column(
+      children: [
+        if (totalDiskon > 0) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Subtotal:'),
+              Text('Rp $subtotal'),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Diskon ($namaPromo):', style: const TextStyle(color: Colors.green)),
+              Text('-Rp $totalDiskon', style: const TextStyle(color: Colors.green)),
+            ],
+          ),
+          const Divider(),
+        ],
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Total', style: Theme.of(context).textTheme.titleLarge),
+            Text('Rp $totalAkhir', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
     );
   }
 }

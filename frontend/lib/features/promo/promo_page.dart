@@ -26,15 +26,69 @@ class PromoPage extends ConsumerWidget {
       context: context,
       barrierDismissible: false, // Mencegah dialog tertutup saat diklik di luar
       builder: (dialogContext) {
-        return AlertDialog(
+        return        AlertDialog(
           title: Text(isEditing ? 'Edit Promo' : 'Buat Promo Baru'),
           content: Consumer(
             builder: (context, ref, child) {
-              final produkAsync = ref.watch(allOwnerProductsProvider);
+              final produkAsync = ref.watch(simpleProdukProvider);
               return produkAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, s) => Text('Gagal memuat produk: $e'),
+                loading: () => const SizedBox(
+                  height: 200,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Memuat daftar produk...'),
+                      ],
+                    ),
+                  ),
+                ),
+                error: (e, s) => Container(
+                  height: 200,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error, color: Colors.red, size: 48),
+                      const SizedBox(height: 8),
+                      Text('Gagal memuat produk: $e'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          ref.invalidate(directProdukListProvider);
+                        },
+                        child: const Text('Coba Lagi'),
+                      ),
+                    ],
+                  ),
+                ),
                 data: (produkList) {
+                  if (produkList.isEmpty) {
+                    return Container(
+                      height: 200,
+                      padding: const EdgeInsets.all(16),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text(
+                            'Tidak ada produk',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Pastikan Anda sudah menambahkan produk di cabang.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  
                   return Form(
                     key: formKey,
                     child: SingleChildScrollView(
