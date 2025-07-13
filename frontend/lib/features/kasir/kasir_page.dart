@@ -88,11 +88,13 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     final user = ref.read(AppProviders.userProfileProvider);
     final namaKasir = user?['namaLengkap'] ?? 'Kasir';
 
-    final items = cart.map((item) => {
-      'nama': item['produk']['nama'],
-      'jumlah': item['jumlah'],
-      'harga': item['produk']['harga'],
-    }).toList();
+    final items = cart
+        .map((item) => {
+              'nama': item['produk']['nama'],
+              'jumlah': item['jumlah'],
+              'harga': item['produk']['harga'],
+            })
+        .toList();
 
     final receiptText = ReceiptService.formatReceiptText(
       namaToko: 'OmsetPro POS',
@@ -123,10 +125,12 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       final dio = ref.read(AppProviders.dioProvider);
       final isConnected = await ConnectivityService.isConnected();
 
-      final itemsDto = cart.map((item) => {
-        'produkId': item['produk']['id'],
-        'jumlah': item['jumlah'],
-      }).toList();
+      final itemsDto = cart
+          .map((item) => {
+                'produkId': item['produk']['id'],
+                'jumlah': item['jumlah'],
+              })
+          .toList();
 
       final requestData = {
         'cabangId': widget.cabangId,
@@ -137,12 +141,16 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
       if (isConnected) {
         final response = await dio.post('/transaksi', data: requestData);
-        final transaksiId = response.data['id'] ?? DateTime.now().millisecondsSinceEpoch;
+        final transaksiId =
+            response.data['id'] ?? DateTime.now().millisecondsSinceEpoch;
         if (!mounted) return;
         scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Transaksi berhasil!'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Transaksi berhasil!'),
+              backgroundColor: Colors.green),
         );
-        _showReceiptPreview(cart: cart, totalHarga: totalHarga, transaksiId: transaksiId);
+        _showReceiptPreview(
+            cart: cart, totalHarga: totalHarga, transaksiId: transaksiId);
         LaporanRefreshHelper.refreshLaporanAfterTransaction(ref);
       } else {
         final transaksiId = DateTime.now().millisecondsSinceEpoch;
@@ -150,37 +158,46 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           cabangId: widget.cabangId,
           metodeBayar: 'Tunai',
           totalHarga: totalHarga,
-          items: cart.map((item) => {
-            'produkId': item['produk']['id'],
-            'jumlah': item['jumlah'],
-            'nama': item['produk']['nama'],
-            'harga': item['produk']['harga'],
-          }).toList(),
+          items: cart
+              .map((item) => {
+                    'produkId': item['produk']['id'],
+                    'jumlah': item['jumlah'],
+                    'nama': item['produk']['nama'],
+                    'harga': item['produk']['harga'],
+                  })
+              .toList(),
         );
         if (!mounted) return;
         scaffoldMessenger.showSnackBar(
           const SnackBar(
-            content: Text('Transaksi disimpan offline - akan disync saat online'),
+            content:
+                Text('Transaksi disimpan offline - akan disync saat online'),
             backgroundColor: Colors.orange,
           ),
         );
-        _showReceiptPreview(cart: cart, totalHarga: totalHarga, transaksiId: transaksiId);
+        _showReceiptPreview(
+            cart: cart, totalHarga: totalHarga, transaksiId: transaksiId);
       }
 
       ref.read(AppProviders.cartProvider.notifier).state = [];
       ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
-      ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
-
-    } on DioException catch (e) { // <-- PERBAIKAN: Menggunakan tipe DioException yang benar
-      final errorMessage = e.response?.data['message'] ?? 'Terjadi kesalahan saat transaksi.';
+      ref.invalidate(
+          AppProviders.produkListWithOfflineProvider(widget.cabangId));
+    } on DioException catch (e) {
+      // <-- PERBAIKAN: Menggunakan tipe DioException yang benar
+      final errorMessage =
+          e.response?.data['message'] ?? 'Terjadi kesalahan saat transaksi.';
       if (!mounted) return;
       scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
       );
     } catch (e) {
       if (!mounted) return;
       scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -208,18 +225,23 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             : Column(
                 children: [
                   ListTile(
-                    leading: CircleAvatar(child: Text(pelanggan.nama.substring(0, 1))),
-                    title: Text(pelanggan.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    leading: CircleAvatar(
+                        child: Text(pelanggan.nama.substring(0, 1))),
+                    title: Text(pelanggan.nama,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(pelanggan.noHp),
                     trailing: IconButton(
                       icon: const Icon(Icons.close, color: Colors.red),
                       tooltip: 'Hapus Pelanggan dari Transaksi',
                       onPressed: () {
-                        ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
+                        ref
+                            .read(
+                                AppProviders.selectedPelangganProvider.notifier)
+                            .state = null;
                       },
                     ),
                     onTap: () {
-                       showDialog(
+                      showDialog(
                         context: context,
                         builder: (_) => const PilihPelangganDialog(),
                       );
@@ -234,10 +256,14 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Total Poin', style: TextStyle(fontSize: 12)),
+                            const Text('Total Poin',
+                                style: TextStyle(fontSize: 12)),
                             Text(
                               '${pelanggan.totalPoin} Poin',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     color: Colors.amber.shade800,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -251,7 +277,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                               ? () {
                                   showDialog(
                                     context: context,
-                                    builder: (_) => RedeemRewardDialog(pelanggan: pelanggan),
+                                    builder: (_) => RedeemRewardDialog(
+                                        pelanggan: pelanggan),
                                   );
                                 }
                               : null, // Disable tombol jika poin 0
@@ -285,7 +312,9 @@ class _KasirPageState extends ConsumerState<KasirPage> {
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(result ? 'Sync berhasil!' : 'Sync gagal atau tidak ada data baru.'),
+                  content: Text(result
+                      ? 'Sync berhasil!'
+                      : 'Sync gagal atau tidak ada data baru.'),
                   backgroundColor: result ? Colors.green : Colors.orange,
                 ),
               );
@@ -294,10 +323,13 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             tooltip: 'Manual Sync',
           ),
           connectivityAsync.when(
-            data: (isOnline) => isOnline 
-              ? const Icon(Icons.wifi, color: Colors.green)
-              : const Icon(Icons.wifi_off, color: Colors.red),
-            loading: () => const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white)),
+            data: (isOnline) => isOnline
+                ? const Icon(Icons.wifi, color: Colors.green)
+                : const Icon(Icons.wifi_off, color: Colors.red),
+            loading: () => const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(color: Colors.white)),
             error: (_, __) => const Icon(Icons.error, color: Colors.red),
           ),
           const SizedBox(width: 16),
@@ -322,7 +354,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                               onPressed: () => _searchController.clear(),
                             )
                           : null,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
@@ -331,16 +364,22 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
+                      ref.invalidate(AppProviders.produkListWithOfflineProvider(
+                          widget.cabangId));
                       ref.read(AppProviders.cartProvider.notifier).state = [];
-                      ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
+                      ref
+                          .read(AppProviders.selectedPelangganProvider.notifier)
+                          .state = null;
                     },
                     child: Consumer(
                       builder: (context, ref, _) {
-                        final produkAsync = ref.watch(AppProviders.produkListWithOfflineProvider(widget.cabangId));
+                        final produkAsync = ref.watch(
+                            AppProviders.produkListWithOfflineProvider(
+                                widget.cabangId));
                         return produkAsync.when(
                           data: (produkList) {
-                            final filteredProducts = _filterProducts(produkList);
+                            final filteredProducts =
+                                _filterProducts(produkList);
                             return Column(
                               children: [
                                 if (isOfflineMode)
@@ -350,30 +389,40 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                                     color: Colors.orange.shade100,
                                     child: const Row(
                                       children: [
-                                        Icon(Icons.offline_bolt, color: Colors.orange),
+                                        Icon(Icons.offline_bolt,
+                                            color: Colors.orange),
                                         SizedBox(width: 8),
-                                        Text('Mode Offline - Data dari cache lokal', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                        Text(
+                                            'Mode Offline - Data dari cache lokal',
+                                            style: TextStyle(
+                                                color: Colors.orange,
+                                                fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
                                 Expanded(
                                   child: GridView.builder(
                                     padding: const EdgeInsets.all(8),
-                                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    gridDelegate:
+                                        const SliverGridDelegateWithMaxCrossAxisExtent(
                                       maxCrossAxisExtent: 200,
                                       childAspectRatio: 3 / 4,
                                       crossAxisSpacing: 8,
                                       mainAxisSpacing: 8,
                                     ),
                                     itemCount: filteredProducts.length,
-                                    itemBuilder: (context, index) => _buildProdukCard(filteredProducts[index]),
+                                    itemBuilder: (context, index) =>
+                                        _buildProdukCard(
+                                            filteredProducts[index]),
                                   ),
                                 ),
                               ],
                             );
                           },
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => Center(child: Text('Error: $err')),
+                          loading: () =>
+                              const Center(child: CircularProgressIndicator()),
+                          error: (err, stack) =>
+                              Center(child: Text('Error: $err')),
                         );
                       },
                     ),
@@ -397,7 +446,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       onTap: () {
         final cartNotifier = ref.read(AppProviders.cartProvider.notifier);
         final currentCart = cartNotifier.state;
-        final existingItemIndex = currentCart.indexWhere((item) => item['produk']['id'] == produk['id']);
+        final existingItemIndex = currentCart
+            .indexWhere((item) => item['produk']['id'] == produk['id']);
 
         if (existingItemIndex != -1) {
           final updatedItem = {
@@ -424,11 +474,13 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                   ? Image.network(
                       produk['fotoUrl'],
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 50),
                     )
                   : Container(
                       color: Colors.grey.shade200,
-                      child: const Icon(Icons.inventory_2, size: 50, color: Colors.grey),
+                      child: const Icon(Icons.inventory_2,
+                          size: 50, color: Colors.grey),
                     ),
             ),
             Padding(
@@ -441,7 +493,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0).copyWith(bottom: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0)
+                  .copyWith(bottom: 8.0),
               child: Text('Rp ${produk['harga']}'),
             ),
           ],
@@ -450,7 +503,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     );
   }
 
-  Widget _buildCartView(List<Map<String, dynamic>> cart, int totalHarga, Pelanggan? selectedPelanggan) {
+  Widget _buildCartView(List<Map<String, dynamic>> cart, int totalHarga,
+      Pelanggan? selectedPelanggan) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -476,21 +530,30 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(item['produk']['nama'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    Text('Rp ${item['produk']['harga']}', style: TextStyle(color: Colors.grey[600])),
+                                    Text(item['produk']['nama'],
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                    Text('Rp ${item['produk']['harga']}',
+                                        style:
+                                            TextStyle(color: Colors.grey[600])),
                                   ],
                                 ),
                               ),
                               Row(
                                 children: [
                                   IconButton(
-                                    onPressed: () => _updateCartItemQuantity(index, item['jumlah'] - 1),
-                                    icon: const Icon(Icons.remove_circle_outline),
+                                    onPressed: () => _updateCartItemQuantity(
+                                        index, item['jumlah'] - 1),
+                                    icon:
+                                        const Icon(Icons.remove_circle_outline),
                                     color: Colors.red,
                                   ),
-                                  Text('${item['jumlah']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  Text('${item['jumlah']}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
                                   IconButton(
-                                    onPressed: () => _updateCartItemQuantity(index, item['jumlah'] + 1),
+                                    onPressed: () => _updateCartItemQuantity(
+                                        index, item['jumlah'] + 1),
                                     icon: const Icon(Icons.add_circle_outline),
                                     color: Colors.green,
                                   ),
@@ -511,12 +574,17 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           _buildTotalSection(ref, totalHarga),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: cart.isEmpty ? null : () => _processTransaction(cart: cart, totalHarga: totalHarga),
+            onPressed: cart.isEmpty
+                ? null
+                : () => _processTransaction(cart: cart, totalHarga: totalHarga),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: ref.watch(AppProviders.offlineModeProvider) ? Colors.orange : Colors.green,
+              backgroundColor: ref.watch(AppProviders.offlineModeProvider)
+                  ? Colors.orange
+                  : Colors.green,
             ),
-            child: const Text('Bayar (Tunai)', style: TextStyle(color: Colors.white)),
+            child: const Text('Bayar (Tunai)',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -526,17 +594,18 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   Widget _buildPromoSection(WidgetRef ref) {
     final activePromosAsync = ref.watch(AppProviders.activePromosProvider);
     final selectedPromo = ref.watch(AppProviders.selectedPromoProvider);
-    
+
     return activePromosAsync.when(
       loading: () => const SizedBox.shrink(),
       error: (e, s) => const SizedBox.shrink(),
       data: (promos) {
         if (promos.isEmpty) return const SizedBox.shrink();
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Promo Tersedia:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Promo Tersedia:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DropdownButton<Map<String, dynamic>?>(
               value: selectedPromo,
@@ -550,12 +619,14 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                 ...promos.map((promo) {
                   return DropdownMenuItem<Map<String, dynamic>>(
                     value: promo,
-                    child: Text('${promo['nama']} - ${promo['nilai']}${promo['tipe'] == 'PERCENTAGE' ? '%' : ' Rupiah'}'),
+                    child: Text(
+                        '${promo['nama']} - ${promo['nilai']}${promo['tipe'] == 'PERCENTAGE' ? '%' : ' Rupiah'}'),
                   );
-                }).toList(),
+                }),
               ],
               onChanged: (value) {
-                ref.read(AppProviders.selectedPromoProvider.notifier).state = value;
+                ref.read(AppProviders.selectedPromoProvider.notifier).state =
+                    value;
               },
             ),
           ],
@@ -563,13 +634,13 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       },
     );
   }
-  
+
   Widget _buildTotalSection(WidgetRef ref, int totalAkhir) {
     final cartTotalInfo = ref.watch(AppProviders.cartTotalWithPromoProvider);
     final subtotal = cartTotalInfo['subtotal'];
     final totalDiskon = cartTotalInfo['totalDiskon'];
     final namaPromo = cartTotalInfo['namaPromo'];
-    
+
     return Column(
       children: [
         if (totalDiskon > 0) ...[
@@ -583,8 +654,10 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Diskon ($namaPromo):', style: const TextStyle(color: Colors.green)),
-              Text('-Rp $totalDiskon', style: const TextStyle(color: Colors.green)),
+              Text('Diskon ($namaPromo):',
+                  style: const TextStyle(color: Colors.green)),
+              Text('-Rp $totalDiskon',
+                  style: const TextStyle(color: Colors.green)),
             ],
           ),
           const Divider(),
@@ -593,7 +666,11 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Total', style: Theme.of(context).textTheme.titleLarge),
-            Text('Rp $totalAkhir', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            Text('Rp $totalAkhir',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold)),
           ],
         ),
       ],
