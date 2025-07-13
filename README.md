@@ -31,7 +31,7 @@ Dokumen ini adalah peta jalan resmi pengembangan OmsetPro, yang mencakup visi ja
 | 4    | Dasbor Smart AI                  | ✅ Selesai     | Memberikan insight bisnis otomatis berbasis AI kepada pengguna.              |
 | 5A   | Fondasi CRM                      | ✅ Selesai     | Membangun sistem untuk mencatat dan mengelola data pelanggan.                |
 | 5B   | Program Loyalitas & Poin         | ✅ Selesai     | Memberikan alat bagi Owner untuk membuat program retensi pelanggan.           |
-| 5C   | Sistem Promo & Diskon            | 🎯 POSISI KITA SAAT INI | Memberikan kemampuan untuk membuat promo dinamis untuk meningkatkan penjualan.|
+| 5C   | Sistem Promo & Diskon            | ✅ Selesai     | Memberikan kemampuan untuk membuat promo dinamis untuk meningkatkan penjualan.|
 | 6    | Integrasi Eksternal (Dasar)      | ⏳ Akan Datang | Membuka kanal pembayaran digital dan pengiriman pihak ketiga.                |
 | 7    | Pemesanan Mandiri (Self-Service) | ⏳ Akan Datang | Mengurangi antrian dan meningkatkan efisiensi operasional di toko.           |
 | 8    | Integrasi Marketplace (SuperApp Core) | ⏳ Akan Datang | Menjadikan OmsetPro sebagai pusat kendali penjualan multi-kanal.             |
@@ -45,7 +45,7 @@ Dokumen ini adalah peta jalan resmi pengembangan OmsetPro, yang mencakup visi ja
 - Fitur: Pengaturan poin & hadiah oleh Owner, akumulasi poin otomatis, dan fitur penukaran poin oleh kasir.
 
 #### Phase 5C: Sistem Promo & Diskon
-- Status: POSISI KITA SAAT INI
+- Status: Selesai
 - Fitur: Owner bisa membuat berbagai jenis promo: diskon dalam bentuk persen (%) atau nominal (Rp), promo "Beli X Gratis Y", dan promo untuk produk atau kategori tertentu.
 
 #### Phase 6: Integrasi Eksternal (Dasar)
