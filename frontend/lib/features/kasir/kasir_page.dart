@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart'; // <-- PERBAIKAN: Import yang hilang ditambahkan
 import '../../models/pelanggan_model.dart';
@@ -7,6 +8,9 @@ import '../../services/offline_database_proxy.dart' as OfflineDatabase;
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/receipt_service.dart';
+import '../../services/midtrans_service.dart'; // <-- TAMBAHKAN INI
+import '../../services/payment_service_factory.dart'; // <-- TAMBAH IMPORT BARU
+import '../../services/payment_service_interface.dart'; // <-- TAMBAH IMPORT INTERFACE
 import '../../widgets/receipt_preview_dialog.dart';
 import '../../utils/laporan_refresh_helper.dart';
 import './widgets/pilih_pelanggan_dialog.dart';
@@ -117,6 +121,9 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   Future<void> _processTransaction({
     required List<Map<String, dynamic>> cart,
     required int totalHarga,
+    bool isDigitalPayment = false,
+    String? paymentMethod,
+    String? orderId,
   }) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final selectedPelanggan = ref.read(AppProviders.selectedPelangganProvider);
@@ -134,9 +141,13 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
       final requestData = {
         'cabangId': widget.cabangId,
-        'metodeBayar': 'Tunai',
+        'metodeBayar': isDigitalPayment 
+            ? (paymentMethod ?? 'Digital') 
+            : 'Tunai',
         'items': itemsDto,
         'pelangganId': selectedPelanggan?.id,
+        'orderId': orderId, // Tambahkan orderId jika ada
+        'isDigitalPayment': isDigitalPayment,
       };
 
       if (isConnected) {
@@ -156,7 +167,9 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         final transaksiId = DateTime.now().millisecondsSinceEpoch;
         await OfflineDatabase.OfflineDatabase.saveTransaksiOffline(
           cabangId: widget.cabangId,
-          metodeBayar: 'Tunai',
+          metodeBayar: isDigitalPayment 
+              ? (paymentMethod ?? 'Digital') 
+              : 'Tunai',
           totalHarga: totalHarga,
           items: cart
               .map((item) => {
@@ -199,6 +212,65 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red),
       );
+    }
+  }
+
+  Future<void> _processDigitalTransaction({
+    required List<Map<String, dynamic>> cart,
+    required int totalHarga,
+  }) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final midtransService = ref.read(midtransServiceProvider);
+    final selectedPelanggan = ref.read(AppProviders.selectedPelangganProvider);
+
+    final List<Map<String, dynamic>> itemDetails = cart.map((item) {
+      return {
+        "id": item['produk']['id'].toString(),
+        "price": item['produk']['harga'].toDouble(),
+        "quantity": item['jumlah'],
+        "name": item['produk']['nama'],
+      };
+    }).toList();
+
+    final Map<String, dynamic> customerDetails = {
+      "first_name": selectedPelanggan?.nama ?? "Pelanggan",
+      "last_name": "",
+      "email": selectedPelanggan?.email ?? "pelanggan@omsetpro.com",
+      "phone": selectedPelanggan?.noHp ?? "081234567890",
+    };
+
+    try {
+      await midtransService.startPayment(
+        totalAmount: totalHarga,
+        items: itemDetails,
+        customerDetails: customerDetails,
+      );
+
+      // TODO: Tambahkan callback listener dari Midtrans untuk mengupdate
+      // status transaksi di backend Anda setelah pembayaran berhasil.
+
+      ref.read(AppProviders.cartProvider.notifier).state = [];
+      ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
+      ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
+
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = e.toString();
+        
+        // Berikan pesan khusus untuk platform web
+        if (e.toString().contains('web')) {
+          errorMessage = 'Pembayaran digital hanya tersedia di aplikasi mobile. '
+                        'Silakan gunakan metode pembayaran tunai atau buka aplikasi di perangkat mobile.';
+        }
+        
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Error memulai pembayaran: $errorMessage'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -505,88 +577,173 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
   Widget _buildCartView(List<Map<String, dynamic>> cart, int totalHarga,
       Pelanggan? selectedPelanggan) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Keranjang', style: Theme.of(context).textTheme.headlineSmall),
-          const Divider(),
-          _buildPelangganInfo(selectedPelanggan),
-          Expanded(
-            child: cart.isEmpty
-                ? const Center(child: Text('Keranjang kosong'))
-                : ListView.builder(
-                    itemCount: cart.length,
-                    itemBuilder: (context, index) {
-                      final item = cart[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(item['produk']['nama'],
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    Text('Rp ${item['produk']['harga']}',
-                                        style:
-                                            TextStyle(color: Colors.grey[600])),
-                                  ],
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: () => _updateCartItemQuantity(
-                                        index, item['jumlah'] - 1),
-                                    icon:
-                                        const Icon(Icons.remove_circle_outline),
-                                    color: Colors.red,
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Keranjang', style: Theme.of(context).textTheme.headlineSmall),
+            const Divider(),
+            _buildPelangganInfo(selectedPelanggan),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Cart Items
+                    SizedBox(
+                      height: cart.isEmpty ? 100 : null,
+                      child: cart.isEmpty
+                          ? const Center(child: Text('Keranjang kosong'))
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: cart.length,
+                              itemBuilder: (context, index) {
+                                final item = cart[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(item['produk']['nama'],
+                                                  style: const TextStyle(
+                                                      fontWeight: FontWeight.bold)),
+                                              Text('Rp ${item['produk']['harga']}',
+                                                  style:
+                                                      TextStyle(color: Colors.grey[600])),
+                                            ],
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              onPressed: () => _updateCartItemQuantity(
+                                                  index, item['jumlah'] - 1),
+                                              icon:
+                                                  const Icon(Icons.remove_circle_outline),
+                                              color: Colors.red,
+                                            ),
+                                            Text('${item['jumlah']}',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold)),
+                                            IconButton(
+                                              onPressed: () => _updateCartItemQuantity(
+                                                  index, item['jumlah'] + 1),
+                                              icon: const Icon(Icons.add_circle_outline),
+                                              color: Colors.green,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  Text('${item['jumlah']}',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  IconButton(
-                                    onPressed: () => _updateCartItemQuantity(
-                                        index, item['jumlah'] + 1),
-                                    icon: const Icon(Icons.add_circle_outline),
-                                    color: Colors.green,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          const Divider(),
-          // Widget Promo Selection
-          _buildPromoSection(ref),
-          const Divider(),
-          // Total Information with Promo
-          _buildTotalSection(ref, totalHarga),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: cart.isEmpty
-                ? null
-                : () => _processTransaction(cart: cart, totalHarga: totalHarga),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: ref.watch(AppProviders.offlineModeProvider)
-                  ? Colors.orange
-                  : Colors.green,
+                                );
+                              },
+                            ),
+                    ),
+                    const Divider(),
+                    // Widget Promo Selection
+                    _buildPromoSection(ref),
+                    const Divider(),
+                    // Total Information with Promo
+                    _buildTotalSection(ref, totalHarga),
+                  ],
+                ),
+              ),
             ),
-            child: const Text('Bayar (Tunai)',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
+            // Payment buttons - Fixed at bottom
+            Container(
+              padding: const EdgeInsets.only(top: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+              // Tampilkan tombol berdasarkan platform yang didukung
+              ...ref.watch(availablePaymentMethodsProvider).map((method) {
+                switch (method) {
+                  case PaymentMethod.digital:
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: ElevatedButton(
+                        onPressed: cart.isEmpty
+                            ? null
+                            : () => _processDigitalTransaction(
+                                  cart: cart,
+                                  totalHarga: totalHarga,
+                                ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.blue,
+                        ),
+                        child: const Text('Bayar Digital (QRIS, dll)',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    );
+                  case PaymentMethod.manual:
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: ElevatedButton(
+                        onPressed: cart.isEmpty
+                            ? null
+                            : () => _showManualPaymentDialog(cart, totalHarga),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.purple,
+                        ),
+                        child: const Text('Input Pembayaran Manual',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    );
+                  case PaymentMethod.cash:
+                    return ElevatedButton(
+                      onPressed: cart.isEmpty
+                          ? null
+                          : () => _processTransaction(cart: cart, totalHarga: totalHarga),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: ref.watch(AppProviders.offlineModeProvider)
+                            ? Colors.orange
+                            : Colors.green,
+                      ),
+                      child: const Text('Bayar (Tunai)',
+                          style: TextStyle(color: Colors.white)),
+                    );
+                }
+              }).toList(),
+              
+              // Platform info (hanya untuk debug)
+              if (kDebugMode) ...[
+                const SizedBox(height: 8),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final platformInfo = ref.watch(platformInfoProvider);
+                    return Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Platform: ${platformInfo['platform']} | '
+                        'Digital Payment: ${platformInfo['digitalPaymentSupported'] ? '✓' : '✗'}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  },
+                ),
+              ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -675,5 +832,108 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         ),
       ],
     );
+  }
+
+  // Method untuk menampilkan dialog pembayaran manual (khusus web)
+  void _showManualPaymentDialog(List<Map<String, dynamic>> cart, int totalHarga) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pembayaran Manual'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Total: ${_formatCurrency(totalHarga)}'),
+            const SizedBox(height: 16),
+            const Text(
+              'Pilih metode pembayaran:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.credit_card),
+              title: const Text('Transfer Bank'),
+              subtitle: const Text('Catat sebagai pembayaran digital'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _processManualDigitalPayment(cart, totalHarga, 'transfer');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code),
+              title: const Text('QRIS'),
+              subtitle: const Text('Pembayaran melalui QRIS'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _processManualDigitalPayment(cart, totalHarga, 'qris');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet),
+              title: const Text('E-Wallet'),
+              subtitle: const Text('GoPay, OVO, DANA, dll'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _processManualDigitalPayment(cart, totalHarga, 'ewallet');
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Batal'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Method untuk memproses pembayaran digital manual
+  Future<void> _processManualDigitalPayment(
+    List<Map<String, dynamic>> cart, 
+    int totalHarga, 
+    String paymentType
+  ) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    try {
+      // Simulasi pembayaran berhasil (dalam implementasi nyata, 
+      // Anda bisa menambahkan dialog konfirmasi)
+      final orderId = 'MANUAL-${DateTime.now().millisecondsSinceEpoch}';
+      
+      // Proses transaksi seperti pembayaran tunai, tapi tandai sebagai digital
+      await _processTransaction(
+        cart: cart, 
+        totalHarga: totalHarga,
+        isDigitalPayment: true,
+        paymentMethod: paymentType,
+        orderId: orderId,
+      );
+      
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Pembayaran $paymentType berhasil dicatat'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+    } catch (e) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String _formatCurrency(int amount) {
+    // Format mata uang sesuai kebutuhan Anda
+    return 'Rp ${amount.toString().replaceAllMapped(
+      RegExp(r'(\d+)(\d{3})'),
+      (Match m) => '${m[1]}.${m[2]}',
+    )}';
   }
 }

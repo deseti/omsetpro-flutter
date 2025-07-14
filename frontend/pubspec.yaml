@@ -18,7 +18,9 @@ dependencies:
   dio: ^5.4.3+1
   http: ^1.4.0
 
-  # --- TAMBAHKAN BARIS INI ---
+  # --- TAMBAHKAN BARIS INI (VERSI SUDAH DIPERBAIKI) ---
+  midtrans_sdk: ^1.0.1
+
   # Untuk komunikasi real-time (WebSocket)
   socket_io_client: ^2.0.3
 
