@@ -7,8 +7,9 @@ import 'package:dio/dio.dart';
 import 'payment_service_interface.dart';
 import '../providers/providers.dart';
 import '../utils/api_config.dart';
-// Conditional import untuk web
-import 'dart:html' as html if (dart.library.html) 'dart:html';
+// Conditional import untuk web - Suppress lint warning karena ini file khusus web
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 class PaymentServiceWeb implements PaymentServiceInterface {
   final Ref _ref;
@@ -56,7 +57,7 @@ class PaymentServiceWeb implements PaymentServiceInterface {
       return PaymentResult(
         isSuccess: false,
         message: 'Pembayaran digital tidak tersedia di web. '
-                'Silakan gunakan aplikasi mobile atau catat transaksi secara manual.',
+            'Silakan gunakan aplikasi mobile atau catat transaksi secara manual.',
         additionalData: {
           'suggestedAction': 'manual_entry',
           'orderId': orderId,
@@ -75,7 +76,7 @@ class PaymentServiceWeb implements PaymentServiceInterface {
     try {
       final dio = _ref.read(dioProvider);
       final response = await dio.post(
-        '/midtrans/create-snap-url',  // Endpoint khusus untuk web
+        '/midtrans/create-snap-url', // Endpoint khusus untuk web
         data: {
           'orderId': orderId,
           'totalAmount': totalAmount,
@@ -89,11 +90,11 @@ class PaymentServiceWeb implements PaymentServiceInterface {
       if (snapUrl != null) {
         // Buka di tab/window baru
         html.window.open(snapUrl, '_blank');
-        
+
         return PaymentResult(
           isSuccess: true,
           message: 'Halaman pembayaran telah dibuka di tab baru. '
-                  'Silakan selesaikan pembayaran di tab tersebut.',
+              'Silakan selesaikan pembayaran di tab tersebut.',
           transactionId: orderId,
           additionalData: {
             'action': 'redirected',

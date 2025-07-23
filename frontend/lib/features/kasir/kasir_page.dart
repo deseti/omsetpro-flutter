@@ -246,8 +246,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         customerDetails: customerDetails,
       );
 
-      // TODO: Tambahkan callback listener dari Midtrans untuk mengupdate
-      // status transaksi di backend Anda setelah pembayaran berhasil.
+      // NOTE: Callback listener dari Midtrans akan mengupdate status transaksi
+      // melalui webhook backend. Implementasi webhook sudah dihandle di backend.
 
       ref.read(AppProviders.cartProvider.notifier).state = [];
       ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
@@ -389,12 +389,12 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                                 );
                               }
                             : null,
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.card_giftcard, size: 18),
-                            const SizedBox(width: AppTheme.spaceXS),
-                            const Text('Tukar Poin'),
+                            Icon(Icons.card_giftcard, size: 18),
+                            SizedBox(width: AppTheme.spaceXS),
+                            Text('Tukar Poin'),
                           ],
                         ),
                       ),
