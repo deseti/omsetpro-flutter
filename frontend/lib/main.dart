@@ -16,6 +16,7 @@ import 'services/offline_database_proxy.dart'
 import 'features/pelanggan/pelanggan_page.dart';
 import 'features/loyalty/loyalty_settings_page.dart'; // <-- IMPORT HALAMAN BARU
 import 'features/promo/promo_page.dart'; // <-- IMPORT HALAMAN BARU
+import 'theme/app_theme.dart'; // Import tema baru
 
 // Ubah fungsi main menjadi async
 Future<void> main() async {
@@ -52,12 +53,9 @@ class OmsetProApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'OmsetPro',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Poppins',
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system, // Mengikuti sistem device
       debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => const AuthChecker(),

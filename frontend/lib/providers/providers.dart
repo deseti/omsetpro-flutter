@@ -8,6 +8,36 @@ import 'package:flutter/foundation.dart'; // For kIsWeb
 import '../utils/api_config.dart'; // Import API config
 import '../services/network_service.dart'; // Import network service
 
+// Payment Method enum
+enum PaymentMethod {
+  cash,
+  digital,
+  manual,
+}
+
+// Platform info provider
+final platformInfoProvider = Provider<Map<String, dynamic>>((ref) {
+  return {
+    'platform': kIsWeb ? 'web' : 'mobile',
+    'digitalPaymentSupported':
+        !kIsWeb, // Digital payment only on mobile for now
+  };
+});
+
+// Available payment methods provider
+final availablePaymentMethodsProvider = Provider<List<PaymentMethod>>((ref) {
+  final platformInfo = ref.watch(platformInfoProvider);
+  final List<PaymentMethod> methods = [PaymentMethod.cash];
+
+  if (platformInfo['digitalPaymentSupported']) {
+    methods.add(PaymentMethod.digital);
+  } else {
+    methods.add(PaymentMethod.manual); // Manual payment for web
+  }
+
+  return methods;
+});
+
 // ... (provider lain tetap sama)
 final authStateProvider = StateProvider<bool>((ref) => false);
 final accessTokenProvider = StateProvider<String?>((ref) => null);
@@ -151,44 +181,49 @@ final selectedPelangganProvider =
     StateProvider.autoDispose<Pelanggan?>((ref) => null);
 
 // [BARU] Provider untuk promo aktif yang bisa diterapkan di kasir
-final activePromosProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final activePromosProvider =
+    FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final dio = ref.watch(dioProvider);
   final response = await dio.get('/promo');
   final List<dynamic> allPromos = response.data;
-  
+
   // Filter hanya promo yang aktif
   return allPromos.where((promo) => promo['isActive'] == true).toList();
 });
 
 // [BARU] Provider untuk menyimpan promo yang dipilih di kasir
-final selectedPromoProvider = StateProvider.autoDispose<Map<String, dynamic>?>((ref) => null);
+final selectedPromoProvider =
+    StateProvider.autoDispose<Map<String, dynamic>?>((ref) => null);
 
 // [BARU] Provider untuk menghitung total setelah promo
-final cartTotalWithPromoProvider = Provider.autoDispose<Map<String, dynamic>>((ref) {
+final cartTotalWithPromoProvider =
+    Provider.autoDispose<Map<String, dynamic>>((ref) {
   final cart = ref.watch(cartProvider);
   final selectedPromo = ref.watch(selectedPromoProvider);
-  
+
   // Hitung subtotal normal
   final subtotal = cart.fold<double>(0, (sum, item) {
     return sum + (item['produk']['harga'] * item['jumlah']);
   }).toInt();
-  
+
   int totalDiskon = 0;
   int totalAkhir = subtotal;
-  
+
   if (selectedPromo != null) {
     // Hitung diskon berdasarkan produk yang ada di cart dan termasuk dalam promo
-    final List<dynamic> promoProdukIds = selectedPromo['produk']?.map((p) => p['produk']['id']).toList() ?? [];
-    
+    final List<dynamic> promoProdukIds =
+        selectedPromo['produk']?.map((p) => p['produk']['id']).toList() ?? [];
+
     for (final item in cart) {
       final produkId = item['produk']['id'];
       if (promoProdukIds.contains(produkId)) {
         final hargaItem = (item['produk']['harga'] as num).toInt();
         final jumlahItem = (item['jumlah'] as num).toInt();
         final subtotalItem = hargaItem * jumlahItem;
-        
+
         if (selectedPromo['tipe'] == 'PERCENTAGE') {
-          final diskonItem = (subtotalItem * (selectedPromo['nilai'] as num) / 100).round();
+          final diskonItem =
+              (subtotalItem * (selectedPromo['nilai'] as num) / 100).round();
           totalDiskon += diskonItem;
         } else if (selectedPromo['tipe'] == 'NOMINAL') {
           // Untuk diskon nominal, terapkan per item
@@ -197,11 +232,11 @@ final cartTotalWithPromoProvider = Provider.autoDispose<Map<String, dynamic>>((r
         }
       }
     }
-    
+
     totalAkhir = subtotal - totalDiskon;
     if (totalAkhir < 0) totalAkhir = 0; // Pastikan tidak negatif
   }
-  
+
   return {
     'subtotal': subtotal,
     'totalDiskon': totalDiskon,

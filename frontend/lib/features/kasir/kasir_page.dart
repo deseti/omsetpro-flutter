@@ -12,6 +12,8 @@ import '../../services/midtrans_service.dart'; // <-- TAMBAHKAN INI
 import '../../services/payment_service_factory.dart'; // <-- TAMBAH IMPORT BARU
 import '../../services/payment_service_interface.dart'; // <-- TAMBAH IMPORT INTERFACE
 import '../../widgets/receipt_preview_dialog.dart';
+import '../../widgets/responsive_widgets.dart'; // Import responsive widgets
+import '../../theme/app_theme.dart'; // Import tema
 import '../../utils/laporan_refresh_helper.dart';
 import './widgets/pilih_pelanggan_dialog.dart';
 import './widgets/redeem_reward_dialog.dart';
@@ -141,9 +143,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
       final requestData = {
         'cabangId': widget.cabangId,
-        'metodeBayar': isDigitalPayment 
-            ? (paymentMethod ?? 'Digital') 
-            : 'Tunai',
+        'metodeBayar':
+            isDigitalPayment ? (paymentMethod ?? 'Digital') : 'Tunai',
         'items': itemsDto,
         'pelangganId': selectedPelanggan?.id,
         'orderId': orderId, // Tambahkan orderId jika ada
@@ -167,9 +168,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         final transaksiId = DateTime.now().millisecondsSinceEpoch;
         await OfflineDatabase.OfflineDatabase.saveTransaksiOffline(
           cabangId: widget.cabangId,
-          metodeBayar: isDigitalPayment 
-              ? (paymentMethod ?? 'Digital') 
-              : 'Tunai',
+          metodeBayar:
+              isDigitalPayment ? (paymentMethod ?? 'Digital') : 'Tunai',
           totalHarga: totalHarga,
           items: cart
               .map((item) => {
@@ -251,18 +251,19 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
       ref.read(AppProviders.cartProvider.notifier).state = [];
       ref.read(AppProviders.selectedPelangganProvider.notifier).state = null;
-      ref.invalidate(AppProviders.produkListWithOfflineProvider(widget.cabangId));
-
+      ref.invalidate(
+          AppProviders.produkListWithOfflineProvider(widget.cabangId));
     } catch (e) {
       if (mounted) {
         String errorMessage = e.toString();
-        
+
         // Berikan pesan khusus untuk platform web
         if (e.toString().contains('web')) {
-          errorMessage = 'Pembayaran digital hanya tersedia di aplikasi mobile. '
-                        'Silakan gunakan metode pembayaran tunai atau buka aplikasi di perangkat mobile.';
+          errorMessage =
+              'Pembayaran digital hanya tersedia di aplikasi mobile. '
+              'Silakan gunakan metode pembayaran tunai atau buka aplikasi di perangkat mobile.';
         }
-        
+
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text('Error memulai pembayaran: $errorMessage'),
@@ -276,91 +277,132 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
   // [PERBAIKAN] Widget ini dipindahkan ke dalam class _KasirPageState
   Widget _buildPelangganInfo(Pelanggan? pelanggan) {
-    return Card(
-      color: Colors.blue.shade50,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: pelanggan == null
-            ? ListTile(
-                leading: const Icon(Icons.person_add_alt_1, color: Colors.blue),
-                title: const Text('Tanpa Pelanggan'),
-                subtitle: const Text('Klik untuk mencari atau menambah'),
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => const PilihPelangganDialog(),
-                  );
-                },
-              )
-            : Column(
-                children: [
-                  ListTile(
-                    leading: CircleAvatar(
-                        child: Text(pelanggan.nama.substring(0, 1))),
-                    title: Text(pelanggan.nama,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(pelanggan.noHp),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      tooltip: 'Hapus Pelanggan dari Transaksi',
-                      onPressed: () {
-                        ref
-                            .read(
-                                AppProviders.selectedPelangganProvider.notifier)
-                            .state = null;
-                      },
+    return ResponsiveCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMD),
+      child: pelanggan == null
+          ? ListTile(
+              leading: Icon(
+                Icons.person_add_alt_1,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text(
+                'Tanpa Pelanggan',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              subtitle: Text(
+                'Klik untuk mencari atau menambah',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => const PilihPelangganDialog(),
-                      );
+              ),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => const PilihPelangganDialog(),
+                );
+              },
+            )
+          : Column(
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    child: Text(
+                      pelanggan.nama.substring(0, 1).toUpperCase(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                  title: Text(
+                    pelanggan.nama,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  subtitle: Text(
+                    pelanggan.noHp,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  trailing: IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    tooltip: 'Hapus Pelanggan dari Transaksi',
+                    onPressed: () {
+                      ref
+                          .read(AppProviders.selectedPelangganProvider.notifier)
+                          .state = null;
                     },
                   ),
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => const PilihPelangganDialog(),
+                    );
+                  },
+                ),
+                Divider(color: Theme.of(context).colorScheme.outline),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Poin',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                          const SizedBox(height: AppTheme.spaceXS),
+                          Text(
+                            '${pelanggan.totalPoin} Poin',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ),
+                      FilledButton.tonal(
+                        onPressed: pelanggan.totalPoin > 0
+                            ? () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) =>
+                                      RedeemRewardDialog(pelanggan: pelanggan),
+                                );
+                              }
+                            : null,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text('Total Poin',
-                                style: TextStyle(fontSize: 12)),
-                            Text(
-                              '${pelanggan.totalPoin} Poin',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Colors.amber.shade800,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
+                            const Icon(Icons.card_giftcard, size: 18),
+                            const SizedBox(width: AppTheme.spaceXS),
+                            const Text('Tukar Poin'),
                           ],
                         ),
-                        TextButton.icon(
-                          icon: const Icon(Icons.card_giftcard),
-                          label: const Text('Tukar Poin'),
-                          onPressed: pelanggan.totalPoin > 0
-                              ? () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => RedeemRewardDialog(
-                                        pelanggan: pelanggan),
-                                  );
-                                }
-                              : null, // Disable tombol jika poin 0
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-      ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -375,8 +417,18 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kasir di ${widget.cabangNama}'),
-        backgroundColor: isOfflineMode ? Colors.orange.shade700 : null,
+        title: Text(
+          'Kasir di ${widget.cabangNama}',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        backgroundColor: isOfflineMode
+            ? Theme.of(context).colorScheme.tertiary
+            : Theme.of(context).colorScheme.surface,
+        foregroundColor: isOfflineMode
+            ? Theme.of(context).colorScheme.onTertiary
+            : Theme.of(context).colorScheme.onSurface,
         actions: [
           IconButton(
             onPressed: () async {
@@ -387,7 +439,9 @@ class _KasirPageState extends ConsumerState<KasirPage> {
                   content: Text(result
                       ? 'Sync berhasil!'
                       : 'Sync gagal atau tidak ada data baru.'),
-                  backgroundColor: result ? Colors.green : Colors.orange,
+                  backgroundColor: result
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.tertiary,
                 ),
               );
             },
@@ -395,126 +449,205 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             tooltip: 'Manual Sync',
           ),
           connectivityAsync.when(
-            data: (isOnline) => isOnline
-                ? const Icon(Icons.wifi, color: Colors.green)
-                : const Icon(Icons.wifi_off, color: Colors.red),
-            loading: () => const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(color: Colors.white)),
-            error: (_, __) => const Icon(Icons.error, color: Colors.red),
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Cari produk atau scan barcode...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () => _searchController.clear(),
-                            )
-                          : null,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(AppProviders.produkListWithOfflineProvider(
-                          widget.cabangId));
-                      ref.read(AppProviders.cartProvider.notifier).state = [];
-                      ref
-                          .read(AppProviders.selectedPelangganProvider.notifier)
-                          .state = null;
-                    },
-                    child: Consumer(
-                      builder: (context, ref, _) {
-                        final produkAsync = ref.watch(
-                            AppProviders.produkListWithOfflineProvider(
-                                widget.cabangId));
-                        return produkAsync.when(
-                          data: (produkList) {
-                            final filteredProducts =
-                                _filterProducts(produkList);
-                            return Column(
-                              children: [
-                                if (isOfflineMode)
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(8.0),
-                                    color: Colors.orange.shade100,
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.offline_bolt,
-                                            color: Colors.orange),
-                                        SizedBox(width: 8),
-                                        Text(
-                                            'Mode Offline - Data dari cache lokal',
-                                            style: TextStyle(
-                                                color: Colors.orange,
-                                                fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ),
-                                Expanded(
-                                  child: GridView.builder(
-                                    padding: const EdgeInsets.all(8),
-                                    gridDelegate:
-                                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                                      maxCrossAxisExtent: 200,
-                                      childAspectRatio: 3 / 4,
-                                      crossAxisSpacing: 8,
-                                      mainAxisSpacing: 8,
-                                    ),
-                                    itemCount: filteredProducts.length,
-                                    itemBuilder: (context, index) =>
-                                        _buildProdukCard(
-                                            filteredProducts[index]),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                          loading: () =>
-                              const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) =>
-                              Center(child: Text('Error: $err')),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
+            data: (isOnline) => Icon(
+              isOnline ? Icons.wifi : Icons.wifi_off,
+              color: isOnline
+                  ? Theme.of(context).colorScheme.secondary
+                  : Theme.of(context).colorScheme.error,
+            ),
+            loading: () => SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.onSurface,
+                strokeWidth: 2,
+              ),
+            ),
+            error: (_, __) => Icon(
+              Icons.error,
+              color: Theme.of(context).colorScheme.error,
             ),
           ),
-          const VerticalDivider(width: 1),
-          Expanded(
-            flex: 1,
-            child: _buildCartView(cart, totalHarga, selectedPelanggan),
-          ),
+          const SizedBox(width: AppTheme.spaceMD),
         ],
+      ),
+      body: ResponsiveMasterDetail(
+        master: _buildProductGrid(),
+        detail: _buildCartView(cart, totalHarga, selectedPelanggan),
+        masterWidth: ResponsiveBreakpoints.getResponsiveValue(
+          context,
+          mobile: 300,
+          tablet: 400,
+          desktop: 500,
+        ),
+        showMasterInDrawer: context.isMobile,
       ),
     );
   }
 
+  Widget _buildProductGrid() {
+    final isOfflineMode = ref.watch(AppProviders.offlineModeProvider);
+
+    return Column(
+      children: [
+        // Search Bar
+        ResponsiveContainer(
+          padding: const EdgeInsets.all(AppTheme.spaceMD),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Cari produk atau scan barcode...',
+              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => _searchController.clear(),
+                    )
+                  : null,
+            ),
+          ),
+        ),
+        // Product Grid
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(
+                  AppProviders.produkListWithOfflineProvider(widget.cabangId));
+              ref.read(AppProviders.cartProvider.notifier).state = [];
+              ref.read(AppProviders.selectedPelangganProvider.notifier).state =
+                  null;
+            },
+            child: Consumer(
+              builder: (context, ref, _) {
+                final produkAsync = ref.watch(
+                    AppProviders.produkListWithOfflineProvider(
+                        widget.cabangId));
+                return produkAsync.when(
+                  data: (produkList) {
+                    final filteredProducts = _filterProducts(produkList);
+                    return Column(
+                      children: [
+                        // Offline Mode Indicator
+                        if (isOfflineMode)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppTheme.spaceMD),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .tertiaryContainer,
+                              borderRadius: const BorderRadius.vertical(
+                                bottom: Radius.circular(AppTheme.radiusMD),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.offline_bolt,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onTertiaryContainer,
+                                ),
+                                const SizedBox(width: AppTheme.spaceSM),
+                                Expanded(
+                                  child: Text(
+                                    'Mode Offline - Data dari cache lokal',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onTertiaryContainer,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        // Products Grid
+                        Expanded(
+                          child: ResponsiveGrid(
+                            mobileColumns:
+                                ResponsiveUtils.getGridCrossAxisCount(
+                              context,
+                              mobileCount: 2,
+                              tabletCount: 3,
+                              desktopCount: 4,
+                            ),
+                            tabletColumns:
+                                ResponsiveUtils.getGridCrossAxisCount(
+                              context,
+                              mobileCount: 2,
+                              tabletCount: 3,
+                              desktopCount: 4,
+                            ),
+                            desktopColumns:
+                                ResponsiveUtils.getGridCrossAxisCount(
+                              context,
+                              mobileCount: 2,
+                              tabletCount: 3,
+                              desktopCount: 4,
+                            ),
+                            childAspectRatio: 0.75,
+                            children: filteredProducts
+                                .map((product) => _buildProdukCard(product))
+                                .toList(),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  error: (err, stack) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(height: AppTheme.spaceMD),
+                        Text(
+                          'Terjadi kesalahan',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: AppTheme.spaceSM),
+                        Text(
+                          'Error: $err',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildProdukCard(dynamic produk) {
-    return InkWell(
+    return ResponsiveCard(
       onTap: () {
         final cartNotifier = ref.read(AppProviders.cartProvider.notifier);
         final currentCart = cartNotifier.state;
@@ -536,216 +669,339 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           ];
         }
       },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Product Image
+          Expanded(
+            flex: 3,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppTheme.radiusMD),
+                ),
+              ),
               child: produk['fotoUrl'] != null
-                  ? Image.network(
-                      produk['fotoUrl'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.broken_image, size: 50),
+                  ? ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppTheme.radiusMD),
+                      ),
+                      child: Image.network(
+                        produk['fotoUrl'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.broken_image,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.primary,
+                              strokeWidth: 2,
+                            ),
+                          );
+                        },
+                      ),
                     )
-                  : Container(
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.inventory_2,
-                          size: 50, color: Colors.grey),
+                  : Icon(
+                      Icons.inventory_2,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                produk['nama'],
-                style: const TextStyle(fontWeight: FontWeight.bold),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+          ),
+          // Product Info
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.spaceMD),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Product Name
+                  Text(
+                    produk['nama'],
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Product Price
+                  Text(
+                    _formatCurrency(produk['harga']),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0)
-                  .copyWith(bottom: 8.0),
-              child: Text('Rp ${produk['harga']}'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildCartView(List<Map<String, dynamic>> cart, int totalHarga,
       Pelanggan? selectedPelanggan) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Keranjang', style: Theme.of(context).textTheme.headlineSmall),
-            const Divider(),
-            _buildPelangganInfo(selectedPelanggan),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // Cart Items
-                    SizedBox(
-                      height: cart.isEmpty ? 100 : null,
-                      child: cart.isEmpty
-                          ? const Center(child: Text('Keranjang kosong'))
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: cart.length,
-                              itemBuilder: (context, index) {
-                                final item = cart[index];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(item['produk']['nama'],
-                                                  style: const TextStyle(
-                                                      fontWeight: FontWeight.bold)),
-                                              Text('Rp ${item['produk']['harga']}',
-                                                  style:
-                                                      TextStyle(color: Colors.grey[600])),
-                                            ],
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              onPressed: () => _updateCartItemQuantity(
-                                                  index, item['jumlah'] - 1),
-                                              icon:
-                                                  const Icon(Icons.remove_circle_outline),
-                                              color: Colors.red,
-                                            ),
-                                            Text('${item['jumlah']}',
-                                                style: const TextStyle(
-                                                    fontWeight: FontWeight.bold)),
-                                            IconButton(
-                                              onPressed: () => _updateCartItemQuantity(
-                                                  index, item['jumlah'] + 1),
-                                              icon: const Icon(Icons.add_circle_outline),
-                                              color: Colors.green,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    const Divider(),
-                    // Widget Promo Selection
-                    _buildPromoSection(ref),
-                    const Divider(),
-                    // Total Information with Promo
-                    _buildTotalSection(ref, totalHarga),
-                  ],
+    return ResponsiveContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Text(
+            'Keranjang',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ),
-            // Payment buttons - Fixed at bottom
-            Container(
-              padding: const EdgeInsets.only(top: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-              // Tampilkan tombol berdasarkan platform yang didukung
-              ...ref.watch(availablePaymentMethodsProvider).map((method) {
-                switch (method) {
-                  case PaymentMethod.digital:
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: ElevatedButton(
-                        onPressed: cart.isEmpty
-                            ? null
-                            : () => _processDigitalTransaction(
-                                  cart: cart,
-                                  totalHarga: totalHarga,
-                                ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.blue,
+          ),
+          Divider(
+            color: Theme.of(context).colorScheme.outline,
+            height: AppTheme.spaceLG,
+          ),
+
+          // Customer Info
+          _buildPelangganInfo(selectedPelanggan),
+          const ResponsiveSpacing(mobileSize: AppTheme.spaceMD),
+
+          // Cart Content
+          Expanded(
+            child: Column(
+              children: [
+                // Cart Items
+                Expanded(
+                  child: cart.isEmpty
+                      ? _buildEmptyCart()
+                      : ListView.separated(
+                          itemCount: cart.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: AppTheme.spaceSM),
+                          itemBuilder: (context, index) {
+                            final item = cart[index];
+                            return _buildCartItem(item, index);
+                          },
                         ),
-                        child: const Text('Bayar Digital (QRIS, dll)',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    );
-                  case PaymentMethod.manual:
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: ElevatedButton(
-                        onPressed: cart.isEmpty
-                            ? null
-                            : () => _showManualPaymentDialog(cart, totalHarga),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.purple,
-                        ),
-                        child: const Text('Input Pembayaran Manual',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    );
-                  case PaymentMethod.cash:
-                    return ElevatedButton(
-                      onPressed: cart.isEmpty
-                          ? null
-                          : () => _processTransaction(cart: cart, totalHarga: totalHarga),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: ref.watch(AppProviders.offlineModeProvider)
-                            ? Colors.orange
-                            : Colors.green,
-                      ),
-                      child: const Text('Bayar (Tunai)',
-                          style: TextStyle(color: Colors.white)),
-                    );
-                }
-              }),
-              
-              // Platform info (hanya untuk debug)
-              if (kDebugMode) ...[
-                const SizedBox(height: 8),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final platformInfo = ref.watch(platformInfoProvider);
-                    return Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Platform: ${platformInfo['platform']} | '
-                        'Digital Payment: ${platformInfo['digitalPaymentSupported'] ? '✓' : '✗'}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  },
                 ),
+
+                // Promo Section
+                const ResponsiveSpacing(mobileSize: AppTheme.spaceMD),
+                _buildPromoSection(ref),
+
+                // Total Section
+                const ResponsiveSpacing(mobileSize: AppTheme.spaceMD),
+                _buildTotalSection(ref, totalHarga),
               ],
-                ],
-              ),
             ),
-          ],
-        ),
+          ),
+
+          // Payment Buttons - Fixed at bottom
+          const ResponsiveSpacing(mobileSize: AppTheme.spaceLG),
+          _buildPaymentButtons(cart, totalHarga),
+        ],
       ),
     );
+  }
+
+  Widget _buildEmptyCart() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.shopping_cart_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          Text(
+            'Keranjang kosong',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            'Pilih produk untuk mulai transaksi',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCartItem(Map<String, dynamic> item, int index) {
+    return ResponsiveCard(
+      padding: const EdgeInsets.all(AppTheme.spaceMD),
+      child: Row(
+        children: [
+          // Product Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['produk']['nama'],
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: AppTheme.spaceXS),
+                Text(
+                  _formatCurrency(item['produk']['harga']),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          // Quantity Controls
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () =>
+                    _updateCartItemQuantity(index, item['jumlah'] - 1),
+                icon: const Icon(Icons.remove_circle_outline),
+                color: Theme.of(context).colorScheme.error,
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(40, 40),
+                ),
+              ),
+              Container(
+                constraints: const BoxConstraints(minWidth: 40),
+                child: Text(
+                  '${item['jumlah']}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              IconButton(
+                onPressed: () =>
+                    _updateCartItemQuantity(index, item['jumlah'] + 1),
+                icon: const Icon(Icons.add_circle_outline),
+                color: Theme.of(context).colorScheme.secondary,
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(40, 40),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentButtons(List<Map<String, dynamic>> cart, int totalHarga) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Payment Methods
+        ...ref
+            .watch(AppProviders.availablePaymentMethodsProvider)
+            .map((method) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+            child: _buildPaymentButton(method, cart, totalHarga),
+          );
+        }),
+
+        // Platform Info (Debug Mode)
+        if (kDebugMode) ...[
+          const ResponsiveSpacing(mobileSize: AppTheme.spaceSM),
+          Consumer(
+            builder: (context, ref, child) {
+              final platformInfo = ref.watch(AppProviders.platformInfoProvider);
+              return Container(
+                padding: const EdgeInsets.all(AppTheme.spaceSM),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                ),
+                child: Text(
+                  'Platform: ${platformInfo['platform']} | '
+                  'Digital Payment: ${platformInfo['digitalPaymentSupported'] ? '✓' : '✗'}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPaymentButton(AppProviders.PaymentMethod method,
+      List<Map<String, dynamic>> cart, int totalHarga) {
+    switch (method) {
+      case AppProviders.PaymentMethod.digital:
+        return FilledButton.icon(
+          onPressed: cart.isEmpty
+              ? null
+              : () => _processDigitalTransaction(
+                    cart: cart,
+                    totalHarga: totalHarga,
+                  ),
+          icon: const Icon(Icons.qr_code),
+          label: const Text('Bayar Digital (QRIS, dll)'),
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+          ),
+        );
+      case AppProviders.PaymentMethod.manual:
+        return FilledButton.tonal(
+          onPressed: cart.isEmpty
+              ? null
+              : () => _showManualPaymentDialog(cart, totalHarga),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.credit_card),
+              SizedBox(width: AppTheme.spaceSM),
+              Text('Input Pembayaran Manual'),
+            ],
+          ),
+        );
+      case AppProviders.PaymentMethod.cash:
+        final isOfflineMode = ref.watch(AppProviders.offlineModeProvider);
+        return FilledButton.icon(
+          onPressed: cart.isEmpty
+              ? null
+              : () => _processTransaction(cart: cart, totalHarga: totalHarga),
+          icon: Icon(isOfflineMode ? Icons.offline_bolt : Icons.payments),
+          label: const Text('Bayar (Tunai)'),
+          style: FilledButton.styleFrom(
+            backgroundColor: isOfflineMode
+                ? Theme.of(context).colorScheme.tertiary
+                : Theme.of(context).colorScheme.secondary,
+            foregroundColor: isOfflineMode
+                ? Theme.of(context).colorScheme.onTertiary
+                : Theme.of(context).colorScheme.onSecondary,
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+          ),
+        );
+    }
   }
 
   Widget _buildPromoSection(WidgetRef ref) {
@@ -835,7 +1091,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   }
 
   // Method untuk menampilkan dialog pembayaran manual (khusus web)
-  void _showManualPaymentDialog(List<Map<String, dynamic>> cart, int totalHarga) {
+  void _showManualPaymentDialog(
+      List<Map<String, dynamic>> cart, int totalHarga) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -891,34 +1148,30 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   }
 
   // Method untuk memproses pembayaran digital manual
-  Future<void> _processManualDigitalPayment(
-    List<Map<String, dynamic>> cart, 
-    int totalHarga, 
-    String paymentType
-  ) async {
+  Future<void> _processManualDigitalPayment(List<Map<String, dynamic>> cart,
+      int totalHarga, String paymentType) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
+
     try {
-      // Simulasi pembayaran berhasil (dalam implementasi nyata, 
+      // Simulasi pembayaran berhasil (dalam implementasi nyata,
       // Anda bisa menambahkan dialog konfirmasi)
       final orderId = 'MANUAL-${DateTime.now().millisecondsSinceEpoch}';
-      
+
       // Proses transaksi seperti pembayaran tunai, tapi tandai sebagai digital
       await _processTransaction(
-        cart: cart, 
+        cart: cart,
         totalHarga: totalHarga,
         isDigitalPayment: true,
         paymentMethod: paymentType,
         orderId: orderId,
       );
-      
+
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text('Pembayaran $paymentType berhasil dicatat'),
           backgroundColor: Colors.green,
         ),
       );
-      
     } catch (e) {
       scaffoldMessenger.showSnackBar(
         SnackBar(
@@ -932,8 +1185,8 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   String _formatCurrency(int amount) {
     // Format mata uang sesuai kebutuhan Anda
     return 'Rp ${amount.toString().replaceAllMapped(
-      RegExp(r'(\d+)(\d{3})'),
-      (Match m) => '${m[1]}.${m[2]}',
-    )}';
+          RegExp(r'(\d+)(\d{3})'),
+          (Match m) => '${m[1]}.${m[2]}',
+        )}';
   }
 }
