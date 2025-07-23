@@ -18,7 +18,7 @@ import { CreateProdukDto } from './dto/create-produk.dto';
 import { UpdateProdukDto } from './dto/update-produk.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as xlsx from 'xlsx'; // Import xlsx
+import * as ExcelJS from 'exceljs'; // Import ExcelJS
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('produk')
@@ -28,19 +28,56 @@ export class ProdukController {
   // --- ENDPOINT BARU UNTUK UPLOAD MASSAL ---
   @Post('upload-massal')
   @UseInterceptors(FileInterceptor('file'))
-  uploadMassal(
+  async uploadMassal(
     @UploadedFile() file: Express.Multer.File,
     @Body('cabangId', ParseIntPipe) cabangId: number, // Ambil cabangId dari body form-data
     @Request() req,
   ) {
     const userId = req.user.id;
-    // Baca file buffer dari Excel
-    const workbook = xlsx.read(file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0]; // Ambil sheet pertama
-    const sheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(sheet); // Ubah sheet menjadi JSON
+    
+    try {
+      // Baca file buffer dari Excel menggunakan ExcelJS
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(file.buffer);
+      
+      // Ambil worksheet pertama
+      const worksheet = workbook.worksheets[0];
+      
+      if (!worksheet) {
+        throw new Error('Worksheet tidak ditemukan');
+      }
 
-    return this.produkService.createMany(data, cabangId, userId);
+      // Konversi worksheet menjadi array of objects
+      const data: any[] = [];
+      const headers: string[] = [];
+      
+      // Ambil headers dari baris pertama
+      worksheet.getRow(1).eachCell((cell, colNumber) => {
+        headers[colNumber - 1] = cell.value?.toString() || '';
+      });
+      
+      // Iterasi setiap baris mulai dari baris kedua
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) { // Skip header row
+          const rowData: any = {};
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              rowData[header] = cell.value;
+            }
+          });
+          
+          // Hanya tambahkan jika rowData tidak kosong
+          if (Object.keys(rowData).length > 0) {
+            data.push(rowData);
+          }
+        }
+      });
+
+      return this.produkService.createMany(data, cabangId, userId);
+    } catch (error) {
+      throw new Error(`Gagal memproses file Excel: ${error.message}`);
+    }
   }
 
   // Endpoint untuk upload foto (tidak berubah)
