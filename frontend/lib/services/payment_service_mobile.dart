@@ -27,8 +27,8 @@ class PaymentServiceMobile implements PaymentServiceInterface {
     if (!isSupported) return;
 
     try {
-      const midtransClientKey = "Mid-client-Pqcy5qa-KoOoRDpd";
-      
+      const midtransClientKey = 'Mid-client-Pqcy5qa-KoOoRDpd';
+
       _midtrans = await MidtransSDK.init(
         config: MidtransConfig(
           clientKey: midtransClientKey,
@@ -100,11 +100,11 @@ class PaymentServiceMobile implements PaymentServiceInterface {
         waitTime += 100;
       }
 
-      return result ?? PaymentResult(
-        isSuccess: false,
-        message: 'Timeout menunggu hasil pembayaran',
-      );
-
+      return result ??
+          PaymentResult(
+            isSuccess: false,
+            message: 'Timeout menunggu hasil pembayaran',
+          );
     } on DioError catch (e) {
       print('DioError: ${e.response?.data}');
       return PaymentResult(
