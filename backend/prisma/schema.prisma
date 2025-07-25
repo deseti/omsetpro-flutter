@@ -29,6 +29,7 @@ model User {
   loyaltyRule         LoyaltyRule?        @relation("OwnerLoyaltyRule")
   rewards             Reward[]            @relation("OwnerRewards")
   promos              Promo[]             // [BARU] Relasi ke Promo
+  akunToko            AkunToko?           @relation("OwnerAkunToko")
   // Relasi untuk hak akses sebagai kasir/admin
   aksesCabang         AksesCabang[]
   transaksiKasir      Transaksi[]         @relation("KasirBuatTransaksi")
@@ -209,4 +210,19 @@ model ProdukPromo {
 enum PromoTipe {
   PERCENTAGE // Diskon persen untuk produk tertentu
   NOMINAL    // Diskon nominal untuk produk tertentu
+}
+
+// ============== PENGATURAN AKUN TOKO ==============
+model AkunToko {
+  id             Int     @id @default(autoincrement())
+  ownerId        Int     @unique
+  owner          User    @relation("OwnerAkunToko", fields: [ownerId], references: [id], onDelete: Cascade)
+  nama           String
+  logoUrl        String?
+  alamat         String
+  telepon        String
+  email          String
+  kategoriBisnis String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

@@ -291,6 +291,16 @@ class ResponsiveBreakpoints {
     return MediaQuery.of(context).size.width >= largeDesktop;
   }
 
+  // Mobile-first responsive design
+  static bool isSmallMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 480;
+  }
+
+  static bool isMediumMobile(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width >= 480 && width < mobile;
+  }
+
   static double getResponsiveValue(
     BuildContext context, {
     required double mobile,

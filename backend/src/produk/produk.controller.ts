@@ -12,6 +12,7 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { ProdukService } from './produk.service';
 import { CreateProdukDto } from './dto/create-produk.dto';
@@ -101,9 +102,25 @@ export class ProdukController {
 
   // Endpoint untuk mengambil semua produk per cabang (tidak berubah)
   @Get()
-  findAllByCabang(@Query('cabangId', ParseIntPipe) cabangId: number, @Request() req) {
+  async findAllByCabang(@Query('cabangId') cabangIdRaw: string, @Request() req) {
     const userId = req.user.id;
-    return this.produkService.findAllByCabang(cabangId, userId);
+    console.log('🔍 GET /produk called with raw cabangId:', cabangIdRaw, 'userId:', userId);
+    
+    try {
+      // Validasi manual untuk cabangId
+      const cabangId = parseInt(cabangIdRaw);
+      if (isNaN(cabangId)) {
+        console.error('❌ Invalid cabangId format:', cabangIdRaw);
+        throw new BadRequestException('cabangId harus berupa angka yang valid');
+      }
+      
+      const produkList = await this.produkService.findAllByCabang(cabangId, userId);
+      console.log(`✅ Returning ${produkList.length} products`);
+      return produkList;
+    } catch (error) {
+      console.error('❌ Error in findAllByCabang controller:', error);
+      throw error;
+    }
   }
 
   // ENDPOINT BARU: Mengambil semua produk dari semua cabang milik owner

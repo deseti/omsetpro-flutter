@@ -112,13 +112,24 @@ export class ProdukService {
 
   // Fungsi mengambil semua produk per cabang (hanya yang tidak diarsip)
   async findAllByCabang(cabangId: number, userId: number) {
-    await this.verifyCabangAccess(cabangId, userId);
-    return this.prisma.produk.findMany({
-      where: {
-        cabangId,
-        isArsip: false, // hanya produk yang tidak diarsip
-      },
-    });
+    console.log('🔍 findAllByCabang called with:', { cabangId, userId });
+    
+    try {
+      await this.verifyCabangAccess(cabangId, userId);
+      
+      const produkList = await this.prisma.produk.findMany({
+        where: {
+          cabangId,
+          isArsip: false, // hanya produk yang tidak diarsip
+        },
+      });
+      
+      console.log(`✅ Found ${produkList.length} products for cabang ${cabangId}`);
+      return produkList;
+    } catch (error) {
+      console.error('❌ Error in findAllByCabang:', error);
+      throw error;
+    }
   }
 
   // FUNGSI BARU: Mengambil semua produk dari semua cabang milik owner

@@ -11,6 +11,8 @@ import { PelangganModule } from './pelanggan/pelanggan.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
 import { PromoModule } from './promo/promo.module';
 import { MidtransModule } from './midtrans/midtrans.module'; // <-- IMPORT MODUL BARU
+import { PengaturanModule } from './pengaturan/pengaturan.module'; // <-- IMPORT MODUL PENGATURAN
+import { DashboardModule } from './dashboard/dashboard.module'; // <-- IMPORT MODUL DASHBOARD
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { MidtransModule } from './midtrans/midtrans.module'; // <-- IMPORT MODUL
     LoyaltyModule,
     PromoModule,
     MidtransModule, // <-- DAFTARKAN DI SINI
+    PengaturanModule, // <-- DAFTARKAN MODUL PENGATURAN
+    DashboardModule, // <-- DAFTARKAN MODUL DASHBOARD
   ],
   controllers: [AppController],
   providers: [AppService],

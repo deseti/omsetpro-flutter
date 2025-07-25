@@ -15,8 +15,16 @@ export class PromoController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.promoService.findAll(req.user);
+  async findAll(@Request() req) {
+    console.log('🔍 GET /promo called by user:', req.user.id);
+    try {
+      const result = await this.promoService.findAll(req.user);
+      console.log(`✅ Returning ${result.length} promos`);
+      return result;
+    } catch (error) {
+      console.error('❌ Error in /promo:', error);
+      throw error;
+    }
   }
 
   @Get(':id')

@@ -105,11 +105,18 @@ final produkListWithOfflineProvider = FutureProvider.autoDispose
   // Check if running on web
   if (kIsWeb) {
     try {
+      print('🔍 Fetching produk for cabangId: $cabangId on web');
       final response =
           await dio.get('/produk', queryParameters: {'cabangId': cabangId});
+      print(
+          '✅ Successfully fetched ${(response.data as List).length} products');
       return response.data as List<dynamic>;
     } catch (e) {
-      print('Server error on web: $e');
+      print('❌ Server error on web: $e');
+      if (e is DioException) {
+        print(
+            '❌ DioException details: ${e.response?.statusCode} - ${e.response?.data}');
+      }
       return [];
     }
   }
@@ -184,11 +191,25 @@ final selectedPelangganProvider =
 final activePromosProvider =
     FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final dio = ref.watch(dioProvider);
-  final response = await dio.get('/promo');
-  final List<dynamic> allPromos = response.data;
+  try {
+    print('🔍 Fetching active promos...');
+    final response = await dio.get('/promo');
+    final List<dynamic> allPromos = response.data;
 
-  // Filter hanya promo yang aktif
-  return allPromos.where((promo) => promo['isActive'] == true).toList();
+    // Filter hanya promo yang aktif
+    final activePromos =
+        allPromos.where((promo) => promo['isActive'] == true).toList();
+    print('✅ Successfully fetched ${activePromos.length} active promos');
+    return activePromos;
+  } catch (e) {
+    print('❌ Error fetching promos: $e');
+    if (e is DioException) {
+      print(
+          '❌ Promo DioException details: ${e.response?.statusCode} - ${e.response?.data}');
+    }
+    // Return empty list instead of throwing error to avoid breaking kasir page
+    return <dynamic>[];
+  }
 });
 
 // [BARU] Provider untuk menyimpan promo yang dipilih di kasir

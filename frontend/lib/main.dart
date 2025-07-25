@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // Import
 import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'features/auth/auth_page.dart';
 import 'features/cabang/cabang_page.dart';
-import 'features/home/home_page.dart';
+import 'navigation/main_navigator.dart'; // Update import
 import 'providers/providers.dart';
 import 'features/produk/import_produk_page.dart'; // Import halaman import produk
 import 'features/tim/tim_page.dart'; // Import halaman tim
@@ -16,6 +16,7 @@ import 'services/offline_database_proxy.dart'
 import 'features/pelanggan/pelanggan_page.dart';
 import 'features/loyalty/loyalty_settings_page.dart'; // <-- IMPORT HALAMAN BARU
 import 'features/promo/promo_page.dart'; // <-- IMPORT HALAMAN BARU
+import 'features/pengaturan/pengaturan_akun_page.dart'; // <-- IMPORT HALAMAN PENGATURAN AKUN
 import 'theme/app_theme.dart'; // Import tema baru
 
 // Ubah fungsi main menjadi async
@@ -59,7 +60,7 @@ class OmsetProApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => const AuthChecker(),
-        '/home': (context) => const HomePage(),
+        '/home': (context) => const MainNavigator(),
         '/cabang': (context) => const CabangPage(),
         '/import-produk': (context) => const ImportProdukPage(),
         '/tim': (context) => const TimPage(),
@@ -67,6 +68,8 @@ class OmsetProApp extends StatelessWidget {
         '/pelanggan': (context) => const PelangganPage(),
         '/loyalty-settings': (context) => const LoyaltySettingsPage(),
         '/promo': (context) => const PromoPage(), // <-- DAFTARKAN RUTE BARU
+        '/pengaturan-akun': (context) =>
+            const PengaturanAkunPage(), // <-- RUTE PENGATURAN AKUN
       },
       initialRoute: '/',
     );
@@ -79,6 +82,6 @@ class AuthChecker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoggedIn = ref.watch(authStateProvider);
-    return isLoggedIn ? const HomePage() : const AuthPage();
+    return isLoggedIn ? const MainNavigator() : const AuthPage();
   }
 }

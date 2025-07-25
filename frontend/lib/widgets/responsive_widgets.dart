@@ -119,7 +119,8 @@ class ResponsiveGrid extends StatelessWidget {
           crossAxisSpacing: spacing,
           mainAxisSpacing: runSpacing,
           childAspectRatio: childAspectRatio ?? 1.0,
-          physics: physics,
+          physics: physics ?? const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
           children: children,
         );
       },
@@ -198,7 +199,10 @@ class ResponsiveCard extends StatelessWidget {
 
     if (onTap != null) {
       card = InkWell(
-        onTap: onTap,
+        onTap: () {
+          print('DEBUG: ResponsiveCard tapped');
+          onTap!();
+        },
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         child: card,
       );

@@ -40,11 +40,20 @@ export class StorageService {
         reject(err);
       });
 
-      blobStream.on('finish', () => {
-        const publicUrl = format(
-          `https://storage.googleapis.com/${bucket.name}/${blob.name}`,
-        );
-        resolve(publicUrl);
+      blobStream.on('finish', async () => {
+        try {
+          // Make the file public
+          await blob.makePublic();
+          console.log('✅ File made public successfully');
+          
+          const publicUrl = format(
+            `https://storage.googleapis.com/${bucket.name}/${blob.name}`,
+          );
+          resolve(publicUrl);
+        } catch (error) {
+          console.error('❌ Error making file public:', error);
+          reject(error);
+        }
       });
 
       blobStream.end(file.buffer);
