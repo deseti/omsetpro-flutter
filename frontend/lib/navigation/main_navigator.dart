@@ -131,51 +131,48 @@ class _MainNavigatorState extends ConsumerState<MainNavigator> {
                   ),
             ),
             const SizedBox(height: 16),
-            ...cabangTersedia
-                .map((cabang) => ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
+            ...cabangTersedia.map((cabang) => ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.store_rounded,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  title: Text(cabang['nama']),
+                  subtitle: Text(cabang['alamat']),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    if (mode == 'kasir') {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => KasirPage(
+                            cabangId: cabang['id'],
+                            cabangNama: cabang['nama'],
+                          ),
                         ),
-                        child: Icon(
-                          Icons.store_rounded,
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
+                      );
+                    } else {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ProdukPage(
+                            cabangId: cabang['id'],
+                            cabangNama: cabang['nama'],
+                          ),
                         ),
-                      ),
-                      title: Text(cabang['nama']),
-                      subtitle: Text(cabang['alamat']),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        if (mode == 'kasir') {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => KasirPage(
-                                cabangId: cabang['id'],
-                                cabangNama: cabang['nama'],
-                              ),
-                            ),
-                          );
-                        } else {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => ProdukPage(
-                                cabangId: cabang['id'],
-                                cabangNama: cabang['nama'],
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ))
-                .toList(),
+                      );
+                    }
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                )),
             const SizedBox(height: 20),
           ],
         ),
@@ -322,7 +319,7 @@ class _MainNavigatorState extends ConsumerState<MainNavigator> {
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(), // Disable swipe
-        children: [
+        children: const [
           HomePage(), // Index 0 - Beranda
           // Halaman lain bisa ditambahkan di sini jika perlu
         ],
