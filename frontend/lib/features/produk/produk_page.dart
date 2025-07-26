@@ -41,10 +41,31 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(bytes, filename: fileName),
       });
+
+      print('🔄 Uploading photo for product ID: $produkId');
       await dio.post('/produk/$produkId/upload-foto', data: formData);
+      print('✅ Photo upload successful!');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foto produk berhasil diunggah!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
       _refreshProduk();
     } catch (e) {
-      // Handle error
+      print('❌ Error uploading photo: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengunggah foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

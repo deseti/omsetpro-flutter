@@ -148,65 +148,82 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header dengan last updated info
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Dashboard Insights',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+              // Header dengan last updated info
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Dashboard Insights',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: isMobile ? 18 : null,
+                              ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-              ),
-              if (isLoading)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Text(
-                  'Update: ${_formatLastUpdated(insightData!['lastUpdated'])}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
                   ),
+                  const SizedBox(width: 8),
+                  if (isLoading)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Flexible(
+                      child: Text(
+                        'Update: ${_formatLastUpdated(insightData!['lastUpdated'])}',
+                        style: TextStyle(
+                          fontSize: isMobile ? 10 : 12,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: isMobile ? 16 : 24),
+
+              // Insight Cards Grid
+              _buildInsightCards(),
+              SizedBox(height: isMobile ? 16 : 24),
+
+              // Sales Comparison Chart
+              _buildSalesComparison(),
+              SizedBox(height: isMobile ? 16 : 24),
+
+              // Product Insights
+              ProductInsightCard(
+                productInsights: insightData!['productInsights'],
+              ),
+              SizedBox(height: isMobile ? 16 : 24),
+
+              // Trend Chart
+              TrendChart(
+                trendData: List<Map<String, dynamic>>.from(
+                  insightData!['trendData'],
                 ),
+              ),
+              SizedBox(height: isMobile ? 16 : 24),
+
+              // Profit Insights
+              _buildProfitInsights(),
             ],
           ),
-          const SizedBox(height: 24),
-
-          // Insight Cards Grid
-          _buildInsightCards(),
-          const SizedBox(height: 24),
-
-          // Sales Comparison Chart
-          _buildSalesComparison(),
-          const SizedBox(height: 24),
-
-          // Product Insights
-          ProductInsightCard(
-            productInsights: insightData!['productInsights'],
-          ),
-          const SizedBox(height: 24),
-
-          // Trend Chart
-          TrendChart(
-            trendData: List<Map<String, dynamic>>.from(
-              insightData!['trendData'],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Profit Insights
-          _buildProfitInsights(),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -215,27 +232,61 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
       insightData!['insights'],
     );
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 1.2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: insights.length,
-      itemBuilder: (context, index) {
-        final insight = insights[index];
-        return InsightCard(
-          title: insight['title'],
-          value: insight['value'].toString(),
-          trend: insight['trend'],
-          trendPercentage: insight['trendPercentage'].toDouble(),
-          description: insight['description'],
-          type: insight['type'],
-          icon: _getIconData(insight['icon']),
-        );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Determine if mobile layout
+        final isMobile = constraints.maxWidth < 600;
+
+        if (isMobile) {
+          // Mobile: Use ListView instead of GridView to prevent overflow
+          return Column(
+            children: insights.asMap().entries.map((entry) {
+              final index = entry.key;
+              final insight = entry.value;
+              return Container(
+                margin: EdgeInsets.only(
+                    bottom: index < insights.length - 1 ? 16 : 0),
+                child: SizedBox(
+                  height: 140, // Fixed height for mobile
+                  child: InsightCard(
+                    title: insight['title'],
+                    value: insight['value'].toString(),
+                    trend: insight['trend'],
+                    trendPercentage: insight['trendPercentage'].toDouble(),
+                    description: insight['description'],
+                    type: insight['type'],
+                    icon: _getIconData(insight['icon']),
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        } else {
+          // Desktop/Tablet: Use GridView as before
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: constraints.maxWidth > 900 ? 3 : 2,
+              childAspectRatio: 1.2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: insights.length,
+            itemBuilder: (context, index) {
+              final insight = insights[index];
+              return InsightCard(
+                title: insight['title'],
+                value: insight['value'].toString(),
+                trend: insight['trend'],
+                trendPercentage: insight['trendPercentage'].toDouble(),
+                description: insight['description'],
+                type: insight['type'],
+                icon: _getIconData(insight['icon']),
+              );
+            },
+          );
+        }
       },
     );
   }
@@ -254,77 +305,106 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
   Widget _buildProfitInsights() {
     final profitInsights = insightData!['profitInsights'];
 
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Analisa Keuntungan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+
+        return Card(
+          elevation: 2,
+          child: Padding(
+            padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _buildProfitMetric(
-                    'Keuntungan Periode Ini',
-                    _formatCurrency(profitInsights['currentProfit'].toDouble()),
-                    Colors.green,
+                Text(
+                  'Analisa Keuntungan',
+                  style: TextStyle(
+                    fontSize: isMobile ? 16 : 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildProfitMetric(
-                    'Margin Keuntungan',
-                    '${profitInsights['profitMargin'].toStringAsFixed(1)}%',
-                    Colors.blue,
+                SizedBox(height: isMobile ? 12 : 16),
+                if (isMobile)
+                  // Mobile: Stack vertically
+                  Column(
+                    children: [
+                      _buildProfitMetric(
+                        'Keuntungan Periode Ini',
+                        _formatCurrency(
+                            profitInsights['currentProfit'].toDouble()),
+                        Colors.green,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProfitMetric(
+                        'Margin Keuntungan',
+                        '${profitInsights['profitMargin'].toStringAsFixed(1)}%',
+                        Colors.blue,
+                      ),
+                    ],
+                  )
+                else
+                  // Desktop: Side by side
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildProfitMetric(
+                          'Keuntungan Periode Ini',
+                          _formatCurrency(
+                              profitInsights['currentProfit'].toDouble()),
+                          Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildProfitMetric(
+                          'Margin Keuntungan',
+                          '${profitInsights['profitMargin'].toStringAsFixed(1)}%',
+                          Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                SizedBox(height: isMobile ? 12 : 16),
+                Container(
+                  padding: EdgeInsets.all(isMobile ? 10 : 12),
+                  decoration: BoxDecoration(
+                    color: profitInsights['comparison']['trend'] == 'up'
+                        ? Colors.green.shade50
+                        : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        profitInsights['comparison']['trend'] == 'up'
+                            ? Icons.trending_up
+                            : Icons.trending_down,
+                        color: profitInsights['comparison']['trend'] == 'up'
+                            ? Colors.green
+                            : Colors.red,
+                        size: isMobile ? 20 : 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          profitInsights['comparison']['description'],
+                          style: TextStyle(
+                            fontSize: isMobile ? 14 : 16,
+                            fontWeight: FontWeight.w500,
+                            color: profitInsights['comparison']['trend'] == 'up'
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: profitInsights['comparison']['trend'] == 'up'
-                    ? Colors.green.shade50
-                    : Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    profitInsights['comparison']['trend'] == 'up'
-                        ? Icons.trending_up
-                        : Icons.trending_down,
-                    color: profitInsights['comparison']['trend'] == 'up'
-                        ? Colors.green
-                        : Colors.red,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      profitInsights['comparison']['description'],
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: profitInsights['comparison']['trend'] == 'up'
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

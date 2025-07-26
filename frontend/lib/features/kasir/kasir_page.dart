@@ -198,7 +198,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       children: [
         // Product Grid sebagai tab atau section atas
         Expanded(
-          flex: 2,
+          flex: 3, // Increased from 2 to give more space to products
           child: ProductGridWidget(
             cabangId: widget.cabangId,
             searchController: _searchController,
@@ -206,24 +206,26 @@ class _KasirPageState extends ConsumerState<KasirPage> {
           ),
         ),
         // Cart Section sebagai bottom sheet atau section bawah
-        Container(
-          height: 200, // Fixed height untuk cart
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              top: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                width: 1,
+        Expanded(
+          flex: 2, // Use flex instead of fixed height to be more responsive
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
             ),
-          ),
-          child: CartSectionWidget(
-            onCashPayment: () =>
-                _processTransaction(cart: cart, totalHarga: totalHarga),
-            onDigitalPayment: () =>
-                _processDigitalTransaction(cart: cart, totalHarga: totalHarga),
-            onManualPayment: (paymentType) =>
-                _processManualDigitalPayment(cart, totalHarga, paymentType),
+            child: CartSectionWidget(
+              onCashPayment: () =>
+                  _processTransaction(cart: cart, totalHarga: totalHarga),
+              onDigitalPayment: () => _processDigitalTransaction(
+                  cart: cart, totalHarga: totalHarga),
+              onManualPayment: (paymentType) =>
+                  _processManualDigitalPayment(cart, totalHarga, paymentType),
+            ),
           ),
         ),
       ],

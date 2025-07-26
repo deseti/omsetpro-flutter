@@ -29,30 +29,42 @@ export class StorageService {
    */
   async uploadFile(file: Express.Multer.File): Promise<string> {
     const bucket = this.storage.bucket(this.bucketName);
-    const blob = bucket.file(`${Date.now()}-${file.originalname}`);
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const blob = bucket.file(fileName);
     
     const blobStream = blob.createWriteStream({
       resumable: false,
+      metadata: {
+        contentType: file.mimetype,
+        cacheControl: 'public, max-age=31536000',
+      },
     });
 
     return new Promise((resolve, reject) => {
       blobStream.on('error', (err) => {
-        reject(err);
+        console.error('❌ Error uploading file:', err);
+        reject(new InternalServerErrorException('Gagal mengunggah file ke storage'));
       });
 
       blobStream.on('finish', async () => {
         try {
-          // Make the file public
-          await blob.makePublic();
-          console.log('✅ File made public successfully');
+          console.log('📁 File uploaded successfully to GCS');
           
-          const publicUrl = format(
-            `https://storage.googleapis.com/${bucket.name}/${blob.name}`,
-          );
+          // Coba membuat file public
+          try {
+            await blob.makePublic();
+            console.log('✅ File made public successfully');
+          } catch (publicError) {
+            console.log('⚠️ Cannot make file public (likely uniform bucket-level access):', publicError.message);
+            // Lanjutkan dengan URL public (asumsi bucket sudah dikonfigurasi public)
+          }
+          
+          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+          console.log('✅ Upload completed! Public URL:', publicUrl);
           resolve(publicUrl);
         } catch (error) {
-          console.error('❌ Error making file public:', error);
-          reject(error);
+          console.error('❌ Error processing uploaded file:', error);
+          reject(new InternalServerErrorException('Gagal memproses file yang diunggah'));
         }
       });
 

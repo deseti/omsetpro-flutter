@@ -38,8 +38,8 @@ export class DashboardService {
       // Hitung transaksi hari ini
       const transaksiHariIni = await this.prisma.transaksi.count({
         where: {
-          kasir: {
-            dikelolaOlehId: ownerId,
+          cabang: {
+            ownerId: ownerId,
           },
           createdAt: {
             gte: today,
@@ -54,8 +54,8 @@ export class DashboardService {
           total: true,
         },
         where: {
-          kasir: {
-            dikelolaOlehId: ownerId,
+          cabang: {
+            ownerId: ownerId,
           },
           createdAt: {
             gte: today,
@@ -73,8 +73,8 @@ export class DashboardService {
         },
         where: {
           transaksi: {
-            kasir: {
-              dikelolaOlehId: ownerId,
+            cabang: {
+              ownerId: ownerId,
             },
             createdAt: {
               gte: today,

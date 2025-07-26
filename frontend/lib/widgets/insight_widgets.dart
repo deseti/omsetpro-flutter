@@ -24,26 +24,26 @@ class InsightCard extends StatelessWidget {
   Color get _cardColor {
     switch (type) {
       case 'success':
-        return Colors.green.shade50;
+        return Colors.green.shade100;
       case 'warning':
-        return Colors.orange.shade50;
+        return Colors.orange.shade100;
       case 'danger':
-        return Colors.red.shade50;
+        return Colors.red.shade100;
       default:
-        return Colors.blue.shade50;
+        return Colors.blue.shade100;
     }
   }
 
   Color get _iconColor {
     switch (type) {
       case 'success':
-        return Colors.green;
+        return Colors.green.shade800;
       case 'warning':
-        return Colors.orange;
+        return Colors.orange.shade800;
       case 'danger':
-        return Colors.red;
+        return Colors.red.shade800;
       default:
-        return Colors.blue;
+        return Colors.blue.shade800;
     }
   }
 
@@ -61,23 +61,32 @@ class InsightCard extends StatelessWidget {
   Color get _trendColor {
     switch (trend) {
       case 'up':
-        return Colors.green;
+        return Colors.green.shade700;
       case 'down':
-        return Colors.red;
+        return Colors.red.shade700;
       default:
-        return Colors.grey;
+        return Colors.grey.shade700;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      elevation: 4,
       color: _cardColor,
-      child: Padding(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: _iconColor.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -89,11 +98,13 @@ class InsightCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
+                color: _iconColor,
+                fontWeight: FontWeight.w600,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
@@ -101,19 +112,24 @@ class InsightCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 Icon(_trendIcon, color: _trendColor, size: 16),
                 const SizedBox(width: 4),
-                Text(
-                  '${trendPercentage.toStringAsFixed(1)}%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _trendColor,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  child: Text(
+                    '${trendPercentage.toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _trendColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -121,9 +137,10 @@ class InsightCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               description,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -152,7 +169,14 @@ class SalesComparisonChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Colors.blue.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -163,6 +187,7 @@ class SalesComparisonChart extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 16),
@@ -171,13 +196,14 @@ class SalesComparisonChart extends StatelessWidget {
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
+                  backgroundColor: Colors.grey.shade50,
                   barGroups: [
                     BarChartGroupData(
                       x: 0,
                       barRods: [
                         BarChartRodData(
                           toY: previousValue,
-                          color: Colors.grey,
+                          color: Colors.grey.shade600,
                           width: 40,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(4),
@@ -191,7 +217,7 @@ class SalesComparisonChart extends StatelessWidget {
                       barRods: [
                         BarChartRodData(
                           toY: currentValue,
-                          color: Colors.blue,
+                          color: Colors.blue.shade700,
                           width: 40,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(4),
@@ -270,7 +296,14 @@ class TrendChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Colors.blue.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -281,6 +314,7 @@ class TrendChart extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 16),
@@ -288,6 +322,7 @@ class TrendChart extends StatelessWidget {
               height: 200,
               child: LineChart(
                 LineChartData(
+                  backgroundColor: Colors.grey.shade50,
                   lineBarsData: [
                     LineChartBarData(
                       spots: trendData.asMap().entries.map((entry) {
@@ -297,12 +332,22 @@ class TrendChart extends StatelessWidget {
                         );
                       }).toList(),
                       isCurved: true,
-                      color: Colors.blue,
+                      color: Colors.blue.shade700,
                       barWidth: 3,
-                      dotData: const FlDotData(show: true),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: Colors.blue.shade700,
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          );
+                        },
+                      ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withOpacity(0.2),
                       ),
                     ),
                   ],
