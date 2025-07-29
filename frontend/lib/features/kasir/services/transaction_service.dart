@@ -7,6 +7,7 @@ import '../../../services/offline_database_proxy.dart' as OfflineDatabase;
 import '../../../services/connectivity_service.dart';
 import '../../../services/receipt_service.dart';
 import '../../../services/midtrans_service.dart';
+import '../../../services/payment_service_interface.dart';
 import '../../../widgets/receipt_preview_dialog.dart';
 import '../../../utils/laporan_refresh_helper.dart';
 
@@ -19,7 +20,7 @@ class TransactionService {
     required List<Map<String, dynamic>> cart,
     required int totalHarga,
     bool isDigitalPayment = false,
-    String? paymentMethod,
+    String? paymentMethod, // Ini akan berisi 'QRIS', 'Transfer Bank', dll.
     String? orderId,
   }) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -28,6 +29,16 @@ class TransactionService {
     try {
       final dio = ref.read(AppProviders.dioProvider);
       final isConnected = await ConnectivityService.isConnected();
+
+      // [MODIFIKASI] Logika penentuan metode bayar yang lebih lugas
+      final String metodeBayarUntukStruk;
+      if (paymentMethod != null && paymentMethod.isNotEmpty) {
+        metodeBayarUntukStruk = paymentMethod;
+      } else if (isDigitalPayment) {
+        metodeBayarUntukStruk = 'Digital';
+      } else {
+        metodeBayarUntukStruk = 'Tunai';
+      }
 
       final itemsDto = cart
           .map((item) => {
@@ -38,8 +49,7 @@ class TransactionService {
 
       final requestData = {
         'cabangId': cabangId,
-        'metodeBayar':
-            isDigitalPayment ? (paymentMethod ?? 'Digital') : 'Tunai',
+        'metodeBayar': metodeBayarUntukStruk, // Gunakan variabel yang sudah pasti
         'items': itemsDto,
         'pelangganId': selectedPelanggan?.id,
         'orderId': orderId,
@@ -48,28 +58,28 @@ class TransactionService {
 
       if (isConnected) {
         await _processOnlineTransaction(
-          context,
-          ref,
-          dio,
-          requestData,
-          cart,
-          totalHarga,
-          cabangId,
-          cabangNama,
-          scaffoldMessenger,
-        );
+            context,
+            ref,
+            dio,
+            requestData,
+            cart,
+            totalHarga,
+            cabangId,
+            cabangNama,
+            scaffoldMessenger,
+            metodeBayarUntukStruk // Kirim metode bayar ke struk
+            );
       } else {
         await _processOfflineTransaction(
-          context,
-          ref,
-          cabangId,
-          cabangNama,
-          cart,
-          totalHarga,
-          isDigitalPayment,
-          paymentMethod,
-          scaffoldMessenger,
-        );
+            context,
+            ref,
+            cabangId,
+            cabangNama,
+            cart,
+            totalHarga,
+            scaffoldMessenger,
+            metodeBayarUntukStruk // Kirim metode bayar ke struk
+            );
       }
 
       _clearCartAndRefresh(ref, cabangId);
@@ -101,6 +111,7 @@ class TransactionService {
     int cabangId,
     String cabangNama,
     ScaffoldMessengerState scaffoldMessenger,
+    String metodeBayar, // [BARU] Terima metode bayar
   ) async {
     final response = await dio.post('/transaksi', data: requestData);
     final transaksiId =
@@ -120,6 +131,7 @@ class TransactionService {
       totalHarga: totalHarga,
       transaksiId: transaksiId,
       cabangNama: cabangNama,
+      metodeBayar: metodeBayar, // [BARU] Kirim ke struk
     );
 
     LaporanRefreshHelper.refreshLaporanAfterTransaction(ref);
@@ -132,15 +144,14 @@ class TransactionService {
     String cabangNama,
     List<Map<String, dynamic>> cart,
     int totalHarga,
-    bool isDigitalPayment,
-    String? paymentMethod,
     ScaffoldMessengerState scaffoldMessenger,
+    String metodeBayar, // [BARU] Terima metode bayar
   ) async {
     final transaksiId = DateTime.now().millisecondsSinceEpoch;
 
     await OfflineDatabase.OfflineDatabase.saveTransaksiOffline(
       cabangId: cabangId,
-      metodeBayar: isDigitalPayment ? (paymentMethod ?? 'Digital') : 'Tunai',
+      metodeBayar: metodeBayar,
       totalHarga: totalHarga,
       items: cart
           .map((item) => {
@@ -168,17 +179,16 @@ class TransactionService {
       totalHarga: totalHarga,
       transaksiId: transaksiId,
       cabangNama: cabangNama,
+      metodeBayar: metodeBayar, // [BARU] Kirim ke struk
     );
   }
 
-  static Future<void> processDigitalTransaction({
+  static Future<PaymentResult> processDigitalTransaction({
     required BuildContext context,
     required WidgetRef ref,
-    required int cabangId,
     required List<Map<String, dynamic>> cart,
     required int totalHarga,
   }) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final midtransService = ref.read(midtransServiceProvider);
     final selectedPelanggan = ref.read(AppProviders.selectedPelangganProvider);
 
@@ -199,31 +209,17 @@ class TransactionService {
     };
 
     try {
-      await midtransService.startPayment(
+      final paymentResult = await midtransService.startPayment(
         totalAmount: totalHarga,
         items: itemDetails,
         customerDetails: customerDetails,
       );
-
-      _clearCartAndRefresh(ref, cabangId);
+      return paymentResult;
     } catch (e) {
-      if (context.mounted) {
-        String errorMessage = e.toString();
-
-        if (e.toString().contains('web')) {
-          errorMessage =
-              'Pembayaran digital hanya tersedia di aplikasi mobile. '
-              'Silakan gunakan metode pembayaran tunai atau buka aplikasi di perangkat mobile.';
-        }
-
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Error memulai pembayaran: $errorMessage'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
+      return PaymentResult(
+        isSuccess: false,
+        message: 'Error memulai pembayaran: ${e.toString()}',
+      );
     }
   }
 
@@ -236,37 +232,20 @@ class TransactionService {
     required int totalHarga,
     required String paymentType,
   }) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    try {
-      final orderId = 'MANUAL-${DateTime.now().millisecondsSinceEpoch}';
-
-      await processTransaction(
-        context: context,
-        ref: ref,
-        cabangId: cabangId,
-        cabangNama: cabangNama,
-        cart: cart,
-        totalHarga: totalHarga,
-        isDigitalPayment: true,
-        paymentMethod: paymentType,
-        orderId: orderId,
-      );
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text('Pembayaran $paymentType berhasil dicatat'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    // Untuk pembayaran manual, kita langsung proses transaksinya
+    // karena kita tidak perlu menunggu konfirmasi dari payment gateway.
+    // Kita anggap pembayaran sudah diterima secara manual oleh kasir.
+    await processTransaction(
+      context: context,
+      ref: ref,
+      cabangId: cabangId,
+      cabangNama: cabangNama,
+      cart: cart,
+      totalHarga: totalHarga,
+      isDigitalPayment: true,
+      paymentMethod: paymentType, // Ini akan berisi "QRIS", "Transfer Bank", dll.
+      orderId: 'MANUAL-${DateTime.now().millisecondsSinceEpoch}',
+    );
   }
 
   static void _showReceiptPreview({
@@ -276,6 +255,7 @@ class TransactionService {
     required int totalHarga,
     required int transaksiId,
     required String cabangNama,
+    required String metodeBayar, // [BARU] Terima parameter ini
   }) {
     final user = ref.read(AppProviders.userProfileProvider);
     final namaKasir = user?['namaLengkap'] ?? 'Kasir';
@@ -297,6 +277,7 @@ class TransactionService {
       items: items,
       subtotal: totalHarga,
       totalHarga: totalHarga,
+      metodeBayar: metodeBayar, // [BARU] Kirim ke service struk
     );
 
     ReceiptPreviewDialog.show(

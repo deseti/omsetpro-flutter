@@ -6,12 +6,34 @@ export class MidtransController {
   constructor(private readonly midtransService: MidtransService) {}
 
   /**
-   * Endpoint untuk membuat token transaksi Snap.
-   * Nanti akan dipanggil dari aplikasi Flutter sebelum menampilkan halaman pembayaran.
+   * Endpoint lama, untuk membuat token transaksi Snap.
+   * Dipakai oleh mobile.
    */
   @Post('create-transaction')
-  async createTransaction(@Body() body: { orderId: string; totalAmount: number }) {
-    return this.midtransService.createSnapTransaction(body.orderId, body.totalAmount);
+  async createTransaction(
+    @Body() body: { orderId: string; totalAmount: number },
+  ) {
+    return this.midtransService.createSnapTransaction(
+      body.orderId,
+      body.totalAmount,
+    );
+  }
+
+  /**
+   * [ENDPOINT BARU] Endpoint khusus untuk membuat Snap URL untuk web.
+   * Menerima detail yang lebih lengkap dari frontend web.
+   */
+  @Post('create-snap-url')
+  async createSnapUrlForWeb(
+    @Body()
+    body: {
+      orderId: string;
+      totalAmount: number;
+      items: any[];
+      customerDetails: any;
+    },
+  ) {
+    return this.midtransService.createSnapUrlForWeb(body);
   }
 
   /**

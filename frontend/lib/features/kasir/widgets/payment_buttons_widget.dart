@@ -84,10 +84,14 @@ class PaymentButtonsWidget extends ConsumerWidget {
         return FilledButton.tonal(
           onPressed: cart.isEmpty
               ? null
+              // [MODIFIKASI] Panggil dialog yang sudah diperbarui dengan DUA fungsi
               : () => ManualPaymentDialog.show(
                     context,
                     totalHarga: totalHarga,
-                    onPaymentSelected: onManualPayment,
+                    // Sambungkan ke fungsi pencatatan manual
+                    onManualPaymentSelected: onManualPayment,
+                    // Sambungkan ke fungsi yang memunculkan QRIS
+                    onDigitalPaymentInitiated: onDigitalPayment,
                   ),
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
@@ -97,7 +101,8 @@ class PaymentButtonsWidget extends ConsumerWidget {
             children: [
               Icon(Icons.credit_card),
               SizedBox(width: AppTheme.spaceSM),
-              Text('Input Pembayaran Manual'),
+              // [MODIFIKASI] Ganti nama tombol agar lebih jelas
+              Text('Input Pembayaran Digital'),
             ],
           ),
         );

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../providers/providers.dart' as AppProviders;
 import '../../services/sync_service.dart';
-import '../../services/midtrans_service.dart';
 import '../../widgets/responsive_widgets.dart';
 import '../../theme/app_theme.dart';
 import './widgets/product_grid_widget.dart';
@@ -73,17 +72,48 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     );
   }
 
-  void _processDigitalTransaction({
+  // [MODIFIKASI FINAL] Mengubah alur fungsi ini
+  Future<void> _processDigitalTransaction({
     required List<Map<String, dynamic>> cart,
     required int totalHarga,
-  }) {
-    TransactionService.processDigitalTransaction(
+  }) async {
+    // 1. Panggil service untuk memulai pembayaran dan tunggu hasilnya
+    final paymentResult = await TransactionService.processDigitalTransaction(
       context: context,
       ref: ref,
-      cabangId: widget.cabangId,
       cart: cart,
       totalHarga: totalHarga,
     );
+
+    // 2. Periksa hasilnya
+    if (paymentResult.isSuccess) {
+      // 3. JIKA SUKSES (halaman bayar terbuka), JANGAN BUAT STRUK.
+      //    Cukup bersihkan keranjang dan beri notifikasi ke kasir.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(paymentResult.message ??
+                'Halaman pembayaran dibuka. Selesaikan pembayaran di sana.'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+
+        // Langsung bersihkan keranjang agar kasir bisa lanjut ke transaksi berikutnya.
+        // Transaksi akan dicatat oleh backend setelah ada konfirmasi dari Midtrans (via webhook).
+        CartHelper.clearCart(ref);
+      }
+    } else {
+      // 4. JIKA GAGAL, tampilkan pesan error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                paymentResult.message ?? 'Gagal memulai pembayaran digital.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _processManualDigitalPayment(
@@ -196,18 +226,16 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   Widget _buildMobileLayout(List<Map<String, dynamic>> cart, int totalHarga) {
     return Column(
       children: [
-        // Product Grid sebagai tab atau section atas
         Expanded(
-          flex: 3, // Increased from 2 to give more space to products
+          flex: 3,
           child: ProductGridWidget(
             cabangId: widget.cabangId,
             searchController: _searchController,
             searchQuery: _searchQuery,
           ),
         ),
-        // Cart Section sebagai bottom sheet atau section bawah
         Expanded(
-          flex: 2, // Use flex instead of fixed height to be more responsive
+          flex: 2,
           child: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
@@ -230,13 +258,5 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         ),
       ],
     );
-  }
-
-  String _formatCurrency(int amount) {
-    // Format mata uang sesuai kebutuhan Anda
-    return 'Rp ${amount.toString().replaceAllMapped(
-          RegExp(r'(\d+)(\d{3})'),
-          (Match m) => '${m[1]}.${m[2]}',
-        )}';
   }
 }

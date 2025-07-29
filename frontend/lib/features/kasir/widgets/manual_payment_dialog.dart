@@ -3,24 +3,29 @@ import '../../../utils/currency_formatter.dart';
 
 class ManualPaymentDialog extends StatelessWidget {
   final int totalHarga;
-  final Function(String paymentType) onPaymentSelected;
+  final Function(String paymentType) onManualPaymentSelected;
+  // [BARU] Tambahkan callback baru untuk pembayaran digital sungguhan
+  final VoidCallback onDigitalPaymentInitiated;
 
   const ManualPaymentDialog({
     super.key,
     required this.totalHarga,
-    required this.onPaymentSelected,
+    required this.onManualPaymentSelected,
+    required this.onDigitalPaymentInitiated, // [BARU]
   });
 
   static void show(
     BuildContext context, {
     required int totalHarga,
-    required Function(String paymentType) onPaymentSelected,
+    required Function(String paymentType) onManualPaymentSelected,
+    required VoidCallback onDigitalPaymentInitiated, // [BARU]
   }) {
     showDialog(
       context: context,
       builder: (context) => ManualPaymentDialog(
         totalHarga: totalHarga,
-        onPaymentSelected: onPaymentSelected,
+        onManualPaymentSelected: onManualPaymentSelected,
+        onDigitalPaymentInitiated: onDigitalPaymentInitiated, // [BARU]
       ),
     );
   }
@@ -28,7 +33,7 @@ class ManualPaymentDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Pembayaran Manual'),
+      title: const Text('Pilih Pembayaran'), // Judul diubah agar lebih umum
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,26 +45,30 @@ class ManualPaymentDialog extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          _buildPaymentOption(
-            context,
-            icon: Icons.credit_card,
-            title: 'Transfer Bank',
-            subtitle: 'Catat sebagai pembayaran digital',
-            paymentType: 'transfer',
-          ),
+
+          // [MODIFIKASI] Opsi ini sekarang memanggil fungsi yang berbeda
           _buildPaymentOption(
             context,
             icon: Icons.qr_code,
-            title: 'QRIS',
-            subtitle: 'Pembayaran melalui QRIS',
-            paymentType: 'qris',
+            title: 'QRIS & E-Wallet',
+            subtitle: 'Buat pembayaran via Midtrans',
+            onTapAction: () {
+              Navigator.of(context).pop();
+              onDigitalPaymentInitiated(); // Panggil fungsi untuk memunculkan QRIS
+            },
           ),
+
+          // [MODIFIKASI] Opsi ini tetap sebagai pencatatan manual
           _buildPaymentOption(
             context,
-            icon: Icons.account_balance_wallet,
-            title: 'E-Wallet',
-            subtitle: 'GoPay, OVO, DANA, dll',
-            paymentType: 'ewallet',
+            icon: Icons.credit_card,
+            title: 'Transfer Bank (Manual)',
+            subtitle: 'Catat sebagai lunas via transfer',
+            onTapAction: () {
+              Navigator.of(context).pop();
+              // 'transfer' adalah nama metode bayar yang akan disimpan
+              onManualPaymentSelected('Transfer Bank');
+            },
           ),
         ],
       ),
@@ -77,16 +86,13 @@ class ManualPaymentDialog extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    required String paymentType,
+    required VoidCallback onTapAction, // [MODIFIKASI] Gunakan callback umum
   }) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
       subtitle: Text(subtitle),
-      onTap: () {
-        Navigator.of(context).pop();
-        onPaymentSelected(paymentType);
-      },
+      onTap: onTapAction, // Gunakan action yang sudah ditentukan
     );
   }
 }
