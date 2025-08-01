@@ -214,6 +214,16 @@ class _MainNavigatorState extends ConsumerState<MainNavigator> {
             const SizedBox(height: 16),
             _buildMenuTile(
               context,
+              icon: Icons.receipt_long_rounded,
+              title: 'Riwayat Transaksi',
+              subtitle: 'Lihat histori transaksi',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/riwayat-transaksi');
+              },
+            ),
+            _buildMenuTile(
+              context,
               icon: Icons.analytics_rounded,
               title: 'Laporan',
               subtitle: 'Analisis bisnis dan performa',

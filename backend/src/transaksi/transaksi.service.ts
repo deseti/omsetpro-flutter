@@ -203,4 +203,126 @@ export class TransaksiService {
       return transaksi;
     });
   }
+
+  async getRiwayatTransaksi(params: {
+    cabangId?: number;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    offset?: number;
+    userId: number;
+  }) {
+    const { cabangId, startDate, endDate, limit = 20, offset = 0, userId } = params;
+
+    // Verifikasi akses user
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    
+    if (!user) {
+      throw new NotFoundException('User tidak ditemukan');
+    }
+
+    // Build where clause
+    const whereClause: any = {};
+
+    // Filter cabang berdasarkan role
+    if (user.role === 'OWNER') {
+      // Owner hanya bisa melihat transaksi di cabang miliknya
+      const cabangFilter: any = { ownerId: userId };
+      if (cabangId) {
+        cabangFilter.id = cabangId;
+      }
+      whereClause.cabang = cabangFilter;
+    } else {
+      // ADMIN/KASIR hanya bisa melihat transaksi di cabang yang bisa diakses
+      const aksesQuery = {
+        userId: userId,
+        ...(cabangId && { cabangId }),
+      };
+      
+      const aksesCabang = await this.prisma.aksesCabang.findMany({
+        where: aksesQuery,
+        select: { cabangId: true },
+      });
+      
+      if (aksesCabang.length === 0) {
+        throw new ForbiddenException('Anda tidak memiliki akses ke cabang manapun');
+      }
+      
+      const cabangIds = aksesCabang.map(akses => akses.cabangId);
+      whereClause.cabangId = { in: cabangIds };
+    }
+
+    // Filter tanggal
+    if (startDate || endDate) {
+      whereClause.createdAt = {};
+      if (startDate) {
+        whereClause.createdAt.gte = startDate;
+      }
+      if (endDate) {
+        // Tambahkan 1 hari ke endDate untuk include seluruh hari
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        whereClause.createdAt.lte = endOfDay;
+      }
+    }
+
+    // Get total count untuk pagination
+    const total = await this.prisma.transaksi.count({
+      where: whereClause,
+    });
+
+    // Get transaksi dengan detail
+    const transaksi = await this.prisma.transaksi.findMany({
+      where: whereClause,
+      include: {
+        detail: {
+          include: {
+            produk: {
+              select: {
+                id: true,
+                nama: true,
+                fotoUrl: true,
+              },
+            },
+          },
+        },
+        kasir: {
+          select: {
+            id: true,
+            namaLengkap: true,
+          },
+        },
+        cabang: {
+          select: {
+            id: true,
+            nama: true,
+          },
+        },
+        pelanggan: {
+          select: {
+            id: true,
+            nama: true,
+            noHp: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit,
+      skip: offset,
+    });
+
+    return {
+      data: transaksi,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    };
+  }
 }

@@ -17,6 +17,7 @@ import 'features/pelanggan/pelanggan_page.dart';
 import 'features/loyalty/loyalty_settings_page.dart'; // <-- IMPORT HALAMAN BARU
 import 'features/promo/promo_page.dart'; // <-- IMPORT HALAMAN BARU
 import 'features/pengaturan/pengaturan_akun_page.dart'; // <-- IMPORT HALAMAN PENGATURAN AKUN
+import 'features/riwayat/riwayat_transaksi_page.dart'; // <-- IMPORT HALAMAN RIWAYAT TRANSAKSI
 import 'theme/app_theme.dart'; // Import tema baru
 
 // Ubah fungsi main menjadi async
@@ -68,6 +69,7 @@ class OmsetProApp extends StatelessWidget {
         '/pelanggan': (context) => const PelangganPage(),
         '/loyalty-settings': (context) => const LoyaltySettingsPage(),
         '/promo': (context) => const PromoPage(), // <-- DAFTARKAN RUTE BARU
+        '/riwayat-transaksi': (context) => const RiwayatTransaksiPage(), // <-- RUTE RIWAYAT TRANSAKSI
         '/pengaturan-akun': (context) =>
             const PengaturanAkunPage(), // <-- RUTE PENGATURAN AKUN
       },
