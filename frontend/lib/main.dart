@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import
 import 'package:flutter/foundation.dart'; // For kIsWeb
+import 'package:intl/date_symbol_data_local.dart'; // Import untuk locale data
 import 'features/auth/auth_page.dart';
 import 'features/cabang/cabang_page.dart';
 import 'navigation/main_navigator.dart'; // Update import
@@ -24,6 +25,14 @@ import 'theme/app_theme.dart'; // Import tema baru
 Future<void> main() async {
   // Pastikan semua binding Flutter sudah siap sebelum menjalankan kode async
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi locale data untuk mencegah LocaleDataException
+  try {
+    await initializeDateFormatting('id_ID', null);
+  } catch (e) {
+    // Fallback jika locale id_ID tidak tersedia
+    print('Warning: Failed to initialize id_ID locale, using default');
+  }
 
   // Inisialisasi database offline hanya untuk mobile
   if (!kIsWeb) {

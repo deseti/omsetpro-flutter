@@ -119,8 +119,10 @@ class PromoPage extends ConsumerWidget {
                                     child: Text(value.name),
                                   );
                                 }).toList(),
-                                onChanged: (newValue) {
-                                  setState(() => tipe = newValue);
+                                onChanged: (PromoTipe? newValue) {
+                                  setState(() {
+                                    tipe = newValue;
+                                  });
                                 },
                                 validator: (value) => value == null
                                     ? 'Tipe promo tidak boleh kosong'
@@ -137,30 +139,36 @@ class PromoPage extends ConsumerWidget {
                                 ? 'Nilai tidak boleh kosong'
                                 : null,
                           ),
-                          MultiSelectFormField(
-                            title: const Text('Produk Berlaku'),
-                            dataSource: produkList
-                                .map((p) => {
-                                      'display': '${p.nama} (${p.cabangNama})',
-                                      'value': p.id
-                                    })
-                                .toList(),
-                            textField: 'display',
-                            valueField: 'value',
-                            okButtonLabel: 'OK',
-                            cancelButtonLabel: 'BATAL',
-                            hintWidget:
-                                const Text('Pilih satu atau lebih produk'),
-                            initialValue: selectedProdukIds,
-                            onSaved: (value) {
-                              // [PERBAIKAN] Mengatasi nilai null dengan aman
-                              selectedProdukIds = value ?? [];
-                            },
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Harap pilih setidaknya satu produk';
-                              }
-                              return null;
+                          StatefulBuilder(
+                            builder: (BuildContext context, StateSetter setState) {
+                              return MultiSelectFormField(
+                                title: const Text('Produk Berlaku'),
+                                dataSource: produkList
+                                    .map((p) => {
+                                          'display': '${p.nama} (${p.cabangNama})',
+                                          'value': p.id
+                                        })
+                                    .toList(),
+                                textField: 'display',
+                                valueField: 'value',
+                                okButtonLabel: 'OK',
+                                cancelButtonLabel: 'BATAL',
+                                hintWidget:
+                                    const Text('Pilih satu atau lebih produk'),
+                                initialValue: selectedProdukIds,
+                                onSaved: (value) {
+                                  // [PERBAIKAN] Mengatasi nilai null dengan aman
+                                  setState(() {
+                                    selectedProdukIds = value ?? [];
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Harap pilih setidaknya satu produk';
+                                  }
+                                  return null;
+                                },
+                              );
                             },
                           ),
                         ],

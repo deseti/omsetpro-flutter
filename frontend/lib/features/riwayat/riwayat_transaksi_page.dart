@@ -262,7 +262,6 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
 
   Widget _buildTransaksiCard(RiwayatTransaksi transaksi, {bool dark = false}) {
     final formatter = NumberFormat.currency(
-      locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
     );
@@ -450,7 +449,6 @@ class _TransaksiDetailDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat.currency(
-      locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
     );
@@ -491,7 +489,7 @@ class _TransaksiDetailDialog extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(transaksi.createdAt),
+                          DateFormat('dd MMMM yyyy, HH:mm').format(transaksi.createdAt),
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
