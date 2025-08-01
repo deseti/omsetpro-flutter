@@ -54,9 +54,6 @@ dependencies:
   # Ikon bawaan gaya iOS
   cupertino_icons: ^1.0.8
 
-  # Untuk multiselect widget yang lebih baik
-  multiselect_formfield: ^0.1.7
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

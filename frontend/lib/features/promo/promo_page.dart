@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/promo_provider.dart';
 import '../../providers/providers.dart';
-import 'package:multiselect_formfield/multiselect_formfield.dart';
 
 class PromoPage extends ConsumerWidget {
   const PromoPage({super.key});
@@ -141,33 +140,103 @@ class PromoPage extends ConsumerWidget {
                           ),
                           StatefulBuilder(
                             builder: (BuildContext context, StateSetter setState) {
-                              return MultiSelectFormField(
-                                title: const Text('Produk Berlaku'),
-                                dataSource: produkList
-                                    .map((p) => {
-                                          'display': '${p.nama} (${p.cabangNama})',
-                                          'value': p.id
-                                        })
-                                    .toList(),
-                                textField: 'display',
-                                valueField: 'value',
-                                okButtonLabel: 'OK',
-                                cancelButtonLabel: 'BATAL',
-                                hintWidget:
-                                    const Text('Pilih satu atau lebih produk'),
-                                initialValue: selectedProdukIds,
-                                onSaved: (value) {
-                                  // [PERBAIKAN] Mengatasi nilai null dengan aman
-                                  setState(() {
-                                    selectedProdukIds = value ?? [];
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Harap pilih setidaknya satu produk';
-                                  }
-                                  return null;
-                                },
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Produk Berlaku'),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        ListTile(
+                                          title: selectedProdukIds.isEmpty
+                                              ? const Text(
+                                                  'Pilih satu atau lebih produk',
+                                                  style: TextStyle(
+                                                      color: Colors.grey),
+                                                )
+                                              : Text(
+                                                  '${selectedProdukIds.length} produk dipilih',
+                                                ),
+                                          trailing: const Icon(Icons.arrow_drop_down),
+                                          onTap: () async {
+                                            final List<int>? selected =
+                                                await showDialog<List<int>>(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                List<int> tempSelected = List.from(
+                                                    selectedProdukIds.cast<int>());
+                                                return StatefulBuilder(
+                                                  builder: (context, setDialogState) {
+                                                    return AlertDialog(
+                                                      title: const Text('Pilih Produk'),
+                                                      content: Container(
+                                                        width: double.maxFinite,
+                                                        height: 400,
+                                                        child: ListView.builder(
+                                                          itemCount: produkList.length,
+                                                          itemBuilder: (context, index) {
+                                                            final produk = produkList[index];
+                                                            final isSelected = tempSelected
+                                                                .contains(produk.id);
+                                                            return CheckboxListTile(
+                                                              title: Text(
+                                                                  '${produk.nama} (${produk.cabangNama})'),
+                                                              value: isSelected,
+                                                              onChanged: (bool? value) {
+                                                                setDialogState(() {
+                                                                  if (value == true) {
+                                                                    tempSelected.add(produk.id);
+                                                                  } else {
+                                                                    tempSelected.remove(produk.id);
+                                                                  }
+                                                                });
+                                                              },
+                                                            );
+                                                          },
+                                                        ),
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.of(context).pop(),
+                                                          child: const Text('BATAL'),
+                                                        ),
+                                                        ElevatedButton(
+                                                          onPressed: () => Navigator.of(context).pop(tempSelected),
+                                                          child: const Text('OK'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                            );
+                                            if (selected != null) {
+                                              setState(() {
+                                                selectedProdukIds = selected.cast<Object?>();
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (selectedProdukIds.isEmpty)
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 8.0),
+                                      child: Text(
+                                        'Harap pilih setidaknya satu produk',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               );
                             },
                           ),
@@ -193,6 +262,17 @@ class PromoPage extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                           content: Text('Tipe promo harus dipilih'),
+                          backgroundColor: Colors.red),
+                    );
+                    return;
+                  }
+
+                  // Validasi produk yang dipilih
+                  if (selectedProdukIds.isEmpty) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Harap pilih setidaknya satu produk'),
                           backgroundColor: Colors.red),
                     );
                     return;
