@@ -91,9 +91,15 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadInsights,
-        child: _buildBody(),
+      body: Column(
+        children: [
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadInsights,
+              child: _buildBody(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -153,7 +159,12 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
         final isMobile = constraints.maxWidth < 600;
 
         return SingleChildScrollView(
-          padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
+          padding: EdgeInsets.only(
+            left: isMobile ? 12.0 : 16.0,
+            right: isMobile ? 12.0 : 16.0,
+            top: isMobile ? 8.0 : 16.0,
+            bottom: isMobile ? 80.0 : 24.0, // Reduced padding untuk mobile 
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -220,6 +231,9 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
 
               // Profit Insights
               _buildProfitInsights(),
+              
+              // Space tambahan untuk mobile sudah ditangani di padding
+              SizedBox(height: isMobile ? 20 : 24),
             ],
           ),
         );
@@ -240,23 +254,21 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
         if (isMobile) {
           // Mobile: Use ListView instead of GridView to prevent overflow
           return Column(
+            mainAxisSize: MainAxisSize.min,
             children: insights.asMap().entries.map((entry) {
               final index = entry.key;
               final insight = entry.value;
               return Container(
                 margin: EdgeInsets.only(
-                    bottom: index < insights.length - 1 ? 16 : 0),
-                child: SizedBox(
-                  height: 140, // Fixed height for mobile
-                  child: InsightCard(
-                    title: insight['title'],
-                    value: insight['value'].toString(),
-                    trend: insight['trend'],
-                    trendPercentage: insight['trendPercentage'].toDouble(),
-                    description: insight['description'],
-                    type: insight['type'],
-                    icon: _getIconData(insight['icon']),
-                  ),
+                    bottom: index < insights.length - 1 ? 12 : 0),
+                child: InsightCard(
+                  title: insight['title'],
+                  value: insight['value'].toString(),
+                  trend: insight['trend'],
+                  trendPercentage: insight['trendPercentage'].toDouble(),
+                  description: insight['description'],
+                  type: insight['type'],
+                  icon: _getIconData(insight['icon']),
                 ),
               );
             }).toList(),
@@ -327,6 +339,7 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
                 if (isMobile)
                   // Mobile: Stack vertically
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildProfitMetric(
                         'Keuntungan Periode Ini',
@@ -410,6 +423,7 @@ class _InsightDashboardPageState extends State<InsightDashboardPage> {
 
   Widget _buildProfitMetric(String label, String value, Color color) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(

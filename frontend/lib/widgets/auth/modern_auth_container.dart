@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import '../../widgets/responsive_widgets.dart';
 
 class ModernAuthContainer extends StatelessWidget {
@@ -26,31 +27,60 @@ class ModernAuthContainer extends StatelessWidget {
 
   Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 32, // Account for padding
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildHeader(context),
-                      const SizedBox(height: 30),
-                      Flexible(
-                        child: _buildCard(context),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+            final mediaQuery = MediaQuery.of(context);
+            final keyboardHeight = mediaQuery.viewInsets.bottom;
+            final isKeyboardVisible = keyboardHeight > 0;
+            
+            return CustomScrollView(
+              physics: const ClampingScrollPhysics(),
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      isKeyboardVisible ? 8 : 24,
+                      16,
+                      isKeyboardVisible ? 8 : 24,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: isKeyboardVisible 
+                          ? MainAxisAlignment.start
+                          : MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header section
+                        if (!isKeyboardVisible) ...[
+                          _buildHeader(context),
+                          const SizedBox(height: 32),
+                        ] else ...[
+                          _buildCompactHeader(context),
+                          const SizedBox(height: 16),
+                        ],
+                        
+                        // Form card - flexible to take available space
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: double.infinity,
+                            ),
+                            child: _buildCard(context),
+                          ),
+                        ),
+                        
+                        // Bottom spacer - hanya jika tidak ada keyboard
+                        if (!isKeyboardVisible) 
+                          const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             );
           },
         ),
@@ -60,6 +90,7 @@ class ModernAuthContainer extends StatelessWidget {
 
   Widget _buildTabletLayout(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: _buildBackgroundDecoration(context),
         child: Center(
@@ -68,6 +99,7 @@ class ModernAuthContainer extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildHeader(context),
@@ -84,6 +116,7 @@ class ModernAuthContainer extends StatelessWidget {
 
   Widget _buildDesktopLayout(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: _buildBackgroundDecoration(context),
         child: Row(
@@ -113,6 +146,7 @@ class ModernAuthContainer extends StatelessWidget {
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 400),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _buildHeader(context, compact: true),
@@ -135,6 +169,7 @@ class ModernAuthContainer extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -156,15 +191,51 @@ class ModernAuthContainer extends StatelessWidget {
     );
   }
 
+  Widget _buildCompactHeader(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
   Widget _buildCard(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isMobile = mediaQuery.size.width < 600;
+    final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
+    
+    // Padding yang lebih agresif untuk mobile ketika keyboard aktif
+    double cardPadding = 32;
+    if (isMobile) {
+      cardPadding = keyboardVisible ? 12 : 24;
+    }
+    
     return Card(
-      elevation: 8,
+      elevation: isMobile && keyboardVisible ? 2 : 8,
       shadowColor: Theme.of(context).colorScheme.shadow.withOpacity(0.2),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(isMobile && keyboardVisible ? 12 : 24),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(cardPadding),
         child: child,
       ),
     );
@@ -174,6 +245,7 @@ class ModernAuthContainer extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Logo atau icon
@@ -222,6 +294,7 @@ class ModernAuthContainer extends StatelessWidget {
     ];
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: features.map((feature) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),

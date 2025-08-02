@@ -30,6 +30,7 @@ class ResponsiveLayout extends StatelessWidget {
             tablet != null) {
           return tablet!;
         } else {
+          // Untuk mobile, gunakan pendekatan yang lebih sederhana
           return mobile;
         }
       },
@@ -248,10 +249,24 @@ class ResponsiveContainer extends StatelessWidget {
       ),
     );
 
+    // Untuk mobile, tambahkan sedikit extra bottom padding untuk navigation bar
+    final isMobile = ResponsiveBreakpoints.isMobile(context);
+    final bottomPadding = isMobile 
+        ? MediaQuery.of(context).padding.bottom + AppTheme.spaceMD 
+        : 0.0;
+
+    final finalPadding = padding ?? defaultPadding;
+    final adjustedPadding = EdgeInsets.only(
+      left: finalPadding.resolve(TextDirection.ltr).left,
+      top: finalPadding.resolve(TextDirection.ltr).top,
+      right: finalPadding.resolve(TextDirection.ltr).right,
+      bottom: finalPadding.resolve(TextDirection.ltr).bottom + bottomPadding,
+    );
+
     return Container(
       width: width,
       height: height,
-      padding: padding ?? defaultPadding,
+      padding: adjustedPadding,
       margin: margin,
       color: color,
       child: child,
@@ -342,5 +357,47 @@ class ResponsiveUtils {
     } else {
       return mobile ?? const EdgeInsets.all(AppTheme.spaceMD);
     }
+  }
+}
+
+/// Safe ScrollView untuk mencegah overflow di mobile
+class SafeScrollView extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final ScrollPhysics? physics;
+  final bool primary;
+
+  const SafeScrollView({
+    super.key,
+    required this.child,
+    this.padding,
+    this.physics,
+    this.primary = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = ResponsiveBreakpoints.isMobile(context);
+    
+    // Untuk mobile, tambahkan extra bottom padding untuk navigation bar
+    final extraBottomPadding = isMobile 
+        ? MediaQuery.of(context).padding.bottom + AppTheme.spaceLG 
+        : 0.0;
+    
+    final adjustedPadding = padding != null 
+        ? EdgeInsets.only(
+            left: padding!.resolve(TextDirection.ltr).left,
+            top: padding!.resolve(TextDirection.ltr).top,
+            right: padding!.resolve(TextDirection.ltr).right,
+            bottom: padding!.resolve(TextDirection.ltr).bottom + extraBottomPadding,
+          )
+        : EdgeInsets.only(bottom: extraBottomPadding);
+
+    return SingleChildScrollView(
+      physics: physics ?? const AlwaysScrollableScrollPhysics(),
+      primary: primary,
+      padding: adjustedPadding,
+      child: child,
+    );
   }
 }

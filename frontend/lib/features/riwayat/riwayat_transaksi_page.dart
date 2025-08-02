@@ -84,6 +84,7 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
             color: Colors.grey[900],
             padding: const EdgeInsets.all(16),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -337,6 +338,7 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -361,6 +363,7 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                     ],
                   ),
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(

@@ -145,10 +145,15 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
+    final screenHeight = mediaQuery.size.height;
+    final isSmallScreen = screenHeight < 700; // Small screen detection
 
     return Form(
       key: _formKey,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           ModernTextField(
             label: 'Nama Lengkap',
@@ -166,7 +171,7 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
 
           ModernTextField(
             label: 'Email',
@@ -185,7 +190,7 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
 
           ModernTextField(
             label: 'Password',
@@ -206,7 +211,7 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
 
           ModernTextField(
             label: 'Konfirmasi Password',
@@ -224,15 +229,15 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
 
-          // Terms and Conditions
+          // Terms and Conditions - Ultra compact when needed
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                height: 20,
-                width: 20,
+                height: 16,
+                width: 16,
                 child: Checkbox(
                   value: _acceptTerms,
                   onChanged: (value) {
@@ -245,37 +250,18 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: theme.textTheme.bodyMedium,
-                    children: [
-                      const TextSpan(text: 'Saya menyetujui '),
-                      TextSpan(
-                        text: 'Syarat dan Ketentuan',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w500,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                      const TextSpan(text: ' serta '),
-                      TextSpan(
-                        text: 'Kebijakan Privasi',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w500,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ],
+                child: Text(
+                  'Setuju syarat & ketentuan',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: keyboardVisible || isSmallScreen ? 12 : 14,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: keyboardVisible || isSmallScreen ? 12 : 32),
 
           ModernButton(
             text: 'Daftar',
@@ -283,36 +269,36 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
             isLoading: _isLoading,
             icon: Icons.person_add,
           ),
-          const SizedBox(height: 24),
-
-          // Divider
-          Row(
-            children: [
-              Expanded(
-                  child: Divider(
-                      color: theme.colorScheme.outline.withOpacity(0.3))),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'atau',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+          
+          // Hide semua elemen tambahan ketika keyboard visible atau screen kecil
+          if (!keyboardVisible && !isSmallScreen) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                    child: Divider(
+                        color: theme.colorScheme.outline.withOpacity(0.3))),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'atau',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                  child: Divider(
-                      color: theme.colorScheme.outline.withOpacity(0.3))),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Toggle to Login
-          ModernButton(
-            text: 'Sudah punya akun? Masuk sekarang',
-            onPressed: widget.onToggle,
-            style: ModernButtonStyle.text,
-          ),
+                Expanded(
+                    child: Divider(
+                        color: theme.colorScheme.outline.withOpacity(0.3))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ModernButton(
+              text: 'Sudah punya akun? Masuk sekarang',
+              onPressed: widget.onToggle,
+              style: ModernButtonStyle.text,
+            ),
+          ],
         ],
       ),
     );

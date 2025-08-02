@@ -71,6 +71,8 @@ class InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
     return Card(
       elevation: 4,
       color: _cardColor,
@@ -83,7 +85,7 @@ class InsightCard extends StatelessWidget {
       ),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -91,42 +93,46 @@ class InsightCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, color: _iconColor, size: 24),
-                Icon(_trendIcon, color: _trendColor, size: 20),
+                Icon(icon, color: _iconColor, size: isMobile ? 20 : 24),
+                Icon(_trendIcon, color: _trendColor, size: isMobile ? 16 : 20),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                color: _iconColor,
-                fontWeight: FontWeight.w600,
+            SizedBox(height: isMobile ? 6 : 8),
+            Flexible(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 14,
+                  color: _iconColor,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+            SizedBox(height: isMobile ? 2 : 4),
+            Flexible(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: isMobile ? 20 : 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isMobile ? 4 : 8),
             Row(
               children: [
-                Icon(_trendIcon, color: _trendColor, size: 16),
+                Icon(_trendIcon, color: _trendColor, size: isMobile ? 14 : 16),
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
                     '${trendPercentage.toStringAsFixed(1)}%',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isMobile ? 10 : 12,
                       color: _trendColor,
                       fontWeight: FontWeight.bold,
                     ),
@@ -134,16 +140,18 @@ class InsightCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
+            SizedBox(height: isMobile ? 2 : 4),
+            Flexible(
+              child: Text(
+                description,
+                style: TextStyle(
+                  fontSize: isMobile ? 10 : 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

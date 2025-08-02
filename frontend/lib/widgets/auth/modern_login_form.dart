@@ -151,10 +151,14 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
+    final isSmallScreen = mediaQuery.size.height < 700;
 
     return Form(
       key: _formKey,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           ModernTextField(
             label: 'Email',
@@ -173,7 +177,7 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: keyboardVisible || isSmallScreen ? 12 : 20),
 
           ModernTextField(
             label: 'Password',
@@ -191,72 +195,66 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 16),
 
-          // Remember Me & Forgot Password
-          Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: Checkbox(
-                        value: _rememberMe,
-                        onChanged: (value) {
-                          setState(() {
-                            _rememberMe = value ?? false;
-                          });
-                        },
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
+          // Remember Me & Forgot Password - Hide when keyboard is visible for space
+          if (!keyboardVisible && !isSmallScreen) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: Checkbox(
+                          value: _rememberMe,
+                          onChanged: (value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Ingat saya',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.white),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Fitur reset password belum tersedia. Silakan hubungi administrator.',
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'Ingat saya',
+                        style: theme.textTheme.bodySmall,
                       ),
-                      backgroundColor: theme.colorScheme.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Lupa Password?',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
+                TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Fitur reset password belum tersedia'),
+                        backgroundColor: theme.colorScheme.primary,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Lupa Password?',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ] else ...[
+            const SizedBox(height: 16),
+          ],
 
           ModernButton(
             text: 'Masuk',
@@ -264,36 +262,36 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
             isLoading: _isLoading,
             icon: Icons.login,
           ),
-          const SizedBox(height: 24),
-
-          // Divider
-          Row(
-            children: [
-              Expanded(
-                  child: Divider(
-                      color: theme.colorScheme.outline.withOpacity(0.3))),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'atau',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+          
+          // Hide divider and toggle when keyboard is visible or small screen
+          if (!keyboardVisible && !isSmallScreen) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                    child: Divider(
+                        color: theme.colorScheme.outline.withOpacity(0.3))),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'atau',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                  child: Divider(
-                      color: theme.colorScheme.outline.withOpacity(0.3))),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Toggle to Register
-          ModernButton(
-            text: 'Belum punya akun? Daftar sekarang',
-            onPressed: widget.onToggle,
-            style: ModernButtonStyle.text,
-          ),
+                Expanded(
+                    child: Divider(
+                        color: theme.colorScheme.outline.withOpacity(0.3))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ModernButton(
+              text: 'Belum punya akun? Daftar sekarang',
+              onPressed: widget.onToggle,
+              style: ModernButtonStyle.text,
+            ),
+          ],
         ],
       ),
     );
