@@ -301,20 +301,29 @@ class _HomePageState extends ConsumerState<HomePage> {
           onSelected: (value) {
             switch (value) {
               case 'profile':
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fitur profil sedang dalam pengembangan'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                Navigator.of(context).pushNamed('/profil');
                 break;
               case 'settings':
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fitur pengaturan sedang dalam pengembangan'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                if (profile != null) {
+                  final userRole = Role.values.byName(profile['role']);
+                  if (userRole == Role.OWNER) {
+                    Navigator.of(context).pushNamed('/pengaturan-akun');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Hanya pemilik yang dapat mengakses pengaturan akun toko'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Fitur pengaturan sedang dalam pengembangan'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
                 break;
               case 'logout':
                 _handleLogout(context);
@@ -872,6 +881,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         _buildNavItem(context, Icons.card_giftcard, 'Loyalty', () {
           print('DEBUG: Sidebar - Navigating to /loyalty-settings');
           Navigator.of(context).pushNamed('/loyalty-settings');
+        }),
+        const Divider(),
+        _buildNavItem(context, Icons.person, 'Profil Saya', () {
+          print('DEBUG: Sidebar - Navigating to /profil');
+          Navigator.of(context).pushNamed('/profil');
         }),
       ],
     );

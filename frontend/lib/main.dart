@@ -18,6 +18,8 @@ import 'features/pelanggan/pelanggan_page.dart';
 import 'features/loyalty/loyalty_settings_page.dart'; // <-- IMPORT HALAMAN BARU
 import 'features/promo/promo_page.dart'; // <-- IMPORT HALAMAN BARU
 import 'features/pengaturan/pengaturan_akun_page.dart'; // <-- IMPORT HALAMAN PENGATURAN AKUN
+import 'features/pengaturan/pengaturan_umum_page.dart'; // <-- IMPORT HALAMAN PENGATURAN UMUM
+import 'features/profil/profil_page.dart'; // <-- IMPORT HALAMAN PROFIL
 import 'features/riwayat/riwayat_transaksi_page.dart'; // <-- IMPORT HALAMAN RIWAYAT TRANSAKSI
 import 'theme/app_theme.dart'; // Import tema baru
 
@@ -81,6 +83,7 @@ class OmsetProApp extends StatelessWidget {
         '/riwayat-transaksi': (context) => const RiwayatTransaksiPage(), // <-- RUTE RIWAYAT TRANSAKSI
         '/pengaturan-akun': (context) =>
             const PengaturanAkunPage(), // <-- RUTE PENGATURAN AKUN
+        '/profil': (context) => const ProfilPage(), // <-- RUTE PROFIL
       },
       initialRoute: '/',
     );

@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { RegisterUserDto, LoginUserDto } from './auth.dto';
+import { UpdateProfileDto, ChangePasswordDto } from './update-profile.dto';
 import { PrismaService } from '../prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt'; // Import JwtService
@@ -69,6 +70,66 @@ export class AuthService {
     return {
       message: 'Login berhasil!',
       accessToken: accessToken,
+    };
+  }
+
+  /**
+   * Update profil user (nama lengkap)
+   */
+  async updateProfile(userId: number, updateProfileDto: UpdateProfileDto) {
+    const { namaLengkap } = updateProfileDto;
+
+    // Update user
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { namaLengkap },
+      select: {
+        id: true,
+        email: true,
+        namaLengkap: true,
+        role: true,
+      },
+    });
+
+    return {
+      message: 'Profil berhasil diperbarui',
+      user: updatedUser,
+    };
+  }
+
+  /**
+   * Ubah password user
+   */
+  async changePassword(userId: number, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    // 1. Ambil user beserta password hash
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User tidak ditemukan');
+    }
+
+    // 2. Verifikasi password lama
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Password saat ini salah');
+    }
+
+    // 3. Hash password baru
+    const saltRounds = 10;
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // 4. Update password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    return {
+      message: 'Password berhasil diubah',
     };
   }
 }

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
 import 'offline_database_proxy.dart' as OfflineDatabase;
 import 'connectivity_service.dart';
 import '../providers/providers.dart' as AppProviders;
@@ -115,30 +117,24 @@ class SyncService {
     }
   }
 
-  // Auto sync ketika online
+  // Auto sync ketika online - DIPERBAIKI untuk menghindari error ref.listen
   static Future<void> startAutoSync(WidgetRef ref) async {
     print('🔧 Setting up auto-sync listener...');
     
-    // Listen connectivity changes
-    ref.listen(AppProviders.connectivityProvider, (previous, next) async {
-      next.when(
-        data: (isOnline) async {
-          print('📡 Connectivity changed: ${isOnline ? 'ONLINE' : 'OFFLINE'}');
-          
-          if (isOnline && !_isSyncing) {
-            print('🌐 Device is online, triggering sync...');
-            final dio = ref.read(AppProviders.dioProvider);
-            final result = await syncOfflineTransactions(dio);
-            print('🔄 Auto-sync result: $result');
-          }
-        },
-        loading: () {
-          print('📡 Connectivity loading...');
-        },
-        error: (error, stack) {
-          print('❌ Connectivity error: $error');
-        },
-      );
+    // Gunakan periodic check instead of ref.listen untuk menghindari error
+    Timer.periodic(const Duration(seconds: 30), (timer) async {
+      try {
+        final connectivity = await Connectivity().checkConnectivity();
+        final isOnline = connectivity != ConnectivityResult.none;
+        
+        if (isOnline && !_isSyncing) {
+          print('🌐 Device is online, triggering periodic sync...');
+          final dio = ref.read(AppProviders.dioProvider);
+          await syncOfflineTransactions(dio);
+        }
+      } catch (e) {
+        print('❌ Auto-sync error: $e');
+      }
     });
   }
 
@@ -152,6 +148,11 @@ class SyncService {
   // Clean up old synced data
   static Future<void> cleanupOldData() async {
     await OfflineDatabase.OfflineDatabase.clearOldData();
+  }
+
+  // Wrapper method untuk sync offline data
+  static Future<bool> syncOfflineData(Dio dio) async {
+    return await syncOfflineTransactions(dio);
   }
 }
 
