@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../../models/user_model.dart';
 import '../../utils/role_guard.dart';
 import './scanner_page.dart';
+import 'dart:html' as html;
 
 class ProdukPage extends ConsumerStatefulWidget {
   final int cabangId;
@@ -28,6 +29,63 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
   Future<void> _refreshProduk() async {
     // "Bunyikan lonceng" agar FutureProvider mengambil data baru
     ref.invalidate(produkListFutureProvider(widget.cabangId));
+  }
+
+  // Fungsi untuk export data produk
+  Future<void> _exportProduk() async {
+    try {
+      print('🔄 Starting export for cabangId: ${widget.cabangId}');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mempersiapkan file export...'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+
+      final dio = ref.read(dioProvider);
+      
+      // Request export dengan response type bytes
+      final response = await dio.get(
+        '/produk/export/${widget.cabangId}',
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+        ),
+      );
+
+      // Buat blob dan download
+      final blob = html.Blob([response.data]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      
+      final fileName = 'data_produk_${widget.cabangNama}_${DateTime.now().toString().split(' ')[0]}.xlsx';
+      
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute('download', fileName)
+        ..click();
+      
+      html.Url.revokeObjectUrl(url);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('File $fileName berhasil didownload!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      print('✅ Export completed successfully');
+      
+    } catch (e) {
+      print('❌ Export error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saat export: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _handleFotoUpload(int produkId) async {
@@ -230,6 +288,22 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Produk di ${widget.cabangNama}'),
+        actions: [
+          // Tombol Export Data
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export Data Produk',
+            onPressed: _exportProduk,
+          ),
+          // Tombol Import (menuju halaman import)
+          IconButton(
+            icon: const Icon(Icons.file_upload),
+            tooltip: 'Import Produk Massal',
+            onPressed: () {
+              Navigator.of(context).pushNamed('/import-produk');
+            },
+          ),
+        ],
       ),
       body: produkAsyncValue.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -309,10 +383,27 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showProdukDialog(),
-        tooltip: 'Tambah Produk',
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Tombol Export (secondary)
+          FloatingActionButton(
+            mini: true,
+            heroTag: "export_fab",
+            onPressed: _exportProduk,
+            tooltip: 'Export Data Produk',
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.file_download, size: 20),
+          ),
+          const SizedBox(height: 10),
+          // Tombol Tambah Produk (primary)
+          FloatingActionButton(
+            heroTag: "add_fab",
+            onPressed: () => _showProdukDialog(),
+            tooltip: 'Tambah Produk',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

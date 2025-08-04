@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  Response,
   ParseIntPipe,
   Query,
   UseInterceptors,
@@ -25,6 +26,36 @@ import * as ExcelJS from 'exceljs'; // Import ExcelJS
 @Controller('produk')
 export class ProdukController {
   constructor(private readonly produkService: ProdukService) {}
+
+  // --- ENDPOINT BARU UNTUK EXPORT DATA PRODUK ---
+  @Get('export/:cabangId')
+  async exportProduk(
+    @Param('cabangId', ParseIntPipe) cabangId: number,
+    @Request() req,
+    @Response() res,
+  ) {
+    const userId = req.user.id;
+    
+    console.log('📥 Export produk called for cabangId:', cabangId, 'userId:', userId);
+    
+    try {
+      const buffer = await this.produkService.exportToExcel(cabangId, userId);
+      
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="data_produk_cabang_${cabangId}_${new Date().toISOString().split('T')[0]}.xlsx"`,
+        'Content-Length': buffer.length,
+      });
+      
+      res.end(buffer);
+    } catch (error) {
+      console.error('❌ Error in export produk:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Gagal mengexport data produk: ${error.message}`);
+    }
+  }
 
   // --- ENDPOINT BARU UNTUK UPLOAD MASSAL ---
   @Post('upload-massal')

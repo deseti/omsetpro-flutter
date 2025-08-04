@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma.service';
 import { CreateProdukDto } from './dto/create-produk.dto';
 import { UpdateProdukDto } from './dto/update-produk.dto';
 import { StorageService } from '../storage/storage.service';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class ProdukService {
@@ -205,6 +206,92 @@ export class ProdukService {
     });
 
     return produkList;
+  }
+
+  // FUNGSI BARU: Export data produk ke Excel
+  async exportToExcel(cabangId: number, userId: number): Promise<Buffer> {
+    console.log('📊 Starting export to Excel for cabangId:', cabangId);
+    
+    // Verifikasi akses cabang
+    await this.verifyCabangAccess(cabangId, userId);
+    
+    // Ambil semua produk dari cabang
+    const produkList = await this.prisma.produk.findMany({
+      where: {
+        cabangId: cabangId,
+        isArsip: false, // hanya produk yang tidak diarsip
+      },
+      include: {
+        cabang: {
+          select: { id: true, nama: true }
+        }
+      },
+      orderBy: [
+        { nama: 'asc' }
+      ]
+    });
+
+    console.log(`📦 Found ${produkList.length} products to export`);
+
+    // Buat workbook Excel
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Data Produk');
+
+    // Set header columns
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Nama Produk', key: 'nama', width: 30 },
+      { header: 'Kategori', key: 'kategori', width: 20 },
+      { header: 'Harga Beli', key: 'hargaBeli', width: 15 },
+      { header: 'Harga Jual', key: 'harga', width: 15 },
+      { header: 'Stok', key: 'stok', width: 10 },
+      { header: 'Barcode', key: 'barcode', width: 20 },
+      { header: 'Cabang', key: 'cabangNama', width: 20 },
+      { header: 'Tanggal Dibuat', key: 'createdAt', width: 20 },
+    ];
+
+    // Style header
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    // Tambahkan data produk
+    produkList.forEach((produk) => {
+      worksheet.addRow({
+        id: produk.id,
+        nama: produk.nama,
+        kategori: produk.kategori || '-',
+        hargaBeli: produk.hargaBeli,
+        harga: produk.harga,
+        stok: produk.stok,
+        barcode: produk.barcode || '-',
+        cabangNama: produk.cabang.nama,
+        createdAt: produk.createdAt.toLocaleDateString('id-ID'),
+      });
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      if (column.eachCell) {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const columnLength = cell.value ? cell.value.toString().length : 10;
+          if (columnLength > maxLength) {
+            maxLength = columnLength;
+          }
+        });
+        column.width = maxLength < 10 ? 10 : maxLength + 2;
+      }
+    });
+
+    console.log('✅ Excel workbook created successfully');
+
+    // Convert to buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 
   // Fungsi mengupdate satu produk (tidak berubah)
