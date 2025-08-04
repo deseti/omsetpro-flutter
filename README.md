@@ -26,6 +26,7 @@ OmsetPro adalah platform digital yang dirancang untuk membantu pelaku UMKM di In
 
 | Fitur                                    | OmsetPro (Status) | Moka POS (Gratis) | Moka POS (Premium) |
 |------------------------------------------|-------------------|-------------------|--------------------|
+| Akun Gratis & Premium                    | ❌ Belum Ada      | ✅ Ada            | ✅ Ada             |
 | Manajemen Produk & Stok                  | ✅ Ada            | ✅                | ✅                 |
 | Multi-cabang (Multi-outlet)              | ✅ Ada            | ✅                | ✅                 |
 | Transaksi Kasir & Mode Offline           | ✅ Ada            | ✅                | ✅                 |
@@ -84,10 +85,23 @@ Roadmap ini akan terus diperbarui agar OmsetPro bisa bersaing di semua segmen (r
 - Stock opname, histori perubahan stok
 - Dashboard analitik interaktif, heatmap penjualan, prediksi stok & pelanggan churn (AI)
 
+
+
 ### Fase 6: Ekosistem & Monetisasi (Roadmap)
 - Sistem langganan Freemium (Free & Premium)
-- Panel Kontrol Super Admin (manajemen pengguna, langganan, analitik platform)
+- Panel Kontrol Super Admin (Admin Panel Internal, akan dibuat sebagai modul terpisah di luar folder frontend/backend, struktur monorepo & modular):
+  - Monitoring semua akun (user, bisnis, cabang) beserta status (gratis/premium/berlangganan/tidak aktif)
+  - Statistik jumlah user gratis vs premium, total pelanggan aktif, pertumbuhan langganan
+  - Riwayat pembayaran, status billing, dan aktivitas upgrade/downgrade akun
+  - Monitoring performa aplikasi, error, bug, dan uptime
+  - Analitik penggunaan, pertumbuhan user, dan aktivitas pelanggan
+  - Kontrol operasional: reset akun, troubleshooting, support, investigasi masalah user
+  - Manajemen hak akses internal, audit log, dan keamanan data
+  - Fitur export data, filter, dan pencarian user/tenant
+  - Dashboard ini hanya untuk tim internal (engineering, support, manajemen) dan tidak diakses user bisnis
 - Integrasi software akuntansi (Jurnal, Accurate, dsb)
+
+> **Catatan:** Admin Panel/Super Admin Dashboard akan dibuat sebagai modul terpisah di luar folder frontend dan backend (struktur monorepo & modular), namun tetap terhubung penuh ke seluruh ekosistem OmsetPro. Dashboard ini memungkinkan tim internal memantau, mengelola, dan menganalisis seluruh aplikasi OmsetPro secara terpusat, meskipun pengelolaan kodenya terpisah untuk kemudahan pengembangan dan maintainability.
 
 ### Fitur Lain yang Akan Dikejar
 - Self-service ordering (QR code scan & order)
