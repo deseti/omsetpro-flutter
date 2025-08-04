@@ -22,6 +22,7 @@ import 'features/pengaturan/pengaturan_umum_page.dart'; // <-- IMPORT HALAMAN PE
 import 'features/profil/profil_page.dart'; // <-- IMPORT HALAMAN PROFIL
 import 'features/riwayat/riwayat_transaksi_page.dart'; // <-- IMPORT HALAMAN RIWAYAT TRANSAKSI
 import 'theme/app_theme.dart'; // Import tema baru
+import 'services/hardware/hardware_manager_service.dart'; // Import hardware manager
 
 // Ubah fungsi main menjadi async
 Future<void> main() async {
@@ -39,6 +40,16 @@ Future<void> main() async {
   // Inisialisasi database offline hanya untuk mobile
   if (!kIsWeb) {
     await OfflineDatabase.OfflineDatabase.database;
+  }
+
+  // Initialize hardware manager for POS functionality
+  try {
+    final hardwareManager = HardwareManagerService();
+    await hardwareManager.initialize();
+    print('✅ Hardware Manager initialized in main');
+  } catch (e) {
+    print('⚠️ Hardware Manager initialization failed in main: $e');
+    // Continue app startup even if hardware fails
   }
 
   // Buat instance SharedPreferences

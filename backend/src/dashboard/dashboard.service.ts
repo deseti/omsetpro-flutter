@@ -86,11 +86,42 @@ export class DashboardService {
 
       const totalProdukTerjual = produkTerjualResult._sum.jumlah || 0;
 
-      // Hitung keuntungan hari ini (estimasi sederhana: total penjualan - HPP)
-      // Untuk sekarang kita tidak menghitung ulang, cukup gunakan data yang sudah ada
-      
-      // Estimasi keuntungan (bisa diperbaiki dengan data HPP yang lebih akurat)
-      const estimasiKeuntungan = Math.round(totalPenjualan * 0.3); // Asumsi margin 30%
+      // Hitung keuntungan hari ini berdasarkan HPP yang sebenarnya
+      // Ambil semua detail transaksi hari ini dengan relasi ke produk untuk mendapatkan harga beli
+      const transaksiDetails = await this.prisma.transaksiDetail.findMany({
+        where: {
+          transaksi: {
+            cabang: {
+              ownerId: ownerId,
+            },
+            createdAt: {
+              gte: today,
+              lt: tomorrow,
+            },
+          },
+        },
+        include: {
+          produk: {
+            select: {
+              hargaBeli: true,
+            },
+          },
+        },
+      });
+
+      // Hitung total penjualan dari detail dan total HPP
+      let totalPenjualanDetail = 0;
+      let totalHPP = 0;
+
+      transaksiDetails.forEach(detail => {
+        const subtotalItem = (detail.hargaSaatItu * detail.jumlah) - detail.potonganItem;
+        const hppItem = detail.produk.hargaBeli * detail.jumlah;
+        
+        totalPenjualanDetail += subtotalItem;
+        totalHPP += hppItem;
+      });
+
+      const keuntunganAktual = totalPenjualanDetail - totalHPP;
 
       // Format ke Rupiah
       const formatRupiah = (amount: number) => {
@@ -108,7 +139,7 @@ export class DashboardService {
         penjualanHariIni: formatRupiah(totalPenjualan),
         transaksiHariIni: transaksiHariIni.toString(),
         produkTerjual: totalProdukTerjual.toString(),
-        keuntungan: formatRupiah(estimasiKeuntungan),
+        keuntungan: formatRupiah(keuntunganAktual),
         trendPenjualan: '0%',
         trendTransaksi: '0',
         trendProduk: '0',

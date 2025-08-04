@@ -1,4 +1,7 @@
 import 'package:intl/intl.dart';
+import 'hardware/hardware_manager_service.dart';
+import 'hardware/thermal_printer_service.dart';
+import 'hardware/hardware_detection_service.dart';
 
 class ReceiptService {
   /// Memformat data transaksi menjadi teks struk yang rapi dan profesional
@@ -105,6 +108,81 @@ class ReceiptService {
       decimalDigits: 0,
     );
     return formatter.format(amount);
+  }
+
+  /// Print receipt directly to thermal printer if connected
+  static Future<PrintResult> printReceiptToHardware({
+    required String namaToko,
+    required String namaCabang,
+    required String alamatCabang,
+    required String namaKasir,
+    required int transaksiId,
+    required List<Map<String, dynamic>> items,
+    required int subtotal,
+    required int totalHarga,
+    required String metodeBayar,
+    bool autoCut = true,
+    bool openDrawer = false,
+  }) async {
+    try {
+      final hardwareManager = HardwareManagerService();
+      
+      // Check if printer is connected
+      if (!hardwareManager.isDeviceConnected(HardwareType.thermalPrinter)) {
+        return PrintResult(
+          success: false,
+          message: 'No thermal printer connected. Please connect a printer first.',
+        );
+      }
+      
+      // Generate receipt text
+      final receiptText = formatReceiptText(
+        namaToko: namaToko,
+        namaCabang: namaCabang,
+        alamatCabang: alamatCabang,
+        namaKasir: namaKasir,
+        transaksiId: transaksiId,
+        items: items,
+        subtotal: subtotal,
+        totalHarga: totalHarga,
+        metodeBayar: metodeBayar,
+      );
+      
+      // Print to hardware
+      final result = await hardwareManager.printReceipt(
+        receiptText: receiptText,
+        autoCut: autoCut,
+        openDrawer: openDrawer,
+      );
+      
+      return result;
+    } catch (e) {
+      return PrintResult(
+        success: false,
+        message: 'Error printing receipt: $e',
+      );
+    }
+  }
+
+  /// Print test receipt to verify printer functionality
+  static Future<PrintResult> printTestReceipt() async {
+    try {
+      final hardwareManager = HardwareManagerService();
+      
+      if (!hardwareManager.isDeviceConnected(HardwareType.thermalPrinter)) {
+        return PrintResult(
+          success: false,
+          message: 'No thermal printer connected',
+        );
+      }
+      
+      return await hardwareManager.printerService.printTestPage();
+    } catch (e) {
+      return PrintResult(
+        success: false,
+        message: 'Error printing test receipt: $e',
+      );
+    }
   }
 
   /// Helper untuk format baris dengan label dan nilai (rata kanan)

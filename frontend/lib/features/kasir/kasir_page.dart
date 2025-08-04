@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../providers/providers.dart' as AppProviders;
+import '../../providers/hardware_providers.dart';
 import '../../services/sync_service.dart';
+import '../../services/hardware/hardware_manager_service.dart';
+import '../../services/hardware/barcode_scanner_service.dart';
 import '../../widgets/responsive_widgets.dart';
 import '../../theme/app_theme.dart';
+import '../../pages/hardware_settings_page.dart';
 import './widgets/product_grid_widget.dart';
 import './widgets/cart_section_widget.dart';
 import './services/transaction_service.dart';
@@ -39,7 +43,101 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SyncService.startAutoSync(ref);
+      _initializeHardware();
     });
+  }
+
+  /// Initialize hardware services for POS operations
+  Future<void> _initializeHardware() async {
+    try {
+      final hardwareManager = ref.read(hardwareManagerProvider);
+      if (!hardwareManager.isInitialized) {
+        await hardwareManager.initialize();
+        // Auto-connect to saved devices
+        await hardwareManager.autoConnectSavedDevices();
+      }
+      
+      // Listen to barcode scans and auto-add products
+      ref.listen(barcodeStreamProvider, (previous, next) {
+        next.when(
+          data: (barcode) => _handleBarcodeScanned(barcode.data),
+          loading: () {},
+          error: (error, stackTrace) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Scanner error: $error')),
+            );
+          },
+        );
+      });
+      
+    } catch (e) {
+      print('Hardware initialization failed: $e');
+    }
+  }
+
+  /// Handle barcode scanned from external scanner
+  void _handleBarcodeScanned(String barcode) {
+    // Find product by barcode and add to cart
+    final produkList = ref.read(AppProviders.produkListWithOfflineProvider(widget.cabangId));
+    
+    produkList.when(
+      data: (products) {
+        final product = products.firstWhere(
+          (p) => p['barcode']?.toString() == barcode,
+          orElse: () => null,
+        );
+        
+        if (product != null) {
+          _addToCartByBarcode(product);
+          // Show feedback
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Added ${product['nama']} to cart'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        } else {
+          // Product not found
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Product not found: $barcode'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      loading: () {},
+      error: (error, stackTrace) {},
+    );
+  }
+
+  /// Add product to cart from barcode scan
+  void _addToCartByBarcode(Map<String, dynamic> produk) {
+    final currentCart = ref.read(AppProviders.cartProvider);
+    
+    // Check if product already in cart
+    final existingIndex = currentCart.indexWhere(
+      (item) => item['produk']['id'] == produk['id'],
+    );
+    
+    if (existingIndex != -1) {
+      // Increase quantity
+      final updatedCart = [...currentCart];
+      updatedCart[existingIndex] = {
+        ...updatedCart[existingIndex],
+        'jumlah': updatedCart[existingIndex]['jumlah'] + 1,
+      };
+      ref.read(AppProviders.cartProvider.notifier).state = updatedCart;
+    } else {
+      // Add new item
+      final newItem = {
+        'produk': produk,
+        'jumlah': 1,
+      };
+      ref.read(AppProviders.cartProvider.notifier).state = [...currentCart, newItem];
+    }
   }
 
   @override
@@ -155,6 +253,43 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             ? Theme.of(context).colorScheme.onTertiary
             : Theme.of(context).colorScheme.onSurface,
         actions: [
+          // Hardware Status Icon
+          Consumer(
+            builder: (context, ref, child) {
+              final isPrinterConnected = ref.watch(isPrinterConnectedProvider);
+              final isScannerConnected = ref.watch(isScannerConnectedProvider);
+              
+              return IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HardwareSettingsPage(),
+                    ),
+                  );
+                },
+                icon: Stack(
+                  children: [
+                    const Icon(Icons.devices),
+                    if (isPrinterConnected || isScannerConnected)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                tooltip: 'Hardware Settings',
+              );
+            },
+          ),
           IconButton(
             onPressed: () async {
               final result = await SyncService.manualSync(ref);

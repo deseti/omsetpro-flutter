@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/hardware_providers.dart';
+import '../services/hardware/hardware_manager_service.dart';
+import '../services/receipt_service.dart';
 
-class ReceiptPreviewDialog extends StatelessWidget {
+class ReceiptPreviewDialog extends ConsumerWidget {
   final String receiptText;
   final String transaksiId;
 
@@ -11,8 +15,24 @@ class ReceiptPreviewDialog extends StatelessWidget {
     required this.transaksiId,
   });
 
+  static void show(
+    BuildContext context, {
+    required String receiptText,
+    required String transaksiId,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => ReceiptPreviewDialog(
+        receiptText: receiptText,
+        transaksiId: transaksiId,
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPrinterConnected = ref.watch(isPrinterConnectedProvider);
+    
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -98,14 +118,18 @@ class ReceiptPreviewDialog extends StatelessWidget {
 
                 const SizedBox(width: 12),
 
-                // Tombol print (placeholder untuk future implementation)
+                // Tombol print ke thermal printer atau placeholder
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _printReceipt(context),
-                    icon: const Icon(Icons.print),
-                    label: const Text('Print'),
+                    onPressed: isPrinterConnected 
+                        ? () => _printToThermalPrinter(context, ref)
+                        : () => _showPrinterSetupDialog(context),
+                    icon: Icon(isPrinterConnected ? Icons.print : Icons.print_disabled),
+                    label: Text(isPrinterConnected ? 'Print' : 'Setup Printer'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: isPrinterConnected ? Colors.green.shade50 : null,
+                      foregroundColor: isPrinterConnected ? Colors.green.shade700 : null,
                     ),
                   ),
                 ),
@@ -145,6 +169,86 @@ class ReceiptPreviewDialog extends StatelessWidget {
     );
   }
 
+  /// Print receipt to thermal printer
+  Future<void> _printToThermalPrinter(BuildContext context, WidgetRef ref) async {
+    try {
+      final hardwareManager = ref.read(hardwareManagerProvider);
+      
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      
+      // Print to thermal printer
+      final result = await hardwareManager.printReceipt(
+        receiptText: receiptText,
+        autoCut: true,
+        openDrawer: false, // Don't open drawer on receipt reprint
+      );
+      
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+      
+      // Show result
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor: result.success ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      
+    } catch (e) {
+      // Close loading dialog if still open
+      if (context.mounted) Navigator.of(context).pop();
+      
+      // Show error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Print error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show printer setup dialog
+  void _showPrinterSetupDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Printer Setup Required'),
+        content: const Text(
+          'No thermal printer is connected. Please set up your printer first.\n\n'
+          'Go to Hardware Settings to scan and connect your thermal printer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to hardware settings
+              Navigator.of(context).pushNamed('/hardware-settings');
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Print receipt (placeholder untuk implementasi printer)
   void _printReceipt(BuildContext context) {
     // FUTURE: Implementasi print ke thermal printer akan ditambahkan
@@ -154,22 +258,6 @@ class ReceiptPreviewDialog extends StatelessWidget {
         content: Text('Fitur print akan tersedia di update mendatang'),
         duration: Duration(seconds: 2),
         backgroundColor: Colors.orange,
-      ),
-    );
-  }
-
-  /// Static method untuk menampilkan dialog
-  static void show(
-    BuildContext context, {
-    required String receiptText,
-    required String transaksiId,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => ReceiptPreviewDialog(
-        receiptText: receiptText,
-        transaksiId: transaksiId,
       ),
     );
   }
