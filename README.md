@@ -21,8 +21,39 @@ OmsetPro adalah platform digital yang dirancang untuk membantu pelaku UMKM di In
 - **Fitur Keamanan**: JWT Auth, role-based access, validasi input, dan pengelolaan secrets.
 
 
+
+## Perbandingan Fitur OmsetPro vs Moka POS
+
+| Fitur                                    | OmsetPro (Status) | Moka POS (Gratis) | Moka POS (Premium) |
+|------------------------------------------|-------------------|-------------------|--------------------|
+| Manajemen Produk & Stok                  | ✅ Ada            | ✅                | ✅                 |
+| Multi-cabang (Multi-outlet)              | ✅ Ada            | ✅                | ✅                 |
+| Transaksi Kasir & Mode Offline           | ✅ Ada            | ✅                | ✅                 |
+| Laporan Penjualan                        | ✅ Ada            | ✅                | ✅                 |
+| Promo & Diskon Dinamis                   | ✅ Ada            | ✅                | ✅                 |
+| Loyalti & CRM                            | ✅ Ada            | ✅                | ✅                 |
+| Integrasi Pembayaran Digital (Midtrans)  | ✅ Ada            | ✅ (QRIS)         | ✅ (QRIS, EDC)     |
+| Integrasi Hardware POS (Printer, Scanner)| ✅ Ada (dasar)    | ✅ (dasar)        | ✅ (lengkap)       |
+| Self-service Ordering (QR code)          | 🚧 Roadmap        | ❌                | ✅                 |
+| Manajemen Meja (Table Management)        | ❌ Belum Ada      | ❌                | ✅                 |
+| Kitchen Display System (KDS)             | ❌ Belum Ada      | ❌                | ✅                 |
+| Refund & Multi-payment                   | ❌ Belum Ada      | ❌                | ✅                 |
+| Inventori Lanjutan (transfer stok, dsb)  | ❌ Belum Ada      | ❌                | ✅                 |
+| Shift & Absensi Karyawan                 | ❌ Belum Ada      | ❌                | ✅                 |
+| Integrasi Marketplace & Akuntansi        | 🚧 Roadmap        | ❌                | ✅                 |
+| Analitik Lanjutan (AI, heatmap, dsb)     | 🚧 Roadmap        | ❌                | ✅                 |
+| Pajak & Service Charge Otomatis          | ❌ Belum Ada      | ❌                | ✅                 |
+| Membership Tier/Level Pelanggan          | ❌ Belum Ada      | ❌                | ✅                 |
+| Bundling/Combo Produk                    | ❌ Belum Ada      | ❌                | ✅                 |
+| Backend Monitoring Hardware              | ❌ Belum Ada      | ❌                | ✅ (enterprise)    |
+
+Keterangan:
+- ✅ Ada: Sudah tersedia dan berjalan di OmsetPro
+- 🚧 Roadmap: Sudah direncanakan, belum implementasi
+- ❌ Belum Ada: Belum tersedia di OmsetPro
+
 ## Roadmap Pengembangan OmsetPro (2025+)
-Roadmap ini disusun untuk membawa OmsetPro menjadi platform kasir dan bisnis UMKM paling lengkap dan modern di Indonesia, setara bahkan melampaui fitur Moka POS.
+Roadmap ini akan terus diperbarui agar OmsetPro bisa bersaing di semua segmen (retail, F&B, enterprise):
 
 ### Fase 1: Fondasi & Fitur Dasar (Selesai)
 - Auth & User Management
@@ -31,27 +62,29 @@ Roadmap ini disusun untuk membawa OmsetPro menjadi platform kasir dan bisnis UMK
 - Dasbor Smart AI
 - CRM, Loyalitas, Promo & Diskon
 
-### Fase 2: Integrasi Eksternal & Marketplace (2025)
+### Fase 2: Integrasi Eksternal & Marketplace (Berjalan)
 - Integrasi pembayaran QRIS langsung (bukan hanya via Midtrans)
 - Integrasi API pengiriman (JNE, J&T, GoSend)
-- Integrasi marketplace (Shopee, Tokopedia, dsb) — sinkronisasi stok & pesanan
+- Integrasi marketplace (Shopee, Tokopedia, dsb)
 
-### Fase 3: Fitur Restoran & F&B
-- Manajemen meja (table management), split bill, multi-payment, refund
+### Fase 3: Fitur Restoran & F&B (Roadmap)
+- Manajemen meja (table management), split/merge table, split bill
 - Kitchen Display System (KDS)
+- Multi-payment, refund
 - Pengelolaan menu paket/bundling, diskon per item/nota, pajak & service charge otomatis
 
-### Fase 4: Hardware & Operasional
+### Fase 4: Hardware & Operasional (Berjalan)
 - Dukungan printer struk (Bluetooth/USB, ESC/POS)
 - Integrasi barcode scanner & cash drawer
 - Manajemen shift & absensi karyawan, log aktivitas kasir
+- Integrasi hardware tambahan (customer display, timbangan, EDC)
 
-### Fase 5: Inventori & Analitik Lanjutan
+### Fase 5: Inventori & Analitik Lanjutan (Roadmap)
 - Transfer stok antar cabang, mutasi stok, notifikasi stok minimum
 - Stock opname, histori perubahan stok
 - Dashboard analitik interaktif, heatmap penjualan, prediksi stok & pelanggan churn (AI)
 
-### Fase 6: Ekosistem & Monetisasi
+### Fase 6: Ekosistem & Monetisasi (Roadmap)
 - Sistem langganan Freemium (Free & Premium)
 - Panel Kontrol Super Admin (manajemen pengguna, langganan, analitik platform)
 - Integrasi software akuntansi (Jurnal, Accurate, dsb)
@@ -61,4 +94,4 @@ Roadmap ini disusun untuk membawa OmsetPro menjadi platform kasir dan bisnis UMK
 - Membership tier/level pelanggan
 - Pengelolaan promo lanjutan (happy hour, promo bundling, dsb)
 
-Roadmap ini akan terus diperbarui sesuai kebutuhan pasar dan feedback pengguna. Prioritas pengembangan dapat disesuaikan dengan kebutuhan mitra UMKM dan tren industri.
+Prioritas pengembangan dapat disesuaikan dengan kebutuhan mitra UMKM dan tren industri. Roadmap dan tabel fitur akan terus diperbarui agar transparan dan relevan dengan kompetisi pasar.
