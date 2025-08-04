@@ -20,46 +20,45 @@ OmsetPro adalah platform digital yang dirancang untuk membantu pelaku UMKM di In
 - **Database**: SQLite (dev), siap untuk migrasi ke PostgreSQL/Cloud.
 - **Fitur Keamanan**: JWT Auth, role-based access, validasi input, dan pengelolaan secrets.
 
-## Roadmap Resmi OmsetPro - Menuju SuperApp UMKM
-Dokumen ini adalah peta jalan resmi pengembangan OmsetPro, yang mencakup visi jangka panjang untuk menjadi platform SuperApp terpusat bagi UMKM di Indonesia.
 
-| Fase | Nama Fase                        | Status         | Tujuan Utama                                                                 |
-|------|-----------------------------------|---------------|------------------------------------------------------------------------------|
-| 1    | Auth & User Management           | ✅ Selesai     | Membangun sistem registrasi dan login yang aman untuk pengguna.              |
-| 2    | Manajemen Cabang & Produk        | ✅ Selesai     | Memberikan kemampuan bagi Owner untuk mengelola cabang dan produk.           |
-| 3    | Transaksi & Mode Offline         | ✅ Selesai     | Memastikan operasional kasir bisa berjalan lancar, bahkan tanpa internet.    |
-| 4    | Dasbor Smart AI                  | ✅ Selesai     | Memberikan insight bisnis otomatis berbasis AI kepada pengguna.              |
-| 5A   | Fondasi CRM                      | ✅ Selesai     | Membangun sistem untuk mencatat dan mengelola data pelanggan.                |
-| 5B   | Program Loyalitas & Poin         | ✅ Selesai     | Memberikan alat bagi Owner untuk membuat program retensi pelanggan.           |
-| 5C   | Sistem Promo & Diskon            | ✅ Selesai     | Memberikan kemampuan untuk membuat promo dinamis untuk meningkatkan penjualan.|
-| 6    | Integrasi Eksternal (Dasar)      | ⏳ Akan Datang | Membuka kanal pembayaran digital dan pengiriman pihak ketiga.                |
-| 7    | Pemesanan Mandiri (Self-Service) | ⏳ Akan Datang | Mengurangi antrian dan meningkatkan efisiensi operasional di toko.           |
-| 8    | Integrasi Marketplace (SuperApp Core) | ⏳ Akan Datang | Menjadikan OmsetPro sebagai pusat kendali penjualan multi-kanal.             |
-| 9    | Fitur Lanjutan & Analitik        | ⏳ Akan Datang | Memberikan insight bisnis yang lebih dalam dan manajemen inventaris.         |
-| Final| Monetisasi & Operasional         | ⏳ Akan Datang | Meluncurkan produk ke pasar dan mengelola platform secara internal.          |
+## Roadmap Pengembangan OmsetPro (2025+)
+Roadmap ini disusun untuk membawa OmsetPro menjadi platform kasir dan bisnis UMKM paling lengkap dan modern di Indonesia, setara bahkan melampaui fitur Moka POS.
 
-### Detail Fase yang Akan Datang
+### Fase 1: Fondasi & Fitur Dasar (Selesai)
+- Auth & User Management
+- Manajemen Cabang & Produk
+- Transaksi & Mode Offline
+- Dasbor Smart AI
+- CRM, Loyalitas, Promo & Diskon
 
-#### Phase 5B: Program Loyalitas & Poin
-- Status: Selesai
-- Fitur: Pengaturan poin & hadiah oleh Owner, akumulasi poin otomatis, dan fitur penukaran poin oleh kasir.
+### Fase 2: Integrasi Eksternal & Marketplace (2025)
+- Integrasi pembayaran QRIS langsung (bukan hanya via Midtrans)
+- Integrasi API pengiriman (JNE, J&T, GoSend)
+- Integrasi marketplace (Shopee, Tokopedia, dsb) — sinkronisasi stok & pesanan
 
-#### Phase 5C: Sistem Promo & Diskon
-- Status: Selesai
-- Fitur: Owner bisa membuat berbagai jenis promo: diskon dalam bentuk persen (%) atau nominal (Rp), promo "Beli X Gratis Y", dan promo untuk produk atau kategori tertentu.
+### Fase 3: Fitur Restoran & F&B
+- Manajemen meja (table management), split bill, multi-payment, refund
+- Kitchen Display System (KDS)
+- Pengelolaan menu paket/bundling, diskon per item/nota, pajak & service charge otomatis
 
-#### Phase 6: Integrasi Eksternal (Dasar)
-- Fitur: Integrasi QRIS (Midtrans/Xendit) dan integrasi API jasa pengiriman (JNE, J&T, GoSend) untuk cek ongkir dan membuat order.
+### Fase 4: Hardware & Operasional
+- Dukungan printer struk (Bluetooth/USB, ESC/POS)
+- Integrasi barcode scanner & cash drawer
+- Manajemen shift & absensi karyawan, log aktivitas kasir
 
-#### Phase 7: Pemesanan Mandiri (Self-Service)
-- Fitur: Kemampuan bagi Owner untuk mencetak QR Code yang bisa di-scan pelanggan untuk memesan dan membayar langsung dari HP mereka.
+### Fase 5: Inventori & Analitik Lanjutan
+- Transfer stok antar cabang, mutasi stok, notifikasi stok minimum
+- Stock opname, histori perubahan stok
+- Dashboard analitik interaktif, heatmap penjualan, prediksi stok & pelanggan churn (AI)
 
-#### Phase 8: Integrasi Marketplace (SuperApp Core)
-- Fitur: Sinkronisasi stok dan produk dua arah dengan Shopee, Tokopedia, dll. Pesanan dari semua marketplace masuk ke dalam satu dasbor OmsetPro.
+### Fase 6: Ekosistem & Monetisasi
+- Sistem langganan Freemium (Free & Premium)
+- Panel Kontrol Super Admin (manajemen pengguna, langganan, analitik platform)
+- Integrasi software akuntansi (Jurnal, Accurate, dsb)
 
-#### Phase 9: Fitur Lanjutan & Analitik
-- Fitur: Manajemen inventaris (stock opname, transfer stok) dan analitik prediktif berbasis AI (misal: prediksi pelanggan churn).
+### Fitur Lain yang Akan Dikejar
+- Self-service ordering (QR code scan & order)
+- Membership tier/level pelanggan
+- Pengelolaan promo lanjutan (happy hour, promo bundling, dsb)
 
-#### Phase Final: Monetisasi & Operasional
-- Fitur: Implementasi sistem langganan Freemium (Free & Premium).
-- Fitur: Pembangunan Panel Kontrol Tim OmsetPro (Super Admin Dashboard) untuk manajemen pengguna, langganan, dan analitik platform.
+Roadmap ini akan terus diperbarui sesuai kebutuhan pasar dan feedback pengguna. Prioritas pengembangan dapat disesuaikan dengan kebutuhan mitra UMKM dan tren industri.
