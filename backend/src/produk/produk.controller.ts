@@ -31,22 +31,42 @@ export class ProdukController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadMassal(
     @UploadedFile() file: Express.Multer.File,
-    @Body('cabangId', ParseIntPipe) cabangId: number, // Ambil cabangId dari body form-data
+    @Body('cabangId') cabangIdRaw: string, // Ambil sebagai string dulu untuk validation manual
     @Request() req,
   ) {
     const userId = req.user.id;
     
+    console.log('🔍 Upload massal called with:');
+    console.log('- File:', file?.originalname, file?.size, 'bytes');
+    console.log('- CabangId raw:', cabangIdRaw);
+    console.log('- UserId:', userId);
+    
+    if (!file) {
+      throw new BadRequestException('File Excel harus di-upload');
+    }
+    
+    // Validasi cabangId secara manual
+    const cabangId = parseInt(cabangIdRaw);
+    if (isNaN(cabangId)) {
+      throw new BadRequestException('cabangId harus berupa angka yang valid');
+    }
+    
     try {
+      console.log('📁 Processing Excel file...');
+      
       // Baca file buffer dari Excel menggunakan ExcelJS
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(file.buffer);
+      console.log('✅ Excel file loaded successfully');
       
       // Ambil worksheet pertama
       const worksheet = workbook.worksheets[0];
       
       if (!worksheet) {
+        console.error('❌ No worksheet found');
         throw new Error('Worksheet tidak ditemukan');
       }
+      console.log(`📊 Worksheet found with ${worksheet.rowCount} rows`);
 
       // Konversi worksheet menjadi array of objects
       const data: any[] = [];
@@ -56,6 +76,7 @@ export class ProdukController {
       worksheet.getRow(1).eachCell((cell, colNumber) => {
         headers[colNumber - 1] = cell.value?.toString() || '';
       });
+      console.log('📋 Headers found:', headers);
       
       // Iterasi setiap baris mulai dari baris kedua
       worksheet.eachRow((row, rowNumber) => {
@@ -75,9 +96,15 @@ export class ProdukController {
         }
       });
 
+      console.log(`📦 Processed ${data.length} data rows:`, data);
+      
       return this.produkService.createMany(data, cabangId, userId);
     } catch (error) {
-      throw new Error(`Gagal memproses file Excel: ${error.message}`);
+      console.error('❌ Error in upload massal:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Gagal memproses file Excel: ${error.message}`);
     }
   }
 

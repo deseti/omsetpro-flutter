@@ -55,35 +55,76 @@ export class ProdukService {
   }
 
   async createMany(produkData: any[], cabangId: number, userId: number) {
+    console.log('🔄 Starting createMany service...');
+    console.log('📊 Input data:', produkData);
+    console.log('🏢 CabangId:', cabangId);
+    console.log('👤 UserId:', userId);
+    
     // 1. Verifikasi akses cabang sekali saja
     await this.verifyCabangAccess(cabangId, userId);
+    console.log('✅ Cabang access verified');
 
     // 2. Validasi dan format data dari file Excel
-    const validatedData = produkData.map((p) => {
+    console.log('🔍 Starting data validation...');
+    const validatedData = produkData.map((p, index) => {
+      console.log(`📝 Processing row ${index + 1}:`, p);
+      
+      // Normalisasi key untuk menangani case sensitivity
+      const normalizedData: any = {};
+      Object.keys(p).forEach(key => {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey === 'hargabeli' || lowerKey === 'harga_beli') {
+          normalizedData.hargaBeli = p[key];
+        } else {
+          normalizedData[key] = p[key];
+        }
+      });
+      
+      console.log(`🔄 Normalized data for row ${index + 1}:`, normalizedData);
+      
       // Cek kolom wajib, sekarang termasuk hargaBeli
-      if (!p.nama || p.harga === undefined || p.hargaBeli === undefined) {
+      if (!normalizedData.nama || normalizedData.harga === undefined || normalizedData.hargaBeli === undefined) {
+        console.error(`❌ Row ${index + 1} missing required columns:`, {
+          nama: normalizedData.nama,
+          harga: normalizedData.harga,
+          hargaBeli: normalizedData.hargaBeli
+        });
         throw new BadRequestException(
-          'Setiap baris di file Excel harus memiliki kolom "nama", "harga", dan "hargaBeli".',
+          `Baris ${index + 1}: Setiap baris di file Excel harus memiliki kolom "nama", "harga", dan "hargaBeli" (atau "hargabeli").`,
         );
       }
-      return {
-        nama: String(p.nama),
-        hargaBeli: Number(p.hargaBeli), // Tambahkan ini
-        harga: Number(p.harga),
-        stok: p.stok ? Number(p.stok) : 0,
-        barcode: p.barcode ? String(p.barcode) : null,
+      
+      const validated = {
+        nama: String(normalizedData.nama),
+        hargaBeli: Number(normalizedData.hargaBeli),
+        harga: Number(normalizedData.harga),
+        stok: normalizedData.stok ? Number(normalizedData.stok) : 0,
+        barcode: normalizedData.barcode ? String(normalizedData.barcode) : null,
         cabangId: cabangId,
       };
+      
+      console.log(`✅ Row ${index + 1} validated:`, validated);
+      return validated;
     });
+
+    console.log('🎯 All data validated successfully:', validatedData);
 
     // 3. Gunakan createMany dari Prisma untuk efisiensi
-    const result = await this.prisma.produk.createMany({
-      data: validatedData,
-    });
-
-    return {
-      message: `${result.count} produk berhasil ditambahkan.`,
-    };
+    console.log('💾 Inserting data to database...');
+    try {
+      const result = await this.prisma.produk.createMany({
+        data: validatedData,
+      });
+      
+      console.log('✅ Database insertion successful:', result);
+      
+      return {
+        message: `${result.count} produk berhasil ditambahkan.`,
+      };
+    } catch (dbError) {
+      console.error('❌ Database error:', dbError);
+      throw new BadRequestException(`Gagal menyimpan ke database: ${dbError.message}`);
+    }
   }
 
   // Fungsi upload foto (tidak berubah)

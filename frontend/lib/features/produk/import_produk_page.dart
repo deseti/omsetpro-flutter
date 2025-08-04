@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart'; // Import file_picker
+import 'package:file_picker/file_picker.dart';
 import '../../providers/providers.dart';
 import '../../models/user_model.dart';
 import '../../utils/role_guard.dart';
+import 'dart:html' as html;
+import 'dart:typed_data';
 
 class ImportProdukPage extends ConsumerStatefulWidget {
   const ImportProdukPage({super.key});
@@ -31,6 +33,31 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
     }
   }
 
+  void _downloadTemplate() {
+    // Buat CSV template sederhana
+    const csvContent = '''nama,harga,hargabeli,stok,barcode
+Contoh Produk A,10000,8000,50,1234567890
+Contoh Produk B,15000,12000,30,0987654321
+Contoh Produk C,5000,3500,100,1122334455''';
+    
+    final bytes = Uint8List.fromList(csvContent.codeUnits);
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', 'template_produk.csv')
+      ..click();
+    
+    html.Url.revokeObjectUrl(url);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Template berhasil didownload!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   Future<void> _handleUpload() async {
     if (_selectedFile == null || _selectedCabang == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -50,12 +77,19 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
       final bytes = _selectedFile!.bytes;
       final fileName = _selectedFile!.name;
 
+      print('🔍 Debug: Sending upload request');
+      print('📁 File name: $fileName');
+      print('🏢 Cabang ID: ${_selectedCabang['id']}');
+      print('📄 File size: ${bytes!.length} bytes');
+
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(bytes!, filename: fileName),
-        'cabangId': _selectedCabang['id'],
+        'cabangId': _selectedCabang['id'].toString(),
       });
 
       final response = await dio.post('/produk/upload-massal', data: formData);
+
+      print('✅ Upload success: ${response.data}');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -66,11 +100,36 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
       // Kembali ke halaman sebelumnya setelah sukses
       if (mounted) Navigator.of(context).pop();
     } on DioException catch (e) {
-      final errorMessage =
-          e.response?.data['message'] ?? 'Terjadi kesalahan saat upload.';
+      print('❌ DioException occurred');
+      print('Status Code: ${e.response?.statusCode}');
+      print('Response Data: ${e.response?.data}');
+      print('Error Message: ${e.message}');
+      
+      String errorMessage = 'Terjadi kesalahan saat upload.';
+      
+      if (e.response?.data != null) {
+        try {
+          if (e.response!.data is Map<String, dynamic>) {
+            errorMessage = e.response!.data['message'] ?? errorMessage;
+          } else if (e.response!.data is String) {
+            errorMessage = e.response!.data;
+          }
+        } catch (parseError) {
+          print('Error parsing response: $parseError');
+        }
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
+            content: Text('Error: $errorMessage'), 
+            backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      print('❌ General error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Error: Terjadi kesalahan yang tidak terduga'), 
+            backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
@@ -132,9 +191,59 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Pastikan file Excel Anda memiliki kolom: nama, harga, stok (opsional), barcode (opsional).',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF23272F), // full dark
+                border: Border.all(color: const Color(0xFF353A40)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Format File Excel (.xlsx):',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Kolom Wajib:',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                  const Text('• nama (Nama Produk)', style: TextStyle(color: Colors.white)),
+                  const Text('• harga (Harga Jual)', style: TextStyle(color: Colors.white)),
+                  const Text('• hargaBeli atau hargabeli (Harga Beli/Modal)', style: TextStyle(color: Colors.white)),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Kolom Opsional:',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                  const Text('• stok (Stok Awal, default: 0)', style: TextStyle(color: Colors.white70)),
+                  const Text('• barcode (Barcode Produk)', style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.download, size: 16, color: Color(0xFF4ADE80)),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: _downloadTemplate,
+                        child: Text(
+                          'Download Template Excel',
+                          style: TextStyle(
+                            color: Color(0xFF4ADE80),
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const Spacer(),
 
