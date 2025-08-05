@@ -129,8 +129,15 @@ class SyncService {
         
         if (isOnline && !_isSyncing) {
           print('🌐 Device is online, triggering periodic sync...');
-          final dio = ref.read(AppProviders.dioProvider);
-          await syncOfflineTransactions(dio);
+          try {
+            final dio = ref.read(AppProviders.dioProvider);
+            await syncOfflineTransactions(dio);
+          } catch (e) {
+            print('❌ Sync error (ref context issue): $e');
+            // Fallback: create new dio instance
+            final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+            await syncOfflineTransactions(dio);
+          }
         }
       } catch (e) {
         print('❌ Auto-sync error: $e');

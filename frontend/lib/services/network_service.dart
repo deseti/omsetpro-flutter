@@ -7,8 +7,15 @@ class NetworkService {
   static Dio? _dio;
   static String? _workingBaseUrl;
 
+  /// Get cached Dio instance if available, returns null if not cached yet
+  static Dio? getCachedDio() {
+    return _dio;
+  }
+
   static Future<Dio> getDio() async {
     if (_dio != null && _workingBaseUrl != null) {
+      // Update token jika ada perubahan
+      await _updateTokenInInterceptor(_dio!);
       return _dio!;
     }
 
@@ -30,7 +37,17 @@ class NetworkService {
     ));
 
     // Tambahkan interceptor untuk authentication
-    _dio!.interceptors.add(InterceptorsWrapper(
+    await _updateTokenInInterceptor(_dio!);
+
+    print('✅ Connected to: $_workingBaseUrl');
+    return _dio!;
+  }
+
+  static Future<void> _updateTokenInInterceptor(Dio dio) async {
+    // Clear existing interceptors to avoid duplicates
+    dio.interceptors.clear();
+    
+    dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('accessToken');
@@ -40,9 +57,6 @@ class NetworkService {
         return handler.next(options);
       },
     ));
-
-    print('✅ Connected to: $_workingBaseUrl');
-    return _dio!;
   }
 
   static Future<String?> _findWorkingUrl() async {

@@ -2,12 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/laporan/laporan_models.dart';
 import '../utils/api_config.dart';
+import 'network_service.dart'; // Import NetworkService
 
 class LaporanService {
   late final Dio _dio;
 
   LaporanService() {
-    _dio = Dio(BaseOptions(
+    // Gunakan NetworkService cached dio jika tersedia, atau fallback ke ApiConfig
+    _dio = NetworkService.getCachedDio() ?? Dio(BaseOptions(
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
@@ -18,6 +20,9 @@ class LaporanService {
       },
     ));
 
+    // Clear existing interceptors to avoid duplicates
+    _dio.interceptors.clear();
+    
     // Interceptor untuk menambahkan Authorization header
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {

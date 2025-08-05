@@ -84,9 +84,16 @@ export class MidtransService {
         ),
       );
 
-      // Mengembalikan hanya URL redirect (snap_url)
-      console.log('Snap URL created successfully:', response.data.redirect_url);
-      return { snap_url: response.data.redirect_url };
+      // Mengembalikan snap_token dan snap_url untuk web
+      console.log('Snap transaction created successfully:', {
+        token: response.data.token,
+        redirect_url: response.data.redirect_url
+      });
+      
+      return { 
+        snap_token: response.data.token,
+        snap_url: response.data.redirect_url 
+      };
     } catch (error) {
       console.error(
         'Error saat membuat Snap URL untuk web:',
@@ -100,9 +107,95 @@ export class MidtransService {
    * Fungsi untuk menangani notifikasi (webhook) dari Midtrans.
    */
   async handleWebhook(payload: any) {
-    // TODO: Tambahkan logika untuk memvalidasi notifikasi
-    // dan mengupdate status transaksi di database Anda.
-    console.log('Webhook diterima:', payload);
-    return { status: 'ok' };
+    try {
+      console.log('📨 Webhook diterima dari Midtrans:', payload);
+      
+      const orderId = payload.order_id;
+      const transactionStatus = payload.transaction_status;
+      const fraudStatus = payload.fraud_status;
+      const paymentType = payload.payment_type;
+      const grossAmount = payload.gross_amount;
+      
+      console.log(`🔍 Processing webhook for order ${orderId} with status ${transactionStatus}`);
+      
+      // Validasi signature dari Midtrans (untuk keamanan)
+      const serverKey = this.serverKey;
+      const signatureKey = payload.signature_key;
+      const expectedSignature = require('crypto')
+        .createHash('sha512')
+        .update(orderId + payload.status_code + grossAmount + serverKey)
+        .digest('hex');
+      
+      if (signatureKey !== expectedSignature) {
+        console.error('❌ Invalid signature from Midtrans webhook');
+        throw new Error('Invalid signature');
+      }
+      
+      // Proses berdasarkan status transaksi
+      if (transactionStatus === 'capture') {
+        if (fraudStatus === 'challenge') {
+          // TODO: Set transaction status to challenge
+          console.log('⚠️ Transaction challenged, need manual review');
+        } else if (fraudStatus === 'accept') {
+          // TODO: Set transaction status to success
+          console.log('✅ Transaction captured and accepted');
+          await this.updateTransactionStatus(orderId, 'paid', paymentType);
+        }
+      } else if (transactionStatus === 'settlement') {
+        // TODO: Set transaction status to success
+        console.log('✅ Transaction settled');
+        await this.updateTransactionStatus(orderId, 'paid', paymentType);
+      } else if (transactionStatus === 'cancel' || 
+                 transactionStatus === 'deny' || 
+                 transactionStatus === 'expire') {
+        // TODO: Set transaction status to failure
+        console.log('❌ Transaction failed/cancelled');
+        await this.updateTransactionStatus(orderId, 'failed', paymentType);
+      } else if (transactionStatus === 'pending') {
+        // TODO: Set transaction status to pending
+        console.log('⏳ Transaction pending');
+        await this.updateTransactionStatus(orderId, 'pending', paymentType);
+      }
+      
+      return { status: 'ok' };
+    } catch (error) {
+      console.error('❌ Error processing webhook:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Helper function untuk update status transaksi di database
+   */
+  private async updateTransactionStatus(orderId: string, status: string, paymentMethod: string) {
+    try {
+      // Cari transaksi berdasarkan orderId atau metadata lain
+      // Karena orderId dari Midtrans mungkin berbeda dengan ID transaksi internal
+      console.log(`🔄 Updating transaction status for ${orderId} to ${status}`);
+      
+      // Implementasi update ke database
+      const transaction = await this.prisma.transaksi.findFirst({
+        where: { 
+          orderId: orderId 
+        }
+      });
+      
+      if (transaction) {
+        await this.prisma.transaksi.update({
+          where: { id: transaction.id },
+          data: { 
+            status: status,
+            metodeBayar: paymentMethod
+          }
+        });
+        console.log(`✅ Transaction ${orderId} status updated to ${status} in database`);
+      } else {
+        console.log(`⚠️ Transaction ${orderId} not found in database`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error updating transaction ${orderId}:`, error);
+      throw error;
+    }
   }
 }

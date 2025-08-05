@@ -23,6 +23,7 @@ import 'features/profil/profil_page.dart'; // <-- IMPORT HALAMAN PROFIL
 import 'features/riwayat/riwayat_transaksi_page.dart'; // <-- IMPORT HALAMAN RIWAYAT TRANSAKSI
 import 'theme/app_theme.dart'; // Import tema baru
 import 'services/hardware/hardware_manager_service.dart'; // Import hardware manager
+import 'services/network_service.dart'; // Import network service
 
 // Ubah fungsi main menjadi async
 Future<void> main() async {
@@ -107,6 +108,38 @@ class AuthChecker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoggedIn = ref.watch(authStateProvider);
-    return isLoggedIn ? const MainNavigator() : const AuthPage();
+    
+    if (isLoggedIn) {
+      // Jika sudah login (auto-login dari saved token), pastikan NetworkService setup
+      return FutureBuilder(
+        future: _setupNetworkService(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          
+          if (snapshot.hasError) {
+            // Jika network setup gagal, logout dan kembali ke auth
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(authStateProvider.notifier).state = false;
+              ref.read(accessTokenProvider.notifier).state = null;
+            });
+            return const AuthPage();
+          }
+          
+          return const MainNavigator();
+        },
+      );
+    }
+    
+    return const AuthPage();
+  }
+  
+  Future<void> _setupNetworkService() async {
+    await NetworkService.getDio();
   }
 }

@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'hardware_detection_service.dart';
 
 enum PrinterStatus {
@@ -38,7 +38,8 @@ class ThermalPrinterService {
 
   // Printer connections
   Socket? _networkSocket;
-  BluetoothConnection? _bluetoothConnection;
+  BluetoothCharacteristic? _bluetoothCharacteristic;
+  BluetoothDevice? _bluetoothDevice;
   
   // Current state
   HardwareDevice? _connectedDevice;
@@ -109,17 +110,11 @@ class ThermalPrinterService {
   /// Connect to Bluetooth printer
   Future<bool> _connectBluetooth(HardwareDevice device) async {
     try {
-      // Find Bluetooth device
-      final bondedDevices = await FlutterBluetoothSerial.instance.getBondedDevices();
-      final bluetoothDevice = bondedDevices.firstWhere(
-        (d) => d.address == device.address,
-        orElse: () => throw Exception('Bluetooth device not found'),
-      );
-      
-      // Connect using BluetoothConnection
-      _bluetoothConnection = await BluetoothConnection.toAddress(device.address);
-      
-      return _bluetoothConnection != null && _bluetoothConnection!.isConnected;
+      // For flutter_blue_plus, we need to implement a different approach
+      // This is a simplified implementation
+      print('⚠️ Bluetooth printer connection using flutter_blue_plus requires updated implementation');
+      print('💡 Please use Network/WiFi printers for now or implement full flutter_blue_plus integration');
+      return false;
       
     } catch (e) {
       print('❌ Bluetooth connection failed: $e');
@@ -225,13 +220,9 @@ class ThermalPrinterService {
   /// Print via Bluetooth
   Future<bool> _printBluetooth(List<int> bytes) async {
     try {
-      if (_bluetoothConnection == null || !_bluetoothConnection!.isConnected) {
-        return false;
-      }
-      
-      _bluetoothConnection!.output.add(Uint8List.fromList(bytes));
-      await _bluetoothConnection!.output.allSent;
-      return true;
+      print('⚠️ Bluetooth printing using flutter_blue_plus requires updated implementation');
+      print('💡 Please use Network/WiFi printers for now');
+      return false;
     } catch (e) {
       print('❌ Bluetooth print failed: $e');
       return false;
@@ -344,9 +335,10 @@ working correctly.
   /// Disconnect from current printer
   Future<void> disconnect() async {
     try {
-      if (_bluetoothConnection != null) {
-        await _bluetoothConnection!.close();
-        _bluetoothConnection = null;
+      if (_bluetoothDevice != null) {
+        await _bluetoothDevice!.disconnect();
+        _bluetoothDevice = null;
+        _bluetoothCharacteristic = null;
       }
       
       if (_networkSocket != null) {

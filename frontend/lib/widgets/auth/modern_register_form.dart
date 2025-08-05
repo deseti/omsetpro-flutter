@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../providers/providers.dart';
+import '../../services/network_service.dart';
 import 'modern_text_field.dart';
 import 'modern_button.dart';
 
@@ -63,14 +64,20 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
     });
 
     try {
-      final dio = ref.read(dioProvider);
+      print('🔄 Starting registration process...');
+      
+      // Gunakan NetworkService yang sudah support fallback URLs
+      final dio = await NetworkService.getDio();
+      
       final data = {
         'namaLengkap': _namaController.text.trim(),
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
       };
 
+      print('📡 Sending register request to: ${dio.options.baseUrl}/auth/register');
       final response = await dio.post('/auth/register', data: data);
+      print('✅ Registration response received: ${response.statusCode}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -95,6 +95,9 @@ model Transaksi {
   total         Int
   metodeBayar   String
   createdAt     DateTime          @default(now())
+  // [BARU] Field untuk Midtrans integration
+  orderId       String?           @unique  // Order ID dari Midtrans
+  status        String            @default("pending") // pending, paid, failed, cancelled
   // [BARU] Informasi diskon
   potongan      Int               @default(0)
   // Relasi ke Cabang & Kasir

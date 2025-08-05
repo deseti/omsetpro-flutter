@@ -61,10 +61,13 @@ final dioAsyncProvider = FutureProvider<Dio>((ref) async {
 
 // Provider sync untuk backward compatibility dengan existing code
 final dioProvider = Provider<Dio>((ref) {
-  // Gunakan ApiConfig untuk mendapatkan baseURL yang tepat
-  final dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  // Gunakan NetworkService cache jika sudah ada, atau fallback ke ApiConfig
+  final dio = NetworkService.getCachedDio() ?? Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
   final token = ref.watch(accessTokenProvider);
 
+  // Clear existing interceptors to avoid duplicates
+  dio.interceptors.clear();
+  
   dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';

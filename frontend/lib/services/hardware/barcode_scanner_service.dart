@@ -5,7 +5,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'hardware_detection_service.dart';
 
 enum ScannerType {
@@ -51,7 +51,8 @@ class BarcodeScannerService {
 
   // Scanner connections
   // Note: USB support removed for now, will use keyboard event listeners for USB HID scanners
-  BluetoothConnection? _bluetoothConnection;
+  BluetoothDevice? _bluetoothDevice;
+  BluetoothCharacteristic? _bluetoothCharacteristic;
   
   // Current state
   HardwareDevice? _connectedDevice;
@@ -189,20 +190,9 @@ class BarcodeScannerService {
   /// Connect to Bluetooth scanner
   Future<bool> _connectBluetooth(HardwareDevice device) async {
     try {
-      final bondedDevices = await FlutterBluetoothSerial.instance.getBondedDevices();
-      final bluetoothDevice = bondedDevices.firstWhere(
-        (d) => d.address == device.address,
-        orElse: () => throw Exception('Bluetooth device not found'),
-      );
-      
-      _bluetoothConnection = await BluetoothConnection.toAddress(device.address);
-      
-      if (_bluetoothConnection == null || !_bluetoothConnection!.isConnected) {
-        return false;
-      }
-      
-      print('✅ Bluetooth scanner connected: ${device.name}');
-      return true;
+      print('⚠️ Bluetooth scanner connection using flutter_blue_plus requires updated implementation');
+      print('💡 Please use USB HID scanners for now or implement full flutter_blue_plus integration');
+      return false;
       
     } catch (e) {
       print('❌ Bluetooth scanner connection failed: $e');
@@ -249,31 +239,8 @@ class BarcodeScannerService {
 
   /// Listen for Bluetooth scanner data
   Future<void> _listenBluetooth() async {
-    if (_bluetoothConnection == null) return;
-    
-    _bluetoothConnection!.input!.listen(
-      (data) {
-        final scanData = String.fromCharCodes(data).trim();
-        if (scanData.isNotEmpty) {
-          final result = BarcodeResult(
-            data: scanData,
-            symbology: 'Unknown',
-            timestamp: DateTime.now(),
-            rawData: data.toString(),
-          );
-          _barcodeController.add(result);
-          print('📱 Bluetooth Scanner: $scanData');
-        }
-      },
-      onError: (error) {
-        print('❌ Bluetooth scanner error: $error');
-        _updateStatus(ScannerStatus.error);
-      },
-      onDone: () {
-        print('⚠️ Bluetooth scanner disconnected');
-        _updateStatus(ScannerStatus.disconnected);
-      },
-    );
+    print('⚠️ Bluetooth scanner listening using flutter_blue_plus requires updated implementation');
+    print('� Please use USB HID scanners for now');
   }
 
   /// Listen for USB scanner data (simplified for USB HID)
@@ -297,9 +264,9 @@ class BarcodeScannerService {
       
       switch (_connectedDevice!.connectionType) {
         case ConnectionType.bluetooth:
-          if (_bluetoothConnection != null) {
-            _bluetoothConnection!.output.add(Uint8List.fromList(commandBytes));
-            await _bluetoothConnection!.output.allSent;
+          if (_bluetoothCharacteristic != null) {
+            final commandBytes = Uint8List.fromList(command.codeUnits);
+            await _bluetoothCharacteristic!.write(commandBytes);
             return true;
           }
           break;
@@ -401,9 +368,10 @@ class BarcodeScannerService {
     try {
       _isListening = false;
       
-      if (_bluetoothConnection != null) {
-        await _bluetoothConnection!.close();
-        _bluetoothConnection = null;
+      if (_bluetoothDevice != null) {
+        await _bluetoothDevice!.disconnect();
+        _bluetoothDevice = null;
+        _bluetoothCharacteristic = null;
       }
       
       // USB HID scanners don't need explicit disconnection

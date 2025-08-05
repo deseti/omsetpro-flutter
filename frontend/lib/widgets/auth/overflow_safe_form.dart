@@ -127,8 +127,8 @@ class _KeyboardAwareFormState extends State<KeyboardAwareForm>
   }
 }
 
-/// Extension helper untuk MediaQuery
-extension MediaQueryExtension on MediaQuery {
+/// Extension helper untuk MediaQueryData
+extension MediaQueryDataExtension on MediaQueryData {
   /// Mengecek apakah keyboard sedang tampil
   bool get isKeyboardVisible => viewInsets.bottom > 0;
   

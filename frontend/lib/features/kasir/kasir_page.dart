@@ -6,7 +6,9 @@ import '../../providers/hardware_providers.dart';
 import '../../services/sync_service.dart';
 import '../../services/hardware/hardware_manager_service.dart';
 import '../../services/hardware/barcode_scanner_service.dart';
+import '../../services/payment_service_interface.dart';
 import '../../widgets/responsive_widgets.dart';
+import '../../widgets/payment/payment_webview_page.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/hardware_settings_page.dart';
 import './widgets/product_grid_widget.dart';
@@ -56,20 +58,6 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         // Auto-connect to saved devices
         await hardwareManager.autoConnectSavedDevices();
       }
-      
-      // Listen to barcode scans and auto-add products
-      ref.listen(barcodeStreamProvider, (previous, next) {
-        next.when(
-          data: (barcode) => _handleBarcodeScanned(barcode.data),
-          loading: () {},
-          error: (error, stackTrace) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Scanner error: $error')),
-            );
-          },
-        );
-      });
-      
     } catch (e) {
       print('Hardware initialization failed: $e');
     }
@@ -185,21 +173,74 @@ class _KasirPageState extends ConsumerState<KasirPage> {
 
     // 2. Periksa hasilnya
     if (paymentResult.isSuccess) {
-      // 3. JIKA SUKSES (halaman bayar terbuka), JANGAN BUAT STRUK.
-      //    Cukup bersihkan keranjang dan beri notifikasi ke kasir.
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(paymentResult.message ??
-                'Halaman pembayaran dibuka. Selesaikan pembayaran di sana.'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-
-        // Langsung bersihkan keranjang agar kasir bisa lanjut ke transaksi berikutnya.
-        // Transaksi akan dicatat oleh backend setelah ada konfirmasi dari Midtrans (via webhook).
-        CartHelper.clearCart(ref);
+      // 3. Jika ada action untuk buka WebView, buka PaymentWebViewPage
+      if (paymentResult.additionalData?['action'] == 'open_webview') {
+        final snapUrl = paymentResult.additionalData?['snapUrl'];
+        if (snapUrl != null && mounted) {
+          // Buka WebView untuk pembayaran
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PaymentWebViewPage(
+                snapUrl: snapUrl,
+                orderId: paymentResult.transactionId ?? 'unknown',
+                onResult: (PaymentResult result) {
+                  Navigator.pop(context);
+                  
+                  if (mounted) {
+                    // Handle hasil dari WebView
+                    if (result.isSuccess) {
+                      if (result.additionalData?['status'] == 'success') {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Pembayaran berhasil! Transaksi telah dicatat.'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else if (result.additionalData?['status'] == 'pending') {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Pembayaran sedang diproses. Silakan tunggu konfirmasi.'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result.message ?? 'Status pembayaran tidak diketahui.'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(result.message ?? 'Pembayaran dibatalkan atau gagal.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ),
+          );
+        }
+      } else {
+        // Fallback untuk platform lain atau metode pembayaran lain
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(paymentResult.message ??
+                  'Halaman pembayaran dibuka. Selesaikan pembayaran di sana.'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
       }
+
+      // Bersihkan keranjang setelah pembayaran dimulai
+      CartHelper.clearCart(ref);
     } else {
       // 4. JIKA GAGAL, tampilkan pesan error
       if (mounted) {
@@ -231,12 +272,26 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final cart = ref.watch(AppProviders.cartProvider);
     final cartTotalInfo = ref.watch(AppProviders.cartTotalWithPromoProvider);
     final totalHarga = cartTotalInfo['totalAkhir'];
     final connectivityAsync = ref.watch(AppProviders.connectivityProvider);
     final isOfflineMode = ref.watch(AppProviders.offlineModeProvider);
+
+    // Listen to barcode scans and auto-add products (dalam build method untuk menghindari error)
+    ref.listen(barcodeStreamProvider, (previous, next) {
+      next.when(
+        data: (barcode) => _handleBarcodeScanned(barcode.data),
+        loading: () {},
+        error: (error, stackTrace) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Scanner error: $error')),
+          );
+        },
+      );
+    });
 
     return Scaffold(
       appBar: AppBar(

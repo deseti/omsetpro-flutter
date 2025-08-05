@@ -5,8 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../providers/providers.dart';
 import '../../models/user_model.dart';
 import '../../utils/role_guard.dart';
-import 'dart:html' as html;
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 class ImportProdukPage extends ConsumerStatefulWidget {
   const ImportProdukPage({super.key});
@@ -41,21 +40,24 @@ Contoh Produk B,15000,12000,30,0987654321
 Contoh Produk C,5000,3500,100,1122334455''';
     
     final bytes = Uint8List.fromList(csvContent.codeUnits);
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
     
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', 'template_produk.csv')
-      ..click();
-    
-    html.Url.revokeObjectUrl(url);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Template berhasil didownload!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    if (kIsWeb) {
+      // Web platform - would need universal_html or different approach
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Download template belum didukung di platform mobile. Silakan gunakan web version.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } else {
+      // Mobile platform - save to downloads or share
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Template download belum tersedia di mobile. Silakan gunakan web version.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   Future<void> _handleUpload() async {

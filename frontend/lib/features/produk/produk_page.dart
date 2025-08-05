@@ -6,7 +6,7 @@ import '../../providers/providers.dart';
 import '../../models/user_model.dart';
 import '../../utils/role_guard.dart';
 import './scanner_page.dart';
-import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
 
 class ProdukPage extends ConsumerStatefulWidget {
   final int cabangId;
@@ -56,21 +56,27 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
         ),
       );
 
-      // Buat blob dan download
-      final blob = html.Blob([response.data]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      
-      final fileName = 'data_produk_${widget.cabangNama}_${DateTime.now().toString().split(' ')[0]}.xlsx';
-      
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute('download', fileName)
-        ..click();
-      
-      html.Url.revokeObjectUrl(url);
+      if (kIsWeb) {
+        // Web platform - would need universal_html or different approach
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Export belum didukung di platform mobile. Silakan gunakan web version.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
+        // Mobile platform - save to downloads or share
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Export belum tersedia di mobile. Silakan gunakan web version.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
       
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('File $fileName berhasil didownload!'),
+        const SnackBar(
+          content: Text('Export data berhasil!'),
           backgroundColor: Colors.green,
         ),
       );

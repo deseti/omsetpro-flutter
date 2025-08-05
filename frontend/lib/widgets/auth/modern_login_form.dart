@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/providers.dart';
+import '../../services/network_service.dart';
 import 'modern_text_field.dart';
 import 'modern_button.dart';
 
@@ -40,14 +41,22 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
     });
 
     try {
-      final dio = ref.read(dioProvider);
+      print('🔄 Starting login process...');
+      
+      // Gunakan NetworkService yang sudah support fallback URLs
+      final dio = await NetworkService.getDio();
+      
       final data = {
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
       };
 
+      print('📡 Sending login request to: ${dio.options.baseUrl}/auth/login');
       final response = await dio.post('/auth/login', data: data);
+      print('✅ Login response received: ${response.statusCode}');
+      
       final accessToken = response.data['accessToken'];
+      print('🔑 Access token received (length: ${accessToken?.length ?? 0})');
 
       // Simpan token ke SharedPreferences
       final prefs = await SharedPreferences.getInstance();
@@ -62,6 +71,11 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
       ref.read(accessTokenProvider.notifier).state = accessToken;
       ref.read(authStateProvider.notifier).state = true;
 
+      // Pastikan NetworkService sudah ter-cache untuk provider lainnya dengan token
+      await NetworkService.getDio();
+
+      print('✅ Login successful, navigating to home...');
+      
       // Navigasi setelah state diupdate
       if (mounted) {
         // Tampilkan snackbar sukses
@@ -85,6 +99,12 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
         Navigator.of(context).pushReplacementNamed('/home');
       }
     } on DioException catch (e) {
+      print('❌ DioException during login:');
+      print('   Status: ${e.response?.statusCode}');
+      print('   Data: ${e.response?.data}');
+      print('   Message: ${e.message}');
+      print('   Type: ${e.type}');
+      
       String errorMessage = 'Terjadi kesalahan jaringan.';
 
       try {
@@ -96,6 +116,15 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
           } else if (responseData is String) {
             errorMessage = responseData;
           }
+        } else if (e.type == DioExceptionType.connectionTimeout) {
+          errorMessage = 'Koneksi timeout. Periksa koneksi internet Anda.';
+        } else if (e.type == DioExceptionType.receiveTimeout) {
+          errorMessage = 'Server tidak merespons. Coba lagi nanti.';
+        } else if (e.type == DioExceptionType.connectionError) {
+          errorMessage = 'Tidak dapat terhubung ke server. Pastikan:\n'
+              '1. Backend server berjalan\n'
+              '2. Perangkat terhubung ke WiFi yang sama\n'
+              '3. Atau gunakan: adb reverse tcp:3000 tcp:3000';
         }
       } catch (_) {
         errorMessage = 'Terjadi kesalahan tidak terduga.';

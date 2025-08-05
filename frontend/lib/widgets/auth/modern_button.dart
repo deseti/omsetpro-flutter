@@ -164,12 +164,15 @@ class _ModernButtonState extends State<ModernButton>
                           const SizedBox(width: 12),
                         ],
                         if (!widget.isLoading)
-                          Text(
-                            widget.text,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: foregroundColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                          Flexible(
+                            child: Text(
+                              widget.text,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: foregroundColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         if (widget.isLoading) ...[

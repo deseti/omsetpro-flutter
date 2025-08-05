@@ -6,18 +6,19 @@ class ApiConfig {
       // Untuk web, gunakan localhost
       return 'http://localhost:3000';
     } else {
-      // Untuk mobile via USB debugging, gunakan localhost (karena adb reverse)
-      // Untuk WiFi, bisa gunakan IP 192.168.1.6:3000
-      return 'http://localhost:3000';
+      // Untuk mobile, prioritaskan IP jaringan WiFi untuk perangkat fisik
+      return 'http://192.168.1.6:3000';
     }
   }
   
   // Alternative URLs untuk fallback
   static List<String> get fallbackUrls {
     return [
+      'http://192.168.1.6:3000',   // WiFi local network (primary untuk perangkat fisik)
       'http://localhost:3000',      // USB debugging dengan adb reverse
       'http://10.0.2.2:3000',      // Android emulator
-      'http://192.168.1.6:3000',   // WiFi local network
+      'http://192.168.1.100:3000', // Alternative IP ranges
+      'http://192.168.0.100:3000', // Alternative IP ranges
     ];
   }
   

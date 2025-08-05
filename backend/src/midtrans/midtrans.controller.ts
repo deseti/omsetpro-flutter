@@ -7,12 +7,36 @@ export class MidtransController {
 
   /**
    * Endpoint lama, untuk membuat token transaksi Snap.
-   * Dipakai oleh mobile.
+   * Dipakai oleh mobile. Updated untuk handle data lengkap.
    */
   @Post('create-transaction')
   async createTransaction(
-    @Body() body: { orderId: string; totalAmount: number },
+    @Body() body: { 
+      orderId: string; 
+      totalAmount: number;
+      items?: any[];
+      customerDetails?: any;
+      platform?: string;
+    },
   ) {
+    // Jika ada items dan customerDetails, gunakan service web yang lengkap
+    if (body.items && body.customerDetails) {
+      const result = await this.midtransService.createSnapUrlForWeb({
+        orderId: body.orderId,
+        totalAmount: body.totalAmount,
+        items: body.items,
+        customerDetails: body.customerDetails,
+      });
+      
+      // Return format yang konsisten untuk mobile
+      return {
+        token: result.snap_token,
+        snap_url: result.snap_url,
+        redirect_url: result.snap_url, // Backward compatibility
+      };
+    }
+    
+    // Fallback ke service lama untuk compatibility
     return this.midtransService.createSnapTransaction(
       body.orderId,
       body.totalAmount,

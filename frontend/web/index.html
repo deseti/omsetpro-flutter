@@ -37,7 +37,121 @@
   <script 
     type="text/javascript"
     src="https://app.sandbox.midtrans.com/snap/snap.js"
-    data-client-key="MASUKKAN_CLIENT_KEY_SANDBOX_ANDA_DI_SINI">
+    data-client-key="Mid-client-Pqcy5qa-KoOoRDpd"
+    onload="console.log('✅ Snap.js loaded successfully');"
+    onerror="console.error('❌ Failed to load Snap.js');">
+  </script>
+  
+  <!-- Script untuk menangani pembayaran Snap.js -->
+  <script type="text/javascript">
+    // Fungsi untuk check apakah Snap.js sudah ter-load
+    function checkSnapReady() {
+      return typeof window.snap !== 'undefined' && window.snap && typeof window.snap.pay === 'function';
+    }
+    
+    // Fungsi utama untuk pembayaran
+    function snapPay(snapToken, callback) {
+      console.log('🔍 Checking Snap.js availability...');
+      
+      if (checkSnapReady()) {
+        console.log('✅ Snap.js is ready, starting payment with token:', snapToken);
+        try {
+          window.snap.pay(snapToken, {
+            onSuccess: function(result) {
+              console.log('✅ Payment success callback triggered:', result);
+              if (callback) {
+                const response = {
+                  status: 'success', 
+                  result: result,
+                  message: 'Payment completed successfully'
+                };
+                console.log('📤 Sending success response to Flutter:', response);
+                callback(response);
+              }
+            },
+            onPending: function(result) {
+              console.log('⏳ Payment pending callback triggered:', result);
+              if (callback) {
+                const response = {
+                  status: 'pending', 
+                  result: result,
+                  message: 'Payment is pending'
+                };
+                console.log('📤 Sending pending response to Flutter:', response);
+                callback(response);
+              }
+            },
+            onError: function(result) {
+              console.log('❌ Payment error callback triggered:', result);
+              if (callback) {
+                const response = {
+                  status: 'error', 
+                  result: result,
+                  message: 'Payment failed',
+                  error: result
+                };
+                console.log('📤 Sending error response to Flutter:', response);
+                callback(response);
+              }
+            },
+            onClose: function() {
+              console.log('🚪 Payment popup closed by user');
+              if (callback) {
+                const response = {
+                  status: 'closed',
+                  message: 'Payment popup was closed by user'
+                };
+                console.log('📤 Sending close response to Flutter:', response);
+                callback(response);
+              }
+            }
+          });
+        } catch (error) {
+          console.error('❌ Error calling snap.pay:', error);
+          if (callback) {
+            const response = {
+              status: 'error', 
+              message: 'Error calling Snap.js: ' + error.message,
+              error: error.toString()
+            };
+            console.log('📤 Sending exception response to Flutter:', response);
+            callback(response);
+          }
+        }
+      } else {
+        console.error('❌ Snap.js not ready. Window.snap:', typeof window.snap);
+        if (callback) {
+          const response = {
+            status: 'error', 
+            message: 'Snap.js not loaded properly',
+            error: 'Snap.js not available'
+          };
+          console.log('📤 Sending not-ready response to Flutter:', response);
+          callback(response);
+        }
+      }
+    }
+    
+    // Legacy function untuk backward compatibility
+    function snap(action, snapToken, callback) {
+      if (action === 'pay') {
+        snapPay(snapToken, callback);
+      } else {
+        console.error('❌ Invalid action:', action);
+        if (callback) callback({status: 'error', message: 'Invalid action'});
+      }
+    }
+    
+    // Wait untuk Snap.js ter-load
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        if (checkSnapReady()) {
+          console.log('✅ Snap.js fully loaded and ready');
+        } else {
+          console.error('❌ Snap.js failed to load after page load');
+        }
+      }, 1000);
+    });
   </script>
   <!-- ====================================================================== -->
 
