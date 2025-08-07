@@ -24,7 +24,7 @@ class PaymentWebViewPage extends StatefulWidget {
 class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   late final WebViewController _controller;
   bool _isLoading = true;
-  String _title = 'Pembayaran Digital';
+  final String _title = 'Pembayaran Digital';
 
   @override
   void initState() {
@@ -56,7 +56,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
             setState(() {
               _isLoading = false;
             });
-            
+
             // Check if payment is completed based on URL
             _checkPaymentStatus(url);
           },
@@ -65,7 +65,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
           },
           onNavigationRequest: (NavigationRequest request) {
             print('🔄 Navigation request: ${request.url}');
-            
+
             // Allow all navigation for payment flow
             return NavigationDecision.navigate;
           },
@@ -76,7 +76,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
 
   void _checkPaymentStatus(String url) {
     // Check URL patterns to determine payment status
-    if (url.contains('/finish') || 
+    if (url.contains('/finish') ||
         url.contains('status_code=200') ||
         url.contains('transaction_status=settlement') ||
         url.contains('transaction_status=capture')) {
@@ -92,9 +92,9 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
         },
       ));
       Navigator.of(context).pop();
-    } else if (url.contains('/unfinish') || 
-               url.contains('status_code=201') ||
-               url.contains('transaction_status=pending')) {
+    } else if (url.contains('/unfinish') ||
+        url.contains('status_code=201') ||
+        url.contains('transaction_status=pending')) {
       // Payment pending/unfinished
       print('⏳ Payment pending detected from URL: $url');
       widget.onResult(PaymentResult(
@@ -108,11 +108,11 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
         },
       ));
       Navigator.of(context).pop();
-    } else if (url.contains('/error') || 
-               url.contains('status_code=400') ||
-               url.contains('transaction_status=deny') ||
-               url.contains('transaction_status=cancel') ||
-               url.contains('transaction_status=expire')) {
+    } else if (url.contains('/error') ||
+        url.contains('status_code=400') ||
+        url.contains('transaction_status=deny') ||
+        url.contains('transaction_status=cancel') ||
+        url.contains('transaction_status=expire')) {
       // Payment failed
       print('❌ Payment failed detected from URL: $url');
       widget.onResult(PaymentResult(

@@ -10,7 +10,8 @@ class RiwayatTransaksiPage extends ConsumerStatefulWidget {
   const RiwayatTransaksiPage({super.key});
 
   @override
-  ConsumerState<RiwayatTransaksiPage> createState() => _RiwayatTransaksiPageState();
+  ConsumerState<RiwayatTransaksiPage> createState() =>
+      _RiwayatTransaksiPageState();
 }
 
 class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
@@ -30,7 +31,8 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       // Load more data when reaching bottom
       _loadMore();
     }
@@ -41,9 +43,9 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
     setState(() {
       _isLoadingMore = true;
     });
-    
+
     await ref.read(riwayatTransaksiProvider.notifier).loadMore();
-    
+
     if (mounted) {
       setState(() {
         _isLoadingMore = false;
@@ -71,7 +73,8 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () => ref.read(riwayatTransaksiProvider.notifier).refresh(),
+            onPressed: () =>
+                ref.read(riwayatTransaksiProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh, color: Colors.white),
             tooltip: 'Refresh',
           ),
@@ -87,11 +90,11 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   children: [
-                    const Icon(Icons.filter_list, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
+                    Icon(Icons.filter_list, color: AppColors.primary, size: 20),
+                    SizedBox(width: 8),
+                    Text(
                       'Filter Periode:',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -113,20 +116,24 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                           label: Text(
                             periode.label,
                             style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.white70,
+                              color: isSelected ? Colors.white : Colors.white70,
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),
                           ),
                           selected: isSelected,
                           onSelected: (_) {
-                            ref.read(riwayatTransaksiProvider.notifier).onPeriodeChanged(periode);
+                            ref
+                                .read(riwayatTransaksiProvider.notifier)
+                                .onPeriodeChanged(periode);
                           },
                           backgroundColor: Colors.grey[800],
                           selectedColor: AppColors.primary,
                           checkmarkColor: Colors.white,
                           side: BorderSide(
-                            color: isSelected ? AppColors.primary : Colors.grey[700]!,
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.grey[700]!,
                           ),
                         ),
                       );
@@ -136,13 +143,14 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
               ],
             ),
           ),
-          
+
           // Content Section
           Expanded(
             child: riwayatState.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => _buildErrorWidget(error.toString()),
-              data: (transaksiList) => _buildTransaksiList(transaksiList, pagination),
+              data: (transaksiList) =>
+                  _buildTransaksiList(transaksiList, pagination),
             ),
           ),
         ],
@@ -182,7 +190,8 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => ref.read(riwayatTransaksiProvider.notifier).refresh(),
+              onPressed: () =>
+                  ref.read(riwayatTransaksiProvider.notifier).refresh(),
               icon: const Icon(Icons.refresh),
               label: const Text('Coba Lagi'),
               style: ElevatedButton.styleFrom(
@@ -196,7 +205,8 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
     );
   }
 
-  Widget _buildTransaksiList(List<RiwayatTransaksi> transaksiList, PaginationInfo? pagination) {
+  Widget _buildTransaksiList(
+      List<RiwayatTransaksi> transaksiList, PaginationInfo? pagination) {
     if (transaksiList.isEmpty) {
       return _buildEmptyState();
     }
@@ -210,7 +220,7 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
         itemBuilder: (context, index) {
           if (index == transaksiList.length) {
             // Loading indicator for load more
-            return _isLoadingMore 
+            return _isLoadingMore
                 ? const Padding(
                     padding: EdgeInsets.all(16),
                     child: Center(child: CircularProgressIndicator()),
@@ -289,7 +299,8 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -305,15 +316,18 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getPaymentMethodColor(transaksi.metodeBayar).withOpacity(0.1),
+                          color: _getPaymentMethodColor(transaksi.metodeBayar)
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           transaksi.metodeBayar,
                           style: TextStyle(
-                            color: _getPaymentMethodColor(transaksi.metodeBayar),
+                            color:
+                                _getPaymentMethodColor(transaksi.metodeBayar),
                             fontWeight: FontWeight.w600,
                             fontSize: 11,
                           ),
@@ -330,9 +344,9 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Amount and items info
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -385,13 +399,15 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Kasir and customer info
               Row(
                 children: [
-                  Icon(Icons.person, size: 16, color: dark ? Colors.white38 : Colors.grey[500]),
+                  Icon(Icons.person,
+                      size: 16,
+                      color: dark ? Colors.white38 : Colors.grey[500]),
                   const SizedBox(width: 4),
                   Text(
                     transaksi.kasir.namaLengkap,
@@ -402,7 +418,9 @@ class _RiwayatTransaksiPageState extends ConsumerState<RiwayatTransaksiPage> {
                   ),
                   if (transaksi.pelanggan != null) ...[
                     const SizedBox(width: 16),
-                    Icon(Icons.account_circle, size: 16, color: dark ? Colors.white38 : Colors.grey[500]),
+                    Icon(Icons.account_circle,
+                        size: 16,
+                        color: dark ? Colors.white38 : Colors.grey[500]),
                     const SizedBox(width: 4),
                     Text(
                       transaksi.pelanggan!.nama,
@@ -492,7 +510,8 @@ class _TransaksiDetailDialog extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          DateFormat('dd MMMM yyyy, HH:mm').format(transaksi.createdAt),
+                          DateFormat('dd MMMM yyyy, HH:mm')
+                              .format(transaksi.createdAt),
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
@@ -508,7 +527,7 @@ class _TransaksiDetailDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Content
             Flexible(
               child: SingleChildScrollView(
@@ -522,10 +541,10 @@ class _TransaksiDetailDialog extends StatelessWidget {
                     _buildInfoRow('Metode Bayar', transaksi.metodeBayar),
                     if (transaksi.pelanggan != null)
                       _buildInfoRow('Pelanggan', transaksi.pelanggan!.nama),
-                    
+
                     const SizedBox(height: 20),
                     const Divider(),
-                    
+
                     // Items
                     const Text(
                       'Detail Produk:',
@@ -535,94 +554,97 @@ class _TransaksiDetailDialog extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     ...transaksi.detail.map((detail) => Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  detail.produk.nama,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${detail.jumlah} x ${formatter.format(detail.hargaSaatItu)}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                if (detail.potonganItem > 0) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Diskon: ${formatter.format(detail.potonganItem)}',
-                                    style: TextStyle(
-                                      color: Colors.green[600],
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[200]!),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                          child: Row(
                             children: [
-                              if (detail.potonganItem > 0) ...[
-                                Text(
-                                  formatter.format(detail.subtotal),
-                                  style: const TextStyle(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      detail.produk.nama,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${detail.jumlah} x ${formatter.format(detail.hargaSaatItu)}',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    if (detail.potonganItem > 0) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Diskon: ${formatter.format(detail.potonganItem)}',
+                                        style: TextStyle(
+                                          color: Colors.green[600],
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                                Text(
-                                  formatter.format(detail.subtotalSetelahDiskon),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ] else ...[
-                                Text(
-                                  formatter.format(detail.subtotal),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (detail.potonganItem > 0) ...[
+                                    Text(
+                                      formatter.format(detail.subtotal),
+                                      style: const TextStyle(
+                                        decoration: TextDecoration.lineThrough,
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      formatter
+                                          .format(detail.subtotalSetelahDiskon),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    Text(
+                                      formatter.format(detail.subtotal),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ],
                           ),
-                        ],
-                      ),
-                    )),
-                    
+                        )),
+
                     const SizedBox(height: 16),
                     const Divider(),
-                    
+
                     // Summary
                     if (transaksi.potongan > 0) ...[
-                      _buildSummaryRow('Subtotal', formatter.format(transaksi.totalSebelumDiskon)),
-                      _buildSummaryRow('Diskon', '- ${formatter.format(transaksi.potongan)}', 
+                      _buildSummaryRow('Subtotal',
+                          formatter.format(transaksi.totalSebelumDiskon)),
+                      _buildSummaryRow(
+                          'Diskon', '- ${formatter.format(transaksi.potongan)}',
                           color: Colors.green[600]),
                     ],
-                    _buildSummaryRow('Total', formatter.format(transaksi.total), 
+                    _buildSummaryRow('Total', formatter.format(transaksi.total),
                         isTotal: true),
                   ],
                 ),
@@ -664,7 +686,8 @@ class _TransaksiDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {Color? color, bool isTotal = false}) {
+  Widget _buildSummaryRow(String label, String value,
+      {Color? color, bool isTotal = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(

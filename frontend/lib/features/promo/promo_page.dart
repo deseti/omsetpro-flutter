@@ -25,7 +25,7 @@ class PromoPage extends ConsumerWidget {
       context: context,
       barrierDismissible: false, // Mencegah dialog tertutup saat diklik di luar
       builder: (dialogContext) {
-        return        AlertDialog(
+        return AlertDialog(
           title: Text(isEditing ? 'Edit Promo' : 'Buat Promo Baru'),
           content: Consumer(
             builder: (context, ref, child) {
@@ -71,7 +71,8 @@ class PromoPage extends ConsumerWidget {
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+                          Icon(Icons.inventory_2_outlined,
+                              size: 48, color: Colors.grey),
                           SizedBox(height: 8),
                           Text(
                             'Tidak ada produk',
@@ -87,7 +88,7 @@ class PromoPage extends ConsumerWidget {
                       ),
                     );
                   }
-                  
+
                   return Form(
                     key: formKey,
                     child: SingleChildScrollView(
@@ -139,7 +140,8 @@ class PromoPage extends ConsumerWidget {
                                 : null,
                           ),
                           StatefulBuilder(
-                            builder: (BuildContext context, StateSetter setState) {
+                            builder:
+                                (BuildContext context, StateSetter setState) {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -162,37 +164,55 @@ class PromoPage extends ConsumerWidget {
                                               : Text(
                                                   '${selectedProdukIds.length} produk dipilih',
                                                 ),
-                                          trailing: const Icon(Icons.arrow_drop_down),
+                                          trailing:
+                                              const Icon(Icons.arrow_drop_down),
                                           onTap: () async {
                                             final List<int>? selected =
                                                 await showDialog<List<int>>(
                                               context: context,
                                               builder: (BuildContext context) {
-                                                List<int> tempSelected = List.from(
-                                                    selectedProdukIds.cast<int>());
+                                                List<int> tempSelected =
+                                                    List.from(selectedProdukIds
+                                                        .cast<int>());
                                                 return StatefulBuilder(
-                                                  builder: (context, setDialogState) {
+                                                  builder: (context,
+                                                      setDialogState) {
                                                     return AlertDialog(
-                                                      title: const Text('Pilih Produk'),
-                                                      content: Container(
+                                                      title: const Text(
+                                                          'Pilih Produk'),
+                                                      content: SizedBox(
                                                         width: double.maxFinite,
                                                         height: 400,
                                                         child: ListView.builder(
-                                                          itemCount: produkList.length,
-                                                          itemBuilder: (context, index) {
-                                                            final produk = produkList[index];
-                                                            final isSelected = tempSelected
-                                                                .contains(produk.id);
+                                                          itemCount:
+                                                              produkList.length,
+                                                          itemBuilder:
+                                                              (context, index) {
+                                                            final produk =
+                                                                produkList[
+                                                                    index];
+                                                            final isSelected =
+                                                                tempSelected
+                                                                    .contains(
+                                                                        produk
+                                                                            .id);
                                                             return CheckboxListTile(
                                                               title: Text(
                                                                   '${produk.nama} (${produk.cabangNama})'),
                                                               value: isSelected,
-                                                              onChanged: (bool? value) {
-                                                                setDialogState(() {
-                                                                  if (value == true) {
-                                                                    tempSelected.add(produk.id);
+                                                              onChanged: (bool?
+                                                                  value) {
+                                                                setDialogState(
+                                                                    () {
+                                                                  if (value ==
+                                                                      true) {
+                                                                    tempSelected
+                                                                        .add(produk
+                                                                            .id);
                                                                   } else {
-                                                                    tempSelected.remove(produk.id);
+                                                                    tempSelected
+                                                                        .remove(
+                                                                            produk.id);
                                                                   }
                                                                 });
                                                               },
@@ -202,12 +222,21 @@ class PromoPage extends ConsumerWidget {
                                                       ),
                                                       actions: [
                                                         TextButton(
-                                                          onPressed: () => Navigator.of(context).pop(),
-                                                          child: const Text('BATAL'),
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                      context)
+                                                                  .pop(),
+                                                          child: const Text(
+                                                              'BATAL'),
                                                         ),
                                                         ElevatedButton(
-                                                          onPressed: () => Navigator.of(context).pop(tempSelected),
-                                                          child: const Text('OK'),
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                      context)
+                                                                  .pop(
+                                                                      tempSelected),
+                                                          child:
+                                                              const Text('OK'),
                                                         ),
                                                       ],
                                                     );
@@ -217,7 +246,8 @@ class PromoPage extends ConsumerWidget {
                                             );
                                             if (selected != null) {
                                               setState(() {
-                                                selectedProdukIds = selected.cast<Object?>();
+                                                selectedProdukIds =
+                                                    selected.cast<Object?>();
                                               });
                                             }
                                           },

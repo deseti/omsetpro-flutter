@@ -169,6 +169,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
       ref: ref,
       cart: cart,
       totalHarga: totalHarga,
+      cabangId: widget.cabangId, // [PERBAIKAN] Kirim cabangId
     );
 
     // 2. Periksa hasilnya

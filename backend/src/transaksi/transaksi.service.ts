@@ -62,7 +62,7 @@ export class TransaksiService {
   }
 
   async create(createTransaksiDto: CreateTransaksiDto, kasirId: number) {
-    const { cabangId, metodeBayar, items, pelangganId } = createTransaksiDto;
+    const { cabangId, metodeBayar, items, pelangganId, orderId } = createTransaksiDto;
 
     const { cabang } = await this.verifyCabangAccess(cabangId, kasirId);
     const ownerId = cabang.ownerId;
@@ -152,6 +152,7 @@ export class TransaksiService {
           cabangId,
           kasirId,
           pelangganId: pelangganId,
+          orderId: orderId, // [PERBAIKAN] Simpan orderId untuk webhook
           detail: {
             create: transaksiDetailData,
           },

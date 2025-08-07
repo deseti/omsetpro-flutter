@@ -188,6 +188,7 @@ class TransactionService {
     required WidgetRef ref,
     required List<Map<String, dynamic>> cart,
     required int totalHarga,
+    required int cabangId, // [PERBAIKAN] Tambahkan cabangId parameter
   }) async {
     final midtransService = ref.read(midtransServiceProvider);
     final selectedPelanggan = ref.read(AppProviders.selectedPelangganProvider);
@@ -214,12 +215,64 @@ class TransactionService {
         items: itemDetails,
         customerDetails: customerDetails,
       );
+      
+      // [PERBAIKAN] Simpan transaksi ke database dengan orderId dari payment
+      if (paymentResult.isSuccess && paymentResult.transactionId != null) {
+        await _saveDigitalTransactionToDatabase(
+          ref: ref,
+          cart: cart,
+          totalHarga: totalHarga,
+          orderId: paymentResult.transactionId!,
+          selectedPelanggan: selectedPelanggan,
+          cabangId: cabangId, // Gunakan cabangId dari parameter
+        );
+      }
+      
       return paymentResult;
     } catch (e) {
       return PaymentResult(
         isSuccess: false,
         message: 'Error memulai pembayaran: ${e.toString()}',
       );
+    }
+  }
+
+  // [BARU] Helper function untuk menyimpan transaksi digital ke database
+  static Future<void> _saveDigitalTransactionToDatabase({
+    required WidgetRef ref,
+    required List<Map<String, dynamic>> cart,
+    required int totalHarga,
+    required String orderId,
+    required Pelanggan? selectedPelanggan,
+    required int cabangId,
+  }) async {
+    try {
+      final dio = ref.read(AppProviders.dioProvider);
+      
+      final itemsDto = cart
+          .map((item) => {
+                'produkId': item['produk']['id'],
+                'jumlah': item['jumlah'],
+              })
+          .toList();
+
+      final requestData = {
+        'cabangId': cabangId,
+        'metodeBayar': 'Digital', // Pembayaran digital
+        'items': itemsDto,
+        'pelangganId': selectedPelanggan?.id,
+        'orderId': orderId, // [PENTING] Kirim orderId ke backend
+      };
+
+      print('🔄 Saving digital transaction to database with orderId: $orderId');
+      final response = await dio.post('/transaksi', data: requestData);
+      print('✅ Digital transaction saved to database: ${response.data}');
+      
+      // Refresh laporan setelah transaksi tersimpan
+      LaporanRefreshHelper.refreshLaporanAfterTransaction(ref);
+    } catch (e) {
+      print('❌ Error saving digital transaction to database: $e');
+      // Don't throw error karena payment sudah berhasil
     }
   }
 

@@ -37,17 +37,25 @@ class MidtransService {
       customerDetails: customerDetails,
     );
 
+    // [PERBAIKAN] Pastikan orderId dikembalikan sebagai transactionId
+    final updatedResult = PaymentResult(
+      isSuccess: result.isSuccess,
+      transactionId: orderId, // Gunakan orderId yang kita generate
+      message: result.message,
+      additionalData: result.additionalData,
+    );
+
     // Log untuk debugging, bisa dihapus jika tidak perlu
     if (kDebugMode) {
-      if (result.isSuccess) {
-        print('Payment initiation successful: ${result.transactionId}');
-        print('Message: ${result.message}');
+      if (updatedResult.isSuccess) {
+        print('Payment initiation successful: ${updatedResult.transactionId}');
+        print('Message: ${updatedResult.message}');
       } else {
-        print('Payment initiation failed: ${result.message}');
+        print('Payment initiation failed: ${updatedResult.message}');
       }
     }
 
-    return result;
+    return updatedResult;
   }
 
   // Method tambahan untuk mendapatkan informasi platform

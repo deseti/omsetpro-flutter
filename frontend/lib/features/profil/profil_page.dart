@@ -21,7 +21,8 @@ class ProfilData {
 
   factory ProfilData.fromJson(Map<String, dynamic> json) {
     var aksesList = json['aksesCabang'] as List? ?? [];
-    List<AksesCabang> aksesCabangList = aksesList.map((i) => AksesCabang.fromJson(i)).toList();
+    List<AksesCabang> aksesCabangList =
+        aksesList.map((i) => AksesCabang.fromJson(i)).toList();
 
     return ProfilData(
       namaLengkap: json['namaLengkap'] ?? '',
@@ -63,7 +64,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isEditingNama = false;
   bool _isChangingPassword = false;
   bool _isLoading = false;
@@ -95,7 +96,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
 
     try {
       final dio = ref.read(dioProvider);
-      
+
       await dio.patch('/auth/update-profile', data: {
         'namaLengkap': _namaController.text.trim(),
       });
@@ -138,7 +139,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
 
     try {
       final dio = ref.read(dioProvider);
-      
+
       await dio.patch('/auth/change-password', data: {
         'currentPassword': _currentPasswordController.text,
         'newPassword': _newPasswordController.text,
@@ -338,7 +339,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
               radius: 50,
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               child: Text(
-                profilData.namaLengkap.isNotEmpty 
+                profilData.namaLengkap.isNotEmpty
                     ? profilData.namaLengkap[0].toUpperCase()
                     : 'U',
                 style: TextStyle(
@@ -352,8 +353,8 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
             Text(
               profilData.namaLengkap,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Container(
@@ -374,8 +375,8 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
             Text(
               profilData.email,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
           ],
         ),
@@ -394,11 +395,11 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
             Text(
               'Informasi Personal',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 24),
-            
+
             // Nama Lengkap
             Row(
               children: [
@@ -435,7 +436,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                   ),
               ],
             ),
-            
+
             if (_isEditingNama) ...[
               const SizedBox(height: 16),
               Row(
@@ -467,9 +468,9 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                 ],
               ),
             ],
-            
+
             const SizedBox(height: 16),
-            
+
             // Email (Read-only)
             TextFormField(
               initialValue: profilData.email,
@@ -501,8 +502,8 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                   child: Text(
                     'Keamanan Akun',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
                 if (!_isChangingPassword)
@@ -517,10 +518,9 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                   ),
               ],
             ),
-            
             if (_isChangingPassword) ...[
               const SizedBox(height: 24),
-              
+
               // Password Saat Ini
               TextFormField(
                 controller: _currentPasswordController,
@@ -529,7 +529,9 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    icon: Icon(_showCurrentPassword ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(_showCurrentPassword
+                        ? Icons.visibility_off
+                        : Icons.visibility),
                     onPressed: () {
                       setState(() {
                         _showCurrentPassword = !_showCurrentPassword;
@@ -546,7 +548,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Password Baru
               TextFormField(
                 controller: _newPasswordController,
@@ -555,7 +557,9 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                   prefixIcon: const Icon(Icons.lock),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    icon: Icon(_showNewPassword ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(_showNewPassword
+                        ? Icons.visibility_off
+                        : Icons.visibility),
                     onPressed: () {
                       setState(() {
                         _showNewPassword = !_showNewPassword;
@@ -575,7 +579,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Konfirmasi Password Baru
               TextFormField(
                 controller: _confirmPasswordController,
@@ -584,7 +588,9 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                   prefixIcon: const Icon(Icons.lock),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    icon: Icon(_showConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(_showConfirmPassword
+                        ? Icons.visibility_off
+                        : Icons.visibility),
                     onPressed: () {
                       setState(() {
                         _showConfirmPassword = !_showConfirmPassword;
@@ -604,7 +610,7 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
                 },
               ),
               const SizedBox(height: 24),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -659,11 +665,10 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
             Text(
               'Akses Cabang',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 16),
-            
             if (profilData.role == Role.OWNER) ...[
               Container(
                 padding: const EdgeInsets.all(16),
@@ -699,29 +704,29 @@ class _ProfilPageState extends ConsumerState<ProfilPage> {
               ),
             ] else if (profilData.aksesCabang.isNotEmpty) ...[
               ...profilData.aksesCabang.map((akses) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.store, color: Colors.blue[700]),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        akses.namaCabang,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue[700],
-                        ),
-                      ),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
                     ),
-                  ],
-                ),
-              )).toList(),
+                    child: Row(
+                      children: [
+                        Icon(Icons.store, color: Colors.blue[700]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            akses.namaCabang,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blue[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
             ] else ...[
               Container(
                 padding: const EdgeInsets.all(16),

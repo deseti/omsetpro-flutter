@@ -49,45 +49,46 @@ class HardwareDevice {
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'manufacturer': manufacturer,
-    'type': type.toString(),
-    'connectionType': connectionType.toString(),
-    'address': address,
-    'isConnected': isConnected,
-    'capabilities': capabilities,
-  };
+        'id': id,
+        'name': name,
+        'manufacturer': manufacturer,
+        'type': type.toString(),
+        'connectionType': connectionType.toString(),
+        'address': address,
+        'isConnected': isConnected,
+        'capabilities': capabilities,
+      };
 
   factory HardwareDevice.fromJson(Map<String, dynamic> json) => HardwareDevice(
-    id: json['id'],
-    name: json['name'],
-    manufacturer: json['manufacturer'],
-    type: HardwareType.values.firstWhere(
-      (e) => e.toString() == json['type'],
-      orElse: () => HardwareType.thermalPrinter,
-    ),
-    connectionType: ConnectionType.values.firstWhere(
-      (e) => e.toString() == json['connectionType'],
-      orElse: () => ConnectionType.usb,
-    ),
-    address: json['address'],
-    isConnected: json['isConnected'] ?? false,
-    capabilities: json['capabilities'] ?? {},
-  );
+        id: json['id'],
+        name: json['name'],
+        manufacturer: json['manufacturer'],
+        type: HardwareType.values.firstWhere(
+          (e) => e.toString() == json['type'],
+          orElse: () => HardwareType.thermalPrinter,
+        ),
+        connectionType: ConnectionType.values.firstWhere(
+          (e) => e.toString() == json['connectionType'],
+          orElse: () => ConnectionType.usb,
+        ),
+        address: json['address'],
+        isConnected: json['isConnected'] ?? false,
+        capabilities: json['capabilities'] ?? {},
+      );
 }
 
 class HardwareDetectionService {
-  static final HardwareDetectionService _instance = HardwareDetectionService._internal();
+  static final HardwareDetectionService _instance =
+      HardwareDetectionService._internal();
   factory HardwareDetectionService() => _instance;
   HardwareDetectionService._internal();
 
-  final StreamController<List<HardwareDevice>> _devicesController = 
+  final StreamController<List<HardwareDevice>> _devicesController =
       StreamController<List<HardwareDevice>>.broadcast();
-  
+
   Stream<List<HardwareDevice>> get devicesStream => _devicesController.stream;
-  
-  List<HardwareDevice> _discoveredDevices = [];
+
+  final List<HardwareDevice> _discoveredDevices = [];
   bool _isScanning = false;
 
   /// Initialize hardware detection service
@@ -132,22 +133,22 @@ class HardwareDetectionService {
   /// Scan for all available hardware devices
   Future<void> scanForDevices() async {
     if (_isScanning) return;
-    
+
     _isScanning = true;
     _discoveredDevices.clear();
-    
+
     try {
       print('🔍 Starting hardware scan...');
-      
+
       // Run scans
       await Future.wait([
         _scanBluetoothDevices(),
         _scanNetworkDevices(),
       ]);
-      
+
       _devicesController.add(List.from(_discoveredDevices));
-      print('✅ Hardware scan completed. Found ${_discoveredDevices.length} devices');
-      
+      print(
+          '✅ Hardware scan completed. Found ${_discoveredDevices.length} devices');
     } catch (e) {
       print('❌ Error during hardware scan: $e');
     } finally {
@@ -158,7 +159,7 @@ class HardwareDetectionService {
   /// Scan for USB connected devices - Simplified for compatibility
   Future<void> _scanUSBDevices() async {
     if (kIsWeb) return;
-    
+
     try {
       // USB device scanning would require additional setup
       // For now, we'll focus on Bluetooth and Network devices
@@ -171,11 +172,12 @@ class HardwareDetectionService {
   /// Scan for Bluetooth devices
   Future<void> _scanBluetoothDevices() async {
     if (kIsWeb) return;
-    
+
     try {
-      print('⚠️ Bluetooth scanning using flutter_blue_plus requires updated implementation');
+      print(
+          '⚠️ Bluetooth scanning using flutter_blue_plus requires updated implementation');
       print('💡 For now, focusing on Network and USB HID devices');
-      
+
       // This would be the flutter_blue_plus implementation:
       // await FlutterBluePlus.startScan(timeout: Duration(seconds: 4));
       // FlutterBluePlus.scanResults.listen((results) {
@@ -186,7 +188,7 @@ class HardwareDetectionService {
       //     }
       //   }
       // });
-      
+
       print('📶 Bluetooth scan completed (placeholder)');
     } catch (e) {
       print('❌ Bluetooth scan failed: $e');
@@ -198,16 +200,16 @@ class HardwareDetectionService {
     try {
       final info = NetworkInfo();
       final wifiIP = await info.getWifiIP();
-      
+
       if (wifiIP != null) {
         // Add some common network printer IPs as examples
         // In a real implementation, this would scan the network
         final commonPrinterIPs = [
           '192.168.1.100',
-          '192.168.1.101', 
+          '192.168.1.101',
           '192.168.1.102',
         ];
-        
+
         for (final ip in commonPrinterIPs) {
           // Basic network device placeholder
           final device = HardwareDevice(
@@ -223,7 +225,7 @@ class HardwareDetectionService {
           // _discoveredDevices.add(device);
         }
       }
-      
+
       print('🌐 Network scan completed');
     } catch (e) {
       print('❌ Network scan failed: $e');
@@ -236,11 +238,11 @@ class HardwareDetectionService {
     // Simplified USB device identification
     // In a real implementation, this would use platform channels
     // to identify USB devices by vendor/product IDs
-    
+
     final name = deviceInfo['name'] ?? 'Unknown USB Device';
     final manufacturer = deviceInfo['manufacturer'] ?? 'Unknown';
     final address = deviceInfo['address'] ?? 'unknown';
-    
+
     // Basic USB device placeholder
     return HardwareDevice(
       id: 'usb_$address',
@@ -257,10 +259,10 @@ class HardwareDetectionService {
   HardwareDevice? _identifyBluetoothDevice(BluetoothDevice device) {
     final name = device.platformName.toLowerCase();
     final address = device.remoteId.toString();
-    
+
     // Known printer patterns
-    if (name.contains('printer') || 
-        name.contains('pos') || 
+    if (name.contains('printer') ||
+        name.contains('pos') ||
         name.contains('thermal') ||
         name.contains('epson') ||
         name.contains('star') ||
@@ -269,26 +271,31 @@ class HardwareDetectionService {
         name.contains('sunmi')) {
       return HardwareDevice(
         id: 'bt_printer_$address',
-        name: device.platformName.isNotEmpty ? device.platformName : 'Bluetooth Printer',
+        name: device.platformName.isNotEmpty
+            ? device.platformName
+            : 'Bluetooth Printer',
         manufacturer: _extractManufacturer(name),
         type: HardwareType.thermalPrinter,
         connectionType: ConnectionType.bluetooth,
         address: address,
         capabilities: {
-          'rssi': 0, // This would need to be obtained differently in flutter_blue_plus
+          'rssi':
+              0, // This would need to be obtained differently in flutter_blue_plus
         },
       );
     }
-    
+
     // Known scanner patterns
-    if (name.contains('scanner') || 
+    if (name.contains('scanner') ||
         name.contains('barcode') ||
         name.contains('zebra') ||
         name.contains('honeywell') ||
         name.contains('datalogic')) {
       return HardwareDevice(
         id: 'bt_scanner_$address',
-        name: device.platformName.isNotEmpty ? device.platformName : 'Bluetooth Scanner',
+        name: device.platformName.isNotEmpty
+            ? device.platformName
+            : 'Bluetooth Scanner',
         manufacturer: _extractManufacturer(name),
         type: HardwareType.barcodeScanner,
         connectionType: ConnectionType.bluetooth,
@@ -296,14 +303,14 @@ class HardwareDetectionService {
         capabilities: {},
       );
     }
-    
+
     return null;
   }
 
   /// Check if vendor ID belongs to known printer manufacturers
   bool _isPrinterVendor(int? vid) {
     if (vid == null) return false;
-    
+
     // Known printer vendor IDs
     const printerVendors = [
       0x04b8, // Epson
@@ -314,14 +321,14 @@ class HardwareDetectionService {
       0x0fe6, // ICS Advent (Kontron)
       0x20d1, // XPRINTER
     ];
-    
+
     return printerVendors.contains(vid);
   }
 
   /// Check if vendor ID belongs to known scanner manufacturers
   bool _isScannerVendor(int? vid) {
     if (vid == null) return false;
-    
+
     // Known scanner vendor IDs
     const scannerVendors = [
       0x0a5c, // Zebra
@@ -329,14 +336,14 @@ class HardwareDetectionService {
       0x05f9, // Datalogic
       0x1659, // Prolific
     ];
-    
+
     return scannerVendors.contains(vid);
   }
 
   /// Extract manufacturer name from device name
   String _extractManufacturer(String deviceName) {
     final name = deviceName.toLowerCase();
-    
+
     if (name.contains('epson')) return 'Epson';
     if (name.contains('star')) return 'Star Micronics';
     if (name.contains('citizen')) return 'Citizen';
@@ -345,7 +352,7 @@ class HardwareDetectionService {
     if (name.contains('zebra')) return 'Zebra';
     if (name.contains('honeywell')) return 'Honeywell';
     if (name.contains('datalogic')) return 'Datalogic';
-    
+
     return 'Unknown';
   }
 

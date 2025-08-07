@@ -35,7 +35,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
   Future<void> _exportProduk() async {
     try {
       print('🔄 Starting export for cabangId: ${widget.cabangId}');
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Mempersiapkan file export...'),
@@ -44,14 +44,15 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
       );
 
       final dio = ref.read(dioProvider);
-      
+
       // Request export dengan response type bytes
       final response = await dio.get(
         '/produk/export/${widget.cabangId}',
         options: Options(
           responseType: ResponseType.bytes,
           headers: {
-            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Accept':
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           },
         ),
       );
@@ -60,7 +61,8 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
         // Web platform - would need universal_html or different approach
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Export belum didukung di platform mobile. Silakan gunakan web version.'),
+            content: Text(
+                'Export belum didukung di platform mobile. Silakan gunakan web version.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -68,21 +70,21 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
         // Mobile platform - save to downloads or share
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Export belum tersedia di mobile. Silakan gunakan web version.'),
+            content: Text(
+                'Export belum tersedia di mobile. Silakan gunakan web version.'),
             backgroundColor: Colors.orange,
           ),
         );
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Export data berhasil!'),
           backgroundColor: Colors.green,
         ),
       );
-      
+
       print('✅ Export completed successfully');
-      
     } catch (e) {
       print('❌ Export error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -395,7 +397,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
           // Tombol Export (secondary)
           FloatingActionButton(
             mini: true,
-            heroTag: "export_fab",
+            heroTag: 'export_fab',
             onPressed: _exportProduk,
             tooltip: 'Export Data Produk',
             backgroundColor: Colors.green,
@@ -404,7 +406,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
           const SizedBox(height: 10),
           // Tombol Tambah Produk (primary)
           FloatingActionButton(
-            heroTag: "add_fab",
+            heroTag: 'add_fab',
             onPressed: () => _showProdukDialog(),
             tooltip: 'Tambah Produk',
             child: const Icon(Icons.add),

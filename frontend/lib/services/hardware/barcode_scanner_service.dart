@@ -37,15 +37,16 @@ class BarcodeResult {
   });
 
   Map<String, dynamic> toJson() => {
-    'data': data,
-    'symbology': symbology,
-    'timestamp': timestamp.toIso8601String(),
-    'rawData': rawData,
-  };
+        'data': data,
+        'symbology': symbology,
+        'timestamp': timestamp.toIso8601String(),
+        'rawData': rawData,
+      };
 }
 
 class BarcodeScannerService {
-  static final BarcodeScannerService _instance = BarcodeScannerService._internal();
+  static final BarcodeScannerService _instance =
+      BarcodeScannerService._internal();
   factory BarcodeScannerService() => _instance;
   BarcodeScannerService._internal();
 
@@ -53,18 +54,18 @@ class BarcodeScannerService {
   // Note: USB support removed for now, will use keyboard event listeners for USB HID scanners
   BluetoothDevice? _bluetoothDevice;
   BluetoothCharacteristic? _bluetoothCharacteristic;
-  
+
   // Current state
   HardwareDevice? _connectedDevice;
   ScannerStatus _status = ScannerStatus.disconnected;
   bool _isListening = false;
-  
+
   // Stream controllers
-  final StreamController<BarcodeResult> _barcodeController = 
+  final StreamController<BarcodeResult> _barcodeController =
       StreamController<BarcodeResult>.broadcast();
-  final StreamController<ScannerStatus> _statusController = 
+  final StreamController<ScannerStatus> _statusController =
       StreamController<ScannerStatus>.broadcast();
-  
+
   Stream<BarcodeResult> get barcodeStream => _barcodeController.stream;
   Stream<ScannerStatus> get statusStream => _statusController.stream;
   ScannerStatus get currentStatus => _status;
@@ -102,7 +103,7 @@ class BarcodeScannerService {
   void handleRawKeyEvent(RawKeyEvent event) {
     if (event is RawKeyDownEvent && _connectedDevice != null && _isListening) {
       final key = event.logicalKey;
-      
+
       // Handle Enter key (barcode scan complete)
       if (key == LogicalKeyboardKey.enter) {
         if (_barcodeBuffer.isNotEmpty) {
@@ -117,12 +118,12 @@ class BarcodeScannerService {
         }
         return;
       }
-      
+
       // Handle regular characters
       final character = event.character;
       if (character != null && character.isNotEmpty) {
         _barcodeBuffer += character;
-        
+
         // Reset timer for barcode completion
         _barcodeTimer?.cancel();
         _barcodeTimer = Timer(const Duration(milliseconds: 100), () {
@@ -150,10 +151,10 @@ class BarcodeScannerService {
     }
 
     _updateStatus(ScannerStatus.connecting);
-    
+
     try {
       bool connected = false;
-      
+
       switch (device.connectionType) {
         case ConnectionType.bluetooth:
           connected = await _connectBluetooth(device);
@@ -165,20 +166,20 @@ class BarcodeScannerService {
           print('❌ Unsupported connection type: ${device.connectionType}');
           connected = false;
       }
-      
+
       if (connected) {
         _connectedDevice = device;
         _updateStatus(ScannerStatus.connected);
         _isListening = true;
         print('✅ Connected to scanner: ${device.name}');
-        
+
         // Start listening for scans
         await _startListening();
       } else {
         _updateStatus(ScannerStatus.error);
         print('❌ Failed to connect to scanner: ${device.name}');
       }
-      
+
       return connected;
     } catch (e) {
       _updateStatus(ScannerStatus.error);
@@ -190,10 +191,11 @@ class BarcodeScannerService {
   /// Connect to Bluetooth scanner
   Future<bool> _connectBluetooth(HardwareDevice device) async {
     try {
-      print('⚠️ Bluetooth scanner connection using flutter_blue_plus requires updated implementation');
-      print('💡 Please use USB HID scanners for now or implement full flutter_blue_plus integration');
+      print(
+          '⚠️ Bluetooth scanner connection using flutter_blue_plus requires updated implementation');
+      print(
+          '💡 Please use USB HID scanners for now or implement full flutter_blue_plus integration');
       return false;
-      
     } catch (e) {
       print('❌ Bluetooth scanner connection failed: $e');
       return false;
@@ -217,9 +219,9 @@ class BarcodeScannerService {
   /// Start listening for barcode scans
   Future<void> _startListening() async {
     if (_connectedDevice == null) return;
-    
+
     _updateStatus(ScannerStatus.scanning);
-    
+
     try {
       switch (_connectedDevice!.connectionType) {
         case ConnectionType.bluetooth:
@@ -239,7 +241,8 @@ class BarcodeScannerService {
 
   /// Listen for Bluetooth scanner data
   Future<void> _listenBluetooth() async {
-    print('⚠️ Bluetooth scanner listening using flutter_blue_plus requires updated implementation');
+    print(
+        '⚠️ Bluetooth scanner listening using flutter_blue_plus requires updated implementation');
     print('� Please use USB HID scanners for now');
   }
 
@@ -249,7 +252,7 @@ class BarcodeScannerService {
     // They send keystrokes that can be captured via keyboard event listeners
     // This is a placeholder for future implementation using platform channels
     print('� USB HID scanner listening via keyboard events');
-    
+
     // For now, we'll just mark as ready
     // In a real implementation, this would set up keyboard event listeners
     // to capture barcode scans from USB HID devices
@@ -258,10 +261,10 @@ class BarcodeScannerService {
   /// Send command to scanner (for advanced scanners)
   Future<bool> sendCommand(String command) async {
     if (_connectedDevice == null) return false;
-    
+
     try {
       final commandBytes = command.codeUnits;
-      
+
       switch (_connectedDevice!.connectionType) {
         case ConnectionType.bluetooth:
           if (_bluetoothCharacteristic != null) {
@@ -273,12 +276,13 @@ class BarcodeScannerService {
         case ConnectionType.usb:
           // USB HID scanners don't typically accept commands
           // They work as keyboard input devices
-          print('💡 USB HID scanners work as keyboard input - no command sending needed');
+          print(
+              '💡 USB HID scanners work as keyboard input - no command sending needed');
           return true;
         default:
           break;
       }
-      
+
       return false;
     } catch (e) {
       print('❌ Error sending scanner command: $e');
@@ -294,13 +298,13 @@ class BarcodeScannerService {
       '\x1B\x31', // Zebra
       'TRIGGER_SCAN\r\n', // Generic
     ];
-    
+
     for (final command in commands) {
       if (await sendCommand(command)) {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -312,21 +316,21 @@ class BarcodeScannerService {
     List<String>? enabledSymbologies,
   }) async {
     if (_connectedDevice == null) return false;
-    
+
     try {
       // This would send configuration commands specific to the scanner model
       // Each manufacturer has different command sets
-      
+
       if (enableBeep != null) {
         final command = enableBeep ? 'BEEP_ON\r\n' : 'BEEP_OFF\r\n';
         await sendCommand(command);
       }
-      
+
       if (timeout != null) {
-        final command = 'TIMEOUT_${timeout}\r\n';
+        final command = 'TIMEOUT_$timeout\r\n';
         await sendCommand(command);
       }
-      
+
       return true;
     } catch (e) {
       print('❌ Error configuring scanner: $e');
@@ -337,7 +341,7 @@ class BarcodeScannerService {
   /// Test scanner functionality
   Future<bool> testScanner() async {
     if (_connectedDevice == null) return false;
-    
+
     try {
       // Send test command or trigger scan
       return await triggerScan();
@@ -367,16 +371,16 @@ class BarcodeScannerService {
   Future<void> disconnect() async {
     try {
       _isListening = false;
-      
+
       if (_bluetoothDevice != null) {
         await _bluetoothDevice!.disconnect();
         _bluetoothDevice = null;
         _bluetoothCharacteristic = null;
       }
-      
+
       // USB HID scanners don't need explicit disconnection
       // They work as keyboard input devices
-      
+
       _connectedDevice = null;
       _updateStatus(ScannerStatus.disconnected);
       print('✅ Scanner disconnected');

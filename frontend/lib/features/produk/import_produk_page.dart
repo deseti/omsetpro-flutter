@@ -38,14 +38,15 @@ class _ImportProdukPageState extends ConsumerState<ImportProdukPage> {
 Contoh Produk A,10000,8000,50,1234567890
 Contoh Produk B,15000,12000,30,0987654321
 Contoh Produk C,5000,3500,100,1122334455''';
-    
+
     final bytes = Uint8List.fromList(csvContent.codeUnits);
-    
+
     if (kIsWeb) {
       // Web platform - would need universal_html or different approach
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Download template belum didukung di platform mobile. Silakan gunakan web version.'),
+          content: Text(
+              'Download template belum didukung di platform mobile. Silakan gunakan web version.'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -53,7 +54,8 @@ Contoh Produk C,5000,3500,100,1122334455''';
       // Mobile platform - save to downloads or share
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Template download belum tersedia di mobile. Silakan gunakan web version.'),
+          content: Text(
+              'Template download belum tersedia di mobile. Silakan gunakan web version.'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -85,7 +87,7 @@ Contoh Produk C,5000,3500,100,1122334455''';
       print('📄 File size: ${bytes!.length} bytes');
 
       final formData = FormData.fromMap({
-        'file': MultipartFile.fromBytes(bytes!, filename: fileName),
+        'file': MultipartFile.fromBytes(bytes, filename: fileName),
         'cabangId': _selectedCabang['id'].toString(),
       });
 
@@ -106,9 +108,9 @@ Contoh Produk C,5000,3500,100,1122334455''';
       print('Status Code: ${e.response?.statusCode}');
       print('Response Data: ${e.response?.data}');
       print('Error Message: ${e.message}');
-      
+
       String errorMessage = 'Terjadi kesalahan saat upload.';
-      
+
       if (e.response?.data != null) {
         try {
           if (e.response!.data is Map<String, dynamic>) {
@@ -120,17 +122,16 @@ Contoh Produk C,5000,3500,100,1122334455''';
           print('Error parsing response: $parseError');
         }
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Error: $errorMessage'), 
-            backgroundColor: Colors.red),
+            content: Text('Error: $errorMessage'), backgroundColor: Colors.red),
       );
     } catch (e) {
       print('❌ General error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Error: Terjadi kesalahan yang tidak terduga'), 
+            content: Text('Error: Terjadi kesalahan yang tidak terduga'),
             backgroundColor: Colors.red),
       );
     } finally {
@@ -203,7 +204,7 @@ Contoh Produk C,5000,3500,100,1122334455''';
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Format File Excel (.xlsx):',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -214,26 +215,34 @@ Contoh Produk C,5000,3500,100,1122334455''';
                   const SizedBox(height: 8),
                   const Text(
                     'Kolom Wajib:',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, color: Colors.white),
                   ),
-                  const Text('• nama (Nama Produk)', style: TextStyle(color: Colors.white)),
-                  const Text('• harga (Harga Jual)', style: TextStyle(color: Colors.white)),
-                  const Text('• hargaBeli atau hargabeli (Harga Beli/Modal)', style: TextStyle(color: Colors.white)),
+                  const Text('• nama (Nama Produk)',
+                      style: TextStyle(color: Colors.white)),
+                  const Text('• harga (Harga Jual)',
+                      style: TextStyle(color: Colors.white)),
+                  const Text('• hargaBeli atau hargabeli (Harga Beli/Modal)',
+                      style: TextStyle(color: Colors.white)),
                   const SizedBox(height: 4),
                   const Text(
                     'Kolom Opsional:',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, color: Colors.white),
                   ),
-                  const Text('• stok (Stok Awal, default: 0)', style: TextStyle(color: Colors.white70)),
-                  const Text('• barcode (Barcode Produk)', style: TextStyle(color: Colors.white70)),
+                  const Text('• stok (Stok Awal, default: 0)',
+                      style: TextStyle(color: Colors.white70)),
+                  const Text('• barcode (Barcode Produk)',
+                      style: TextStyle(color: Colors.white70)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.download, size: 16, color: Color(0xFF4ADE80)),
+                      const Icon(Icons.download,
+                          size: 16, color: Color(0xFF4ADE80)),
                       const SizedBox(width: 4),
                       GestureDetector(
                         onTap: _downloadTemplate,
-                        child: Text(
+                        child: const Text(
                           'Download Template Excel',
                           style: TextStyle(
                             color: Color(0xFF4ADE80),

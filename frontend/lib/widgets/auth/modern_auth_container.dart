@@ -34,7 +34,7 @@ class ModernAuthContainer extends StatelessWidget {
             final mediaQuery = MediaQuery.of(context);
             final keyboardHeight = mediaQuery.viewInsets.bottom;
             final isKeyboardVisible = keyboardHeight > 0;
-            
+
             return CustomScrollView(
               physics: const ClampingScrollPhysics(),
               slivers: [
@@ -48,7 +48,7 @@ class ModernAuthContainer extends StatelessWidget {
                       isKeyboardVisible ? 8 : 24,
                     ),
                     child: Column(
-                      mainAxisAlignment: isKeyboardVisible 
+                      mainAxisAlignment: isKeyboardVisible
                           ? MainAxisAlignment.start
                           : MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,21 +61,20 @@ class ModernAuthContainer extends StatelessWidget {
                           _buildCompactHeader(context),
                           const SizedBox(height: 16),
                         ],
-                        
+
                         // Form card - flexible to take available space
                         Flexible(
                           fit: FlexFit.loose,
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(
+                            constraints: const BoxConstraints(
                               maxWidth: double.infinity,
                             ),
                             child: _buildCard(context),
                           ),
                         ),
-                        
+
                         // Bottom spacer - hanya jika tidak ada keyboard
-                        if (!isKeyboardVisible) 
-                          const SizedBox(height: 24),
+                        if (!isKeyboardVisible) const SizedBox(height: 24),
                       ],
                     ),
                   ),
@@ -221,18 +220,19 @@ class ModernAuthContainer extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final isMobile = mediaQuery.size.width < 600;
     final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
-    
+
     // Padding yang lebih agresif untuk mobile ketika keyboard aktif
     double cardPadding = 32;
     if (isMobile) {
       cardPadding = keyboardVisible ? 12 : 24;
     }
-    
+
     return Card(
       elevation: isMobile && keyboardVisible ? 2 : 8,
       shadowColor: Theme.of(context).colorScheme.shadow.withOpacity(0.2),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(isMobile && keyboardVisible ? 12 : 24),
+        borderRadius:
+            BorderRadius.circular(isMobile && keyboardVisible ? 12 : 24),
       ),
       child: Padding(
         padding: EdgeInsets.all(cardPadding),
