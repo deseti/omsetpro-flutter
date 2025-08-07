@@ -78,9 +78,18 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.11.0
 
 flutter:
   uses-material-design: true
   
   # Generate app localization (untuk format tanggal dan angka)
   generate: true
+
+# Flutter Launcher Icons Configuration
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/omsetpro_logo.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/logo/omsetpro_logo.png"
