@@ -118,18 +118,23 @@ class _AktivitasLogTabState extends ConsumerState<AktivitasLogTab>
   }
 
   Icon _getActionIcon(String action) {
-    if (action.startsWith('CREATE'))
+    if (action.startsWith('CREATE')) {
       return const Icon(Icons.add_circle, color: Colors.green);
-    if (action.startsWith('UPDATE'))
+    }
+    if (action.startsWith('UPDATE')) {
       return const Icon(Icons.edit, color: Colors.orange);
-    if (action.startsWith('DELETE'))
+    }
+    if (action.startsWith('DELETE')) {
       return const Icon(Icons.delete, color: Colors.red);
+    }
     if (action == 'LOGIN') return const Icon(Icons.login, color: Colors.blue);
     if (action == 'LOGOUT') return const Icon(Icons.logout, color: Colors.grey);
-    if (action.contains('APPROVE'))
+    if (action.contains('APPROVE')) {
       return const Icon(Icons.check_circle, color: Colors.green);
-    if (action.contains('REJECT'))
+    }
+    if (action.contains('REJECT')) {
       return const Icon(Icons.cancel, color: Colors.red);
+    }
     return const Icon(Icons.info, color: Colors.blue);
   }
 

@@ -557,17 +557,17 @@ class _IzinCutiTabState extends ConsumerState<IzinCutiTab>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
+                                        const Text(
                                           'Alasan:',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontWeight: FontWeight.bold),
                                         ),
                                         Text(izin['alasan']),
                                         const SizedBox(height: 8),
                                         if (izin['catatan'] != null) ...[
-                                          Text(
+                                          const Text(
                                             'Catatan:',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                                 fontWeight: FontWeight.bold),
                                           ),
                                           Text(izin['catatan']),
