@@ -100,6 +100,12 @@ model Transaksi {
   status        String            @default("pending") // pending, paid, failed, cancelled
   // [BARU] Informasi diskon
   potongan      Int               @default(0)
+  // [BARU] Sumber transaksi & tipe pengiriman untuk Toko Online
+  sumberTransaksi String          @default("Kasir") // "Kasir" atau "TokoOnline"
+  tipePengiriman  String?         // "Diambil" atau "Diantar" (untuk toko online)
+  // [BARU] Data pelanggan toko online (jika tidak terdaftar)
+  namaPelangganOnline    String?
+  noHpPelangganOnline    String?
   // Relasi ke Cabang & Kasir
   cabangId      Int
   cabang        Cabang            @relation(fields: [cabangId], references: [id], onDelete: Cascade)
@@ -226,6 +232,26 @@ model AkunToko {
   telepon        String
   email          String
   kategoriBisnis String
+  // [BARU] Pengaturan Toko Online & QR Order
+  tokoOnlineSlug        String?  @unique  // Link unik untuk toko online (contoh: "kopi-bahagia")
+  isTokoOnlineActive    Boolean  @default(false)  // Aktif/nonaktif toko online
+  allowPickup           Boolean  @default(true)   // Izinkan "Ambil di Tempat"
+  allowDelivery         Boolean  @default(false)  // Izinkan "Diantar Kurir"
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  // Relasi ke rekening bank
+  rekeningBank   RekeningBank[]
+}
+
+// ============== [BARU] REKENING BANK TOKO ==============
+model RekeningBank {
+  id            Int      @id @default(autoincrement())
+  akunTokoId    Int
+  akunToko      AkunToko @relation(fields: [akunTokoId], references: [id], onDelete: Cascade)
+  namaBank      String   // Contoh: "BCA", "Mandiri", "BRI"
+  nomorRekening String
+  namaPemilik   String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

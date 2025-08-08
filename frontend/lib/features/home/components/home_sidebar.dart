@@ -26,7 +26,8 @@ class HomeSidebar extends ConsumerWidget {
     );
   }
 
-  Widget _buildNavigationMenu(BuildContext context, WidgetRef ref, Role? userRole) {
+  Widget _buildNavigationMenu(
+      BuildContext context, WidgetRef ref, Role? userRole) {
     return ListView(
       children: [
         if (userRole == Role.OWNER) ...[

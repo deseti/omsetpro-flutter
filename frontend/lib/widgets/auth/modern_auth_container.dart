@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import '../../widgets/responsive_widgets.dart';
 
@@ -18,6 +19,13 @@ class ModernAuthContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWeb = kIsWeb;
+
+    // Untuk web, selalu gunakan layout terpusat yang sama
+    if (isWeb) {
+      return _buildWebLayout(context);
+    }
+
     return ResponsiveLayout(
       mobile: _buildMobileLayout(context),
       tablet: _buildTabletLayout(context),
@@ -25,63 +33,97 @@ class ModernAuthContainer extends StatelessWidget {
     );
   }
 
+  Widget _buildWebLayout(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: _buildBackgroundDecoration(context),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 400,
+                minHeight: 400,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 32),
+                  _buildCard(context),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final mediaQuery = MediaQuery.of(context);
-            final keyboardHeight = mediaQuery.viewInsets.bottom;
-            final isKeyboardVisible = keyboardHeight > 0;
+      body: Container(
+        decoration: _buildBackgroundDecoration(context),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final mediaQuery = MediaQuery.of(context);
+              final keyboardHeight = mediaQuery.viewInsets.bottom;
+              final isKeyboardVisible = keyboardHeight > 0;
 
-            return CustomScrollView(
-              physics: const ClampingScrollPhysics(),
-              slivers: [
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      isKeyboardVisible ? 8 : 24,
-                      16,
-                      isKeyboardVisible ? 8 : 24,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: isKeyboardVisible
-                          ? MainAxisAlignment.start
-                          : MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header section
-                        if (!isKeyboardVisible) ...[
-                          _buildHeader(context),
-                          const SizedBox(height: 32),
-                        ] else ...[
-                          _buildCompactHeader(context),
-                          const SizedBox(height: 16),
-                        ],
+              return CustomScrollView(
+                physics: const ClampingScrollPhysics(),
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        isKeyboardVisible ? 8 : 24,
+                        16,
+                        isKeyboardVisible ? 8 : 24,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: isKeyboardVisible
+                            ? MainAxisAlignment.start
+                            : MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header section
+                          if (!isKeyboardVisible) ...[
+                            _buildHeader(context),
+                            const SizedBox(height: 32),
+                          ] else ...[
+                            _buildCompactHeader(context),
+                            const SizedBox(height: 16),
+                          ],
 
-                        // Form card - flexible to take available space
-                        Flexible(
-                          fit: FlexFit.loose,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxWidth: double.infinity,
+                          // Form card - flexible to take available space
+                          Flexible(
+                            fit: FlexFit.loose,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxWidth: double.infinity,
+                              ),
+                              child: _buildCard(context),
                             ),
-                            child: _buildCard(context),
                           ),
-                        ),
 
-                        // Bottom spacer - hanya jika tidak ada keyboard
-                        if (!isKeyboardVisible) const SizedBox(height: 24),
-                      ],
+                          // Bottom spacer - hanya jika tidak ada keyboard
+                          if (!isKeyboardVisible) const SizedBox(height: 24),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -220,6 +262,7 @@ class ModernAuthContainer extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final isMobile = mediaQuery.size.width < 600;
     final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
+    final isWeb = kIsWeb;
 
     // Padding yang lebih agresif untuk mobile ketika keyboard aktif
     double cardPadding = 32;
@@ -227,16 +270,29 @@ class ModernAuthContainer extends StatelessWidget {
       cardPadding = keyboardVisible ? 12 : 24;
     }
 
+    // Untuk web, gunakan padding yang konsisten
+    if (isWeb) {
+      cardPadding = 32;
+    }
+
     return Card(
-      elevation: isMobile && keyboardVisible ? 2 : 8,
-      shadowColor: Theme.of(context).colorScheme.shadow.withOpacity(0.2),
+      elevation: isWeb ? 12 : (isMobile && keyboardVisible ? 2 : 8),
+      shadowColor:
+          Theme.of(context).colorScheme.shadow.withOpacity(isWeb ? 0.3 : 0.2),
       shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(isMobile && keyboardVisible ? 12 : 24),
+        borderRadius: BorderRadius.circular(
+            isWeb ? 16 : (isMobile && keyboardVisible ? 12 : 24)),
       ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: child,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(
+              isWeb ? 16 : (isMobile && keyboardVisible ? 12 : 24)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(cardPadding),
+          child: child,
+        ),
       ),
     );
   }

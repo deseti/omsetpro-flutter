@@ -2,16 +2,19 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
+  Param,
   UseGuards,
   Request,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
-import { PengaturanService } from './pengaturan.service';
+import { PengaturanService, RekeningBankData } from './pengaturan.service';
 import { Role } from '@prisma/client';
 
 @Controller('pengaturan')
@@ -47,5 +50,24 @@ export class PengaturanController {
     @UploadedFile() logo?: Express.Multer.File,
   ) {
     return this.pengaturanService.updateAkunToko(req.user.id, updateData, logo);
+  }
+
+  // [BARU] Endpoint untuk rekening bank
+  @Get('rekening-bank')
+  async getRekeningBank(@Request() req) {
+    return this.pengaturanService.getRekeningBank(req.user.id);
+  }
+
+  @Post('rekening-bank')
+  async addRekeningBank(@Request() req, @Body() rekeningData: RekeningBankData) {
+    return this.pengaturanService.addRekeningBank(req.user.id, rekeningData);
+  }
+
+  @Delete('rekening-bank/:id')
+  async deleteRekeningBank(
+    @Request() req,
+    @Param('id', ParseIntPipe) rekeningId: number,
+  ) {
+    return this.pengaturanService.deleteRekeningBank(req.user.id, rekeningId);
   }
 }

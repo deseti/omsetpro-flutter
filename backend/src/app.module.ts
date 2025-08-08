@@ -13,6 +13,7 @@ import { PromoModule } from './promo/promo.module';
 import { MidtransModule } from './midtrans/midtrans.module'; // <-- IMPORT MODUL BARU
 import { PengaturanModule } from './pengaturan/pengaturan.module'; // <-- IMPORT MODUL PENGATURAN
 import { DashboardModule } from './dashboard/dashboard.module'; // <-- IMPORT MODUL DASHBOARD
+import { TokoOnlineModule } from './toko-online/toko-online.module'; // <-- IMPORT MODUL TOKO ONLINE
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DashboardModule } from './dashboard/dashboard.module'; // <-- IMPORT MO
     MidtransModule, // <-- DAFTARKAN DI SINI
     PengaturanModule, // <-- DAFTARKAN MODUL PENGATURAN
     DashboardModule, // <-- DAFTARKAN MODUL DASHBOARD
+    TokoOnlineModule, // <-- DAFTARKAN MODUL TOKO ONLINE
   ],
   controllers: [AppController],
   providers: [AppService],

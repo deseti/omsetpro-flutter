@@ -9,6 +9,17 @@ export interface AkunTokoData {
   telepon: string;
   email: string;
   kategoriBisnis: string;
+  // [BARU] Pengaturan Toko Online
+  tokoOnlineSlug?: string;
+  isTokoOnlineActive?: boolean;
+  allowPickup?: boolean;
+  allowDelivery?: boolean;
+}
+
+export interface RekeningBankData {
+  namaBank: string;
+  nomorRekening: string;
+  namaPemilik: string;
 }
 
 @Injectable()
@@ -23,6 +34,12 @@ export class PengaturanService {
     
     const akunToko = await this.prisma.akunToko.findUnique({
       where: { ownerId },
+      include: {
+        rekeningBank: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'asc' }
+        }
+      }
     });
 
     console.log('📋 Found akun toko:', akunToko);
@@ -37,6 +54,11 @@ export class PengaturanService {
         telepon: '',
         email: '',
         kategoriBisnis: '',
+        tokoOnlineSlug: null,
+        isTokoOnlineActive: false,
+        allowPickup: true,
+        allowDelivery: false,
+        rekeningBank: []
       };
     }
 
@@ -53,13 +75,20 @@ export class PengaturanService {
     console.log('📝 Update data:', updateData);
     console.log('🖼️ Logo file:', logoFile ? `${logoFile.originalname} (${logoFile.size} bytes)` : 'No file');
 
-    const data: any = {
-      nama: updateData.nama,
-      alamat: updateData.alamat,
-      telepon: updateData.telepon,
-      email: updateData.email,
-      kategoriBisnis: updateData.kategoriBisnis,
-    };
+    const data: any = {};
+
+    // Only add fields that are provided (not undefined)
+    if (updateData.nama !== undefined) data.nama = updateData.nama;
+    if (updateData.alamat !== undefined) data.alamat = updateData.alamat;
+    if (updateData.telepon !== undefined) data.telepon = updateData.telepon;
+    if (updateData.email !== undefined) data.email = updateData.email;
+    if (updateData.kategoriBisnis !== undefined) data.kategoriBisnis = updateData.kategoriBisnis;
+    
+    // Handle toko online fields
+    if (updateData.tokoOnlineSlug !== undefined) data.tokoOnlineSlug = updateData.tokoOnlineSlug;
+    if (updateData.isTokoOnlineActive !== undefined) data.isTokoOnlineActive = updateData.isTokoOnlineActive;
+    if (updateData.allowPickup !== undefined) data.allowPickup = updateData.allowPickup;
+    if (updateData.allowDelivery !== undefined) data.allowDelivery = updateData.allowDelivery;
 
     // If logo file is uploaded, save to GCP Storage
     if (logoFile) {
@@ -76,16 +105,94 @@ export class PengaturanService {
 
     console.log('💾 Final data to save:', data);
 
-    const akunToko = await this.prisma.akunToko.upsert({
-      where: { ownerId },
-      create: {
-        ownerId,
-        ...data,
-      },
-      update: data,
+    // Check if akun toko exists
+    const existingAkunToko = await this.prisma.akunToko.findUnique({
+      where: { ownerId }
     });
+
+    let akunToko;
+    if (existingAkunToko) {
+      // If exists, just update with provided fields
+      akunToko = await this.prisma.akunToko.update({
+        where: { ownerId },
+        data: data,
+      });
+    } else {
+      // If not exists, create with required fields + provided data
+      const createData = {
+        ownerId,
+        nama: data.nama || 'Nama Toko', // Default value if not provided
+        alamat: data.alamat || '',
+        telepon: data.telepon || '',
+        email: data.email || '',
+        kategoriBisnis: data.kategoriBisnis || 'Lainnya',
+        ...data, // Override with any provided data
+      };
+      
+      akunToko = await this.prisma.akunToko.create({
+        data: createData,
+      });
+    }
 
     console.log('✅ Akun toko saved:', akunToko);
     return akunToko;
+  }
+
+  // [BARU] Mendapatkan rekening bank
+  async getRekeningBank(ownerId: number) {
+    const akunToko = await this.prisma.akunToko.findUnique({
+      where: { ownerId },
+      include: {
+        rekeningBank: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    });
+    
+    return akunToko?.rekeningBank || [];
+  }
+
+  // [BARU] Menambah rekening bank
+  async addRekeningBank(ownerId: number, rekeningData: RekeningBankData) {
+    // Pastikan akun toko sudah ada
+    const akunToko = await this.prisma.akunToko.findUnique({
+      where: { ownerId }
+    });
+    
+    if (!akunToko) {
+      throw new NotFoundException('Akun toko belum diatur');
+    }
+
+    return this.prisma.rekeningBank.create({
+      data: {
+        akunTokoId: akunToko.id,
+        namaBank: rekeningData.namaBank,
+        nomorRekening: rekeningData.nomorRekening,
+        namaPemilik: rekeningData.namaPemilik,
+      }
+    });
+  }
+
+  // [BARU] Menghapus rekening bank
+  async deleteRekeningBank(ownerId: number, rekeningId: number) {
+    // Verifikasi ownership
+    const rekening = await this.prisma.rekeningBank.findFirst({
+      where: {
+        id: rekeningId,
+        akunToko: {
+          ownerId: ownerId
+        }
+      }
+    });
+
+    if (!rekening) {
+      throw new NotFoundException('Rekening bank tidak ditemukan');
+    }
+
+    return this.prisma.rekeningBank.update({
+      where: { id: rekeningId },
+      data: { isActive: false }
+    });
   }
 }

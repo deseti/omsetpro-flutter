@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,10 +43,10 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
 
     try {
       print('🔄 Starting login process...');
-      
+
       // Gunakan NetworkService yang sudah support fallback URLs
       final dio = await NetworkService.getDio();
-      
+
       final data = {
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
@@ -54,7 +55,7 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
       print('📡 Sending login request to: ${dio.options.baseUrl}/auth/login');
       final response = await dio.post('/auth/login', data: data);
       print('✅ Login response received: ${response.statusCode}');
-      
+
       final accessToken = response.data['accessToken'];
       print('🔑 Access token received (length: ${accessToken?.length ?? 0})');
 
@@ -75,7 +76,7 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
       await NetworkService.getDio();
 
       print('✅ Login successful, navigating to home...');
-      
+
       // Navigasi setelah state diupdate
       if (mounted) {
         // Tampilkan snackbar sukses
@@ -104,7 +105,7 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
       print('   Data: ${e.response?.data}');
       print('   Message: ${e.message}');
       print('   Type: ${e.type}');
-      
+
       String errorMessage = 'Terjadi kesalahan jaringan.';
 
       try {
@@ -183,6 +184,7 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
     final mediaQuery = MediaQuery.of(context);
     final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
     final isSmallScreen = mediaQuery.size.height < 700;
+    final isWeb = kIsWeb;
 
     return Form(
       key: _formKey,
@@ -206,7 +208,9 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
               return null;
             },
           ),
-          SizedBox(height: keyboardVisible || isSmallScreen ? 12 : 20),
+          SizedBox(
+              height:
+                  isWeb ? 20 : (keyboardVisible || isSmallScreen ? 12 : 20)),
 
           ModernTextField(
             label: 'Password',
@@ -224,10 +228,11 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
               return null;
             },
           ),
-          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 16),
+          SizedBox(
+              height: isWeb ? 20 : (keyboardVisible || isSmallScreen ? 8 : 16)),
 
-          // Remember Me & Forgot Password - Hide when keyboard is visible for space
-          if (!keyboardVisible && !isSmallScreen) ...[
+          // Remember Me & Forgot Password - Always show on web
+          if (isWeb || (!keyboardVisible && !isSmallScreen)) ...[
             Row(
               children: [
                 Expanded(
@@ -260,7 +265,8 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Fitur reset password belum tersedia'),
+                        content:
+                            const Text('Fitur reset password belum tersedia'),
                         backgroundColor: theme.colorScheme.primary,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
@@ -291,9 +297,9 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
             isLoading: _isLoading,
             icon: Icons.login,
           ),
-          
-          // Hide divider and toggle when keyboard is visible or small screen
-          if (!keyboardVisible && !isSmallScreen) ...[
+
+          // Always show toggle on web, hide on mobile when keyboard/small screen
+          if (isWeb || (!keyboardVisible && !isSmallScreen)) ...[
             const SizedBox(height: 16),
             Row(
               children: [

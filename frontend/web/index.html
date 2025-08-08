@@ -18,18 +18,19 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="OmsetPro - Sistem manajemen bisnis yang modern dan mudah digunakan untuk kelola penjualan, inventory, dan laporan bisnis">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="omsetpro">
+  <meta name="apple-mobile-web-app-title" content="OmsetPro">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>omsetpro</title>
+  <title>OmsetPro - Sistem Manajemen Bisnis Modern</title>
   <link rel="manifest" href="manifest.json">
 
   <!-- ================== PERBAIKAN: TAMBAHKAN SCRIPT INI ================== -->
@@ -44,19 +45,80 @@
   
   <!-- Script untuk menangani pembayaran Snap.js -->
   <script type="text/javascript">
+    // Variable untuk track loading state
+    let snapLoadAttempts = 0;
+    const maxSnapLoadAttempts = 10;
+    
     // Fungsi untuk check apakah Snap.js sudah ter-load
     function checkSnapReady() {
-      return typeof window.snap !== 'undefined' && window.snap && typeof window.snap.pay === 'function';
+      const isReady = typeof window.snap !== 'undefined' && 
+                      window.snap && 
+                      typeof window.snap.pay === 'function';
+      console.log(`🔍 Snap.js ready check: ${isReady}`, {
+        windowSnap: typeof window.snap,
+        snapPay: window.snap ? typeof window.snap.pay : 'N/A'
+      });
+      return isReady;
+    }
+    
+    // Fungsi untuk wait hingga Snap.js ready dengan timeout
+    function waitForSnapReady(callback, timeout = 15000) {
+      const startTime = Date.now();
+      
+      function checkReady() {
+        if (checkSnapReady()) {
+          console.log('✅ Snap.js is ready after', Date.now() - startTime, 'ms');
+          callback(true);
+          return;
+        }
+        
+        if (Date.now() - startTime > timeout) {
+          console.error('❌ Snap.js load timeout after', timeout, 'ms');
+          callback(false);
+          return;
+        }
+        
+        // Check lagi setelah 100ms
+        setTimeout(checkReady, 100);
+      }
+      
+      checkReady();
     }
     
     // Fungsi utama untuk pembayaran
     function snapPay(snapToken, callback) {
-      console.log('🔍 Checking Snap.js availability...');
+      console.log('🔍 Starting snapPay with token:', snapToken ? snapToken.substring(0, 20) + '...' : 'null');
       
+      // Jika Snap.js sudah ready, langsung jalankan
       if (checkSnapReady()) {
-        console.log('✅ Snap.js is ready, starting payment with token:', snapToken);
-        try {
-          window.snap.pay(snapToken, {
+        console.log('✅ Snap.js already ready, executing payment');
+        executeSnapPayment(snapToken, callback);
+        return;
+      }
+      
+      // Jika belum ready, tunggu hingga ready
+      console.log('⏳ Waiting for Snap.js to be ready...');
+      waitForSnapReady((isReady) => {
+        if (isReady) {
+          executeSnapPayment(snapToken, callback);
+        } else {
+          console.error('❌ Snap.js failed to load within timeout');
+          if (callback) {
+            callback({
+              status: 'error',
+              message: 'Snap.js gagal dimuat. Silakan refresh halaman dan coba lagi.',
+              error: 'Snap.js load timeout'
+            });
+          }
+        }
+      });
+    }
+    
+    // Fungsi untuk execute payment setelah Snap.js ready
+    function executeSnapPayment(snapToken, callback) {
+      try {
+        console.log('🚀 Executing Snap payment...');
+        window.snap.pay(snapToken, {
             onSuccess: function(result) {
               console.log('✅ Payment success callback triggered:', result);
               if (callback) {
@@ -106,27 +168,15 @@
               }
             }
           });
-        } catch (error) {
-          console.error('❌ Error calling snap.pay:', error);
-          if (callback) {
-            const response = {
-              status: 'error', 
-              message: 'Error calling Snap.js: ' + error.message,
-              error: error.toString()
-            };
-            console.log('📤 Sending exception response to Flutter:', response);
-            callback(response);
-          }
-        }
-      } else {
-        console.error('❌ Snap.js not ready. Window.snap:', typeof window.snap);
+      } catch (error) {
+        console.error('❌ Error calling snap.pay:', error);
         if (callback) {
           const response = {
             status: 'error', 
-            message: 'Snap.js not loaded properly',
-            error: 'Snap.js not available'
+            message: 'Error calling Snap.js: ' + error.message,
+            error: error.toString()
           };
-          console.log('📤 Sending not-ready response to Flutter:', response);
+          console.log('📤 Sending exception response to Flutter:', response);
           callback(response);
         }
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../providers/providers.dart';
@@ -65,17 +66,18 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
 
     try {
       print('🔄 Starting registration process...');
-      
+
       // Gunakan NetworkService yang sudah support fallback URLs
       final dio = await NetworkService.getDio();
-      
+
       final data = {
         'namaLengkap': _namaController.text.trim(),
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
       };
 
-      print('📡 Sending register request to: ${dio.options.baseUrl}/auth/register');
+      print(
+          '📡 Sending register request to: ${dio.options.baseUrl}/auth/register');
       final response = await dio.post('/auth/register', data: data);
       print('✅ Registration response received: ${response.statusCode}');
 
@@ -156,6 +158,7 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
     final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
     final screenHeight = mediaQuery.size.height;
     final isSmallScreen = screenHeight < 700; // Small screen detection
+    final isWeb = kIsWeb;
 
     return Form(
       key: _formKey,
@@ -178,7 +181,8 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
+          SizedBox(
+              height: isWeb ? 20 : (keyboardVisible || isSmallScreen ? 8 : 20)),
 
           ModernTextField(
             label: 'Email',
@@ -197,7 +201,8 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
+          SizedBox(
+              height: isWeb ? 20 : (keyboardVisible || isSmallScreen ? 8 : 20)),
 
           ModernTextField(
             label: 'Password',
@@ -218,7 +223,8 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
+          SizedBox(
+              height: isWeb ? 20 : (keyboardVisible || isSmallScreen ? 8 : 20)),
 
           ModernTextField(
             label: 'Konfirmasi Password',
@@ -236,9 +242,10 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
               return null;
             },
           ),
-          SizedBox(height: keyboardVisible || isSmallScreen ? 8 : 20),
+          SizedBox(
+              height: isWeb ? 20 : (keyboardVisible || isSmallScreen ? 8 : 20)),
 
-          // Terms and Conditions - Ultra compact when needed
+          // Terms and Conditions - Always visible on web
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -262,13 +269,17 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
                 child: Text(
                   'Setuju syarat & ketentuan',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: keyboardVisible || isSmallScreen ? 12 : 14,
+                    fontSize: isWeb
+                        ? 14
+                        : (keyboardVisible || isSmallScreen ? 12 : 14),
                   ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: keyboardVisible || isSmallScreen ? 12 : 32),
+          SizedBox(
+              height:
+                  isWeb ? 32 : (keyboardVisible || isSmallScreen ? 12 : 32)),
 
           ModernButton(
             text: 'Daftar',
@@ -276,9 +287,9 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
             isLoading: _isLoading,
             icon: Icons.person_add,
           ),
-          
-          // Hide semua elemen tambahan ketika keyboard visible atau screen kecil
-          if (!keyboardVisible && !isSmallScreen) ...[
+
+          // Always show toggle on web, hide on mobile when keyboard/small screen
+          if (isWeb || (!keyboardVisible && !isSmallScreen)) ...[
             const SizedBox(height: 16),
             Row(
               children: [

@@ -274,6 +274,16 @@ class _MainNavigatorState extends ConsumerState<MainNavigator> {
             ),
             _buildMenuTile(
               context,
+              icon: Icons.storefront_rounded,
+              title: 'Toko Online',
+              subtitle: 'Kelola toko online',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/toko-online');
+              },
+            ),
+            _buildMenuTile(
+              context,
               icon: Icons.settings_rounded,
               title: 'Pengaturan',
               subtitle: 'Pengaturan akun toko',

@@ -62,7 +62,17 @@ export class TransaksiService {
   }
 
   async create(createTransaksiDto: CreateTransaksiDto, kasirId: number) {
-    const { cabangId, metodeBayar, items, pelangganId, orderId } = createTransaksiDto;
+    const { 
+      cabangId, 
+      metodeBayar, 
+      items, 
+      pelangganId, 
+      orderId,
+      sumberTransaksi = 'Kasir',
+      tipePengiriman,
+      namaPelangganOnline,
+      noHpPelangganOnline
+    } = createTransaksiDto;
 
     const { cabang } = await this.verifyCabangAccess(cabangId, kasirId);
     const ownerId = cabang.ownerId;
@@ -149,6 +159,10 @@ export class TransaksiService {
           total: totalAkhir, // Gunakan total akhir setelah diskon
           potongan: totalPotongan, // Simpan total diskon
           metodeBayar,
+          sumberTransaksi,
+          tipePengiriman,
+          namaPelangganOnline,
+          noHpPelangganOnline,
           cabangId,
           kasirId,
           pelangganId: pelangganId,
@@ -325,5 +339,148 @@ export class TransaksiService {
         hasMore: offset + limit < total,
       },
     };
+  }
+
+  // [BARU] Method untuk konfirmasi pembayaran transaksi online
+  async konfirmasiPembayaranOnline(transaksiId: number, userId: number) {
+    // Verifikasi akses user ke transaksi
+    const transaksi = await this.prisma.transaksi.findUnique({
+      where: { id: transaksiId },
+      include: {
+        cabang: true,
+      },
+    });
+
+    if (!transaksi) {
+      throw new NotFoundException('Transaksi tidak ditemukan');
+    }
+
+    // Cek apakah ini transaksi online dan masih pending
+    if (transaksi.sumberTransaksi !== 'TokoOnline') {
+      throw new BadRequestException('Bukan transaksi dari toko online');
+    }
+
+    if (transaksi.status !== 'pending') {
+      throw new BadRequestException('Transaksi sudah dikonfirmasi atau dibatalkan');
+    }
+
+    // Verifikasi ownership
+    await this.verifyCabangAccess(transaksi.cabangId, userId);
+
+    // Update status transaksi menjadi completed
+    const updatedTransaksi = await this.prisma.transaksi.update({
+      where: { id: transaksiId },
+      data: {
+        status: 'completed',
+      },
+      include: {
+        detail: {
+          include: {
+            produk: {
+              select: {
+                id: true,
+                nama: true,
+                fotoUrl: true,
+              },
+            },
+          },
+        },
+        kasir: {
+          select: {
+            id: true,
+            namaLengkap: true,
+          },
+        },
+        cabang: {
+          select: {
+            id: true,
+            nama: true,
+          },
+        },
+      },
+    });
+
+    // Emit real-time notification (jika method ini ada)
+    // this.laporanGateway.emitTransaksiUpdate(updatedTransaksi);
+
+    return updatedTransaksi;
+  }
+
+  // [BARU] Method untuk membatalkan transaksi online
+  async batalkanTransaksiOnline(transaksiId: number, userId: number) {
+    // Verifikasi akses user ke transaksi
+    const transaksi = await this.prisma.transaksi.findUnique({
+      where: { id: transaksiId },
+      include: {
+        cabang: true,
+        detail: {
+          include: {
+            produk: true,
+          },
+        },
+      },
+    });
+
+    if (!transaksi) {
+      throw new NotFoundException('Transaksi tidak ditemukan');
+    }
+
+    // Cek apakah ini transaksi online dan masih pending
+    if (transaksi.sumberTransaksi !== 'TokoOnline') {
+      throw new BadRequestException('Bukan transaksi dari toko online');
+    }
+
+    if (transaksi.status !== 'pending') {
+      throw new BadRequestException('Transaksi sudah dikonfirmasi atau dibatalkan');
+    }
+
+    // Verifikasi ownership
+    await this.verifyCabangAccess(transaksi.cabangId, userId);
+
+    // Kembalikan stok produk dan update status
+    return this.prisma.$transaction(async (tx) => {
+      // Kembalikan stok
+      for (const detail of transaksi.detail) {
+        await tx.produk.update({
+          where: { id: detail.produkId },
+          data: { stok: { increment: detail.jumlah } },
+        });
+      }
+
+      // Update status transaksi
+      const updatedTransaksi = await tx.transaksi.update({
+        where: { id: transaksiId },
+        data: {
+          status: 'cancelled',
+        },
+        include: {
+          detail: {
+            include: {
+              produk: {
+                select: {
+                  id: true,
+                  nama: true,
+                  fotoUrl: true,
+                },
+              },
+            },
+          },
+          kasir: {
+            select: {
+              id: true,
+              namaLengkap: true,
+            },
+          },
+          cabang: {
+            select: {
+              id: true,
+              nama: true,
+            },
+          },
+        },
+      });
+
+      return updatedTransaksi;
+    });
   }
 }

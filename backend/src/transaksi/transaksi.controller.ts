@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Query, Put, Param, ParseIntPipe } from '@nestjs/common';
 import { TransaksiService } from './transaksi.service';
 import { CreateTransaksiDto } from './dto/create-transaksi.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -32,5 +32,25 @@ export class TransaksiController {
       offset: offset ? parseInt(offset) : 0,
       userId
     });
+  }
+
+  // [BARU] Konfirmasi pembayaran transaksi online
+  @Put(':id/konfirmasi-online')
+  konfirmasiPembayaranOnline(
+    @Param('id', ParseIntPipe) transaksiId: number,
+    @Request() req
+  ) {
+    const userId = req.user.id;
+    return this.transaksiService.konfirmasiPembayaranOnline(transaksiId, userId);
+  }
+
+  // [BARU] Batalkan transaksi online
+  @Put(':id/batalkan-online')
+  batalkanTransaksiOnline(
+    @Param('id', ParseIntPipe) transaksiId: number,
+    @Request() req
+  ) {
+    const userId = req.user.id;
+    return this.transaksiService.batalkanTransaksiOnline(transaksiId, userId);
   }
 }

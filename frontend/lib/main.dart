@@ -21,6 +21,7 @@ import 'features/pengaturan/pengaturan_akun_page.dart'; // <-- IMPORT HALAMAN PE
 import 'features/pengaturan/pengaturan_umum_page.dart'; // <-- IMPORT HALAMAN PENGATURAN UMUM
 import 'features/profil/profil_page.dart'; // <-- IMPORT HALAMAN PROFIL
 import 'features/riwayat/riwayat_transaksi_page.dart'; // <-- IMPORT HALAMAN RIWAYAT TRANSAKSI
+import 'pages/toko_online_page.dart'; // <-- IMPORT HALAMAN TOKO ONLINE
 import 'theme/app_theme.dart'; // Import tema baru
 import 'services/hardware/hardware_manager_service.dart'; // Import hardware manager
 import 'services/network_service.dart'; // Import network service
@@ -92,10 +93,13 @@ class OmsetProApp extends StatelessWidget {
         '/pelanggan': (context) => const PelangganPage(),
         '/loyalty-settings': (context) => const LoyaltySettingsPage(),
         '/promo': (context) => const PromoPage(), // <-- DAFTARKAN RUTE BARU
-        '/riwayat-transaksi': (context) => const RiwayatTransaksiPage(), // <-- RUTE RIWAYAT TRANSAKSI
+        '/riwayat-transaksi': (context) =>
+            const RiwayatTransaksiPage(), // <-- RUTE RIWAYAT TRANSAKSI
         '/pengaturan-akun': (context) =>
             const PengaturanAkunPage(), // <-- RUTE PENGATURAN AKUN
         '/profil': (context) => const ProfilPage(), // <-- RUTE PROFIL
+        '/toko-online': (context) =>
+            const TokoOnlinePage(), // <-- RUTE TOKO ONLINE
       },
       initialRoute: '/',
     );
@@ -108,7 +112,7 @@ class AuthChecker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoggedIn = ref.watch(authStateProvider);
-    
+
     if (isLoggedIn) {
       // Jika sudah login (auto-login dari saved token), pastikan NetworkService setup
       return FutureBuilder(
@@ -121,7 +125,7 @@ class AuthChecker extends ConsumerWidget {
               ),
             );
           }
-          
+
           if (snapshot.hasError) {
             // Jika network setup gagal, logout dan kembali ke auth
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -130,15 +134,15 @@ class AuthChecker extends ConsumerWidget {
             });
             return const AuthPage();
           }
-          
+
           return const MainNavigator();
         },
       );
     }
-    
+
     return const AuthPage();
   }
-  
+
   Future<void> _setupNetworkService() async {
     await NetworkService.getDio();
   }
