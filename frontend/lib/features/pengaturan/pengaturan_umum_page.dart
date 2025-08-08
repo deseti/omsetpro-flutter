@@ -69,7 +69,8 @@ class PengaturanUmum {
 }
 
 // Provider untuk pengaturan umum
-final pengaturanUmumProvider = StateNotifierProvider<PengaturanUmumNotifier, PengaturanUmum>((ref) {
+final pengaturanUmumProvider =
+    StateNotifierProvider<PengaturanUmumNotifier, PengaturanUmum>((ref) {
   return PengaturanUmumNotifier();
 });
 
@@ -86,12 +87,13 @@ class PengaturanUmumNotifier extends StateNotifier<PengaturanUmum> {
         // Parse JSON jika ada settings tersimpan
         final Map<String, dynamic> settings = {};
         // Untuk sederhana, kita load dari SharedPreferences individual keys
-        settings['notifikasiTransaksi'] = prefs.getBool('notif_transaksi') ?? true;
+        settings['notifikasiTransaksi'] =
+            prefs.getBool('notif_transaksi') ?? true;
         settings['notifikasiStok'] = prefs.getBool('notif_stok') ?? true;
         settings['notifikasiLaporan'] = prefs.getBool('notif_laporan') ?? false;
         settings['tema'] = prefs.getString('tema') ?? 'system';
         settings['bahasa'] = prefs.getString('bahasa') ?? 'id';
-        
+
         state = PengaturanUmum.fromJson(settings);
       }
     } catch (e) {
@@ -102,14 +104,14 @@ class PengaturanUmumNotifier extends StateNotifier<PengaturanUmum> {
   Future<void> updateSettings(PengaturanUmum newSettings) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Simpan individual settings
       await prefs.setBool('notif_transaksi', newSettings.notifikasiTransaksi);
       await prefs.setBool('notif_stok', newSettings.notifikasiStok);
       await prefs.setBool('notif_laporan', newSettings.notifikasiLaporan);
       await prefs.setString('tema', newSettings.tema);
       await prefs.setString('bahasa', newSettings.bahasa);
-      
+
       state = newSettings;
     } catch (e) {
       print('Error saving settings: $e');
@@ -147,11 +149,11 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
       await prefs.remove('accessToken');
       await prefs.remove('rememberMe');
       await prefs.remove('email');
-      
+
       ref.read(userProfileProvider.notifier).state = null;
       ref.read(accessTokenProvider.notifier).state = null;
       ref.read(authStateProvider.notifier).state = false;
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/');
       }
@@ -168,7 +170,8 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
   Widget build(BuildContext context) {
     final settings = ref.watch(pengaturanUmumProvider);
     final profile = ref.watch(userProfileProvider);
-    final userRole = profile != null ? Role.values.byName(profile['role']) : null;
+    final userRole =
+        profile != null ? Role.values.byName(profile['role']) : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -274,15 +277,15 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
             Text(
               'Notifikasi',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Atur preferensi notifikasi Anda',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 24),
 
@@ -292,8 +295,11 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
               subtitle: const Text('Terima notifikasi untuk setiap transaksi'),
               value: settings.notifikasiTransaksi,
               onChanged: (value) {
-                final newSettings = settings.copyWith(notifikasiTransaksi: value);
-                ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                final newSettings =
+                    settings.copyWith(notifikasiTransaksi: value);
+                ref
+                    .read(pengaturanUmumProvider.notifier)
+                    .updateSettings(newSettings);
               },
               contentPadding: EdgeInsets.zero,
             ),
@@ -305,7 +311,9 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
               value: settings.notifikasiStok,
               onChanged: (value) {
                 final newSettings = settings.copyWith(notifikasiStok: value);
-                ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                ref
+                    .read(pengaturanUmumProvider.notifier)
+                    .updateSettings(newSettings);
               },
               contentPadding: EdgeInsets.zero,
             ),
@@ -314,16 +322,21 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
             Consumer(
               builder: (context, ref, _) {
                 final profile = ref.watch(userProfileProvider);
-                final userRole = profile != null ? Role.values.byName(profile['role']) : null;
-                
+                final userRole = profile != null
+                    ? Role.values.byName(profile['role'])
+                    : null;
+
                 if (userRole == Role.OWNER || userRole == Role.ADMIN) {
                   return SwitchListTile(
                     title: const Text('Notifikasi Laporan'),
                     subtitle: const Text('Terima laporan harian otomatis'),
                     value: settings.notifikasiLaporan,
                     onChanged: (value) {
-                      final newSettings = settings.copyWith(notifikasiLaporan: value);
-                      ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                      final newSettings =
+                          settings.copyWith(notifikasiLaporan: value);
+                      ref
+                          .read(pengaturanUmumProvider.notifier)
+                          .updateSettings(newSettings);
                     },
                     contentPadding: EdgeInsets.zero,
                   );
@@ -348,15 +361,15 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
             Text(
               'Tampilan',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Sesuaikan tampilan aplikasi',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 24),
 
@@ -398,15 +411,15 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
             Text(
               'Akses Cepat',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Akses fitur-fitur penting',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 24),
 
@@ -479,8 +492,8 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
             Text(
               'Akun',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -546,7 +559,9 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
                 onChanged: (value) {
                   if (value != null) {
                     final newSettings = settings.copyWith(tema: value);
-                    ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                    ref
+                        .read(pengaturanUmumProvider.notifier)
+                        .updateSettings(newSettings);
                     Navigator.of(context).pop();
                   }
                 },
@@ -558,7 +573,9 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
                 onChanged: (value) {
                   if (value != null) {
                     final newSettings = settings.copyWith(tema: value);
-                    ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                    ref
+                        .read(pengaturanUmumProvider.notifier)
+                        .updateSettings(newSettings);
                     Navigator.of(context).pop();
                   }
                 },
@@ -570,7 +587,9 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
                 onChanged: (value) {
                   if (value != null) {
                     final newSettings = settings.copyWith(tema: value);
-                    ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                    ref
+                        .read(pengaturanUmumProvider.notifier)
+                        .updateSettings(newSettings);
                     Navigator.of(context).pop();
                   }
                 },
@@ -598,7 +617,9 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
                 onChanged: (value) {
                   if (value != null) {
                     final newSettings = settings.copyWith(bahasa: value);
-                    ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                    ref
+                        .read(pengaturanUmumProvider.notifier)
+                        .updateSettings(newSettings);
                     Navigator.of(context).pop();
                   }
                 },
@@ -610,7 +631,9 @@ class _PengaturanUmumPageState extends ConsumerState<PengaturanUmumPage> {
                 onChanged: (value) {
                   if (value != null) {
                     final newSettings = settings.copyWith(bahasa: value);
-                    ref.read(pengaturanUmumProvider.notifier).updateSettings(newSettings);
+                    ref
+                        .read(pengaturanUmumProvider.notifier)
+                        .updateSettings(newSettings);
                     Navigator.of(context).pop();
                     _showSnackBar('Fitur bahasa Inggris akan segera hadir');
                   }

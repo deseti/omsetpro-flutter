@@ -6,6 +6,7 @@ import '../../../providers/providers.dart' as AppProviders;
 import '../../../services/offline_database_proxy.dart' as OfflineDatabase;
 import '../../../services/connectivity_service.dart';
 import '../../../services/receipt_service.dart';
+import '../../pengaturan/pengaturan_akun_page.dart'; // Untuk DataToko dan dataTokoProvider
 import '../../../services/midtrans_service.dart';
 import '../../../services/payment_service_interface.dart';
 import '../../../widgets/receipt_preview_dialog.dart';
@@ -49,7 +50,8 @@ class TransactionService {
 
       final requestData = {
         'cabangId': cabangId,
-        'metodeBayar': metodeBayarUntukStruk, // Gunakan variabel yang sudah pasti
+        'metodeBayar':
+            metodeBayarUntukStruk, // Gunakan variabel yang sudah pasti
         'items': itemsDto,
         'pelangganId': selectedPelanggan?.id,
         'orderId': orderId,
@@ -215,7 +217,7 @@ class TransactionService {
         items: itemDetails,
         customerDetails: customerDetails,
       );
-      
+
       // [PERBAIKAN] Simpan transaksi ke database dengan orderId dari payment
       if (paymentResult.isSuccess && paymentResult.transactionId != null) {
         await _saveDigitalTransactionToDatabase(
@@ -227,7 +229,7 @@ class TransactionService {
           cabangId: cabangId, // Gunakan cabangId dari parameter
         );
       }
-      
+
       return paymentResult;
     } catch (e) {
       return PaymentResult(
@@ -248,7 +250,7 @@ class TransactionService {
   }) async {
     try {
       final dio = ref.read(AppProviders.dioProvider);
-      
+
       final itemsDto = cart
           .map((item) => {
                 'produkId': item['produk']['id'],
@@ -267,7 +269,7 @@ class TransactionService {
       print('🔄 Saving digital transaction to database with orderId: $orderId');
       final response = await dio.post('/transaksi', data: requestData);
       print('✅ Digital transaction saved to database: ${response.data}');
-      
+
       // Refresh laporan setelah transaksi tersimpan
       LaporanRefreshHelper.refreshLaporanAfterTransaction(ref);
     } catch (e) {
@@ -296,7 +298,8 @@ class TransactionService {
       cart: cart,
       totalHarga: totalHarga,
       isDigitalPayment: true,
-      paymentMethod: paymentType, // Ini akan berisi "QRIS", "Transfer Bank", dll.
+      paymentMethod:
+          paymentType, // Ini akan berisi "QRIS", "Transfer Bank", dll.
       orderId: 'MANUAL-${DateTime.now().millisecondsSinceEpoch}',
     );
   }
@@ -309,7 +312,7 @@ class TransactionService {
     required int transaksiId,
     required String cabangNama,
     required String metodeBayar, // [BARU] Terima parameter ini
-  }) {
+  }) async {
     final user = ref.read(AppProviders.userProfileProvider);
     final namaKasir = user?['namaLengkap'] ?? 'Kasir';
 
@@ -321,8 +324,24 @@ class TransactionService {
             })
         .toList();
 
+    // [PERBAIKAN] Get store data including logo from existing provider
+    String? logoUrl;
+    String namaToko = 'OmsetPro POS'; // default
+    try {
+      // Get store data from provider
+      final dataToko = await ref.read(dataTokoProvider.future);
+
+      namaToko = dataToko.nama.isNotEmpty ? dataToko.nama : namaToko;
+      logoUrl = dataToko.logoUrl; // This is the URL from backend
+
+      print('📋 Store data: name=$namaToko, logoUrl=$logoUrl');
+    } catch (e) {
+      print('⚠️ Error getting store data: $e');
+      // Continue with default values
+    }
+
     final receiptText = ReceiptService.formatReceiptText(
-      namaToko: 'OmsetPro POS',
+      namaToko: namaToko, // Use dynamic store name
       namaCabang: cabangNama,
       alamatCabang: 'Alamat Cabang',
       namaKasir: namaKasir,
@@ -331,12 +350,14 @@ class TransactionService {
       subtotal: totalHarga,
       totalHarga: totalHarga,
       metodeBayar: metodeBayar, // [BARU] Kirim ke service struk
+      logoPath: logoUrl, // [PERBAIKAN] Use logoUrl from store data
     );
 
     ReceiptPreviewDialog.show(
       context,
       receiptText: receiptText,
       transaksiId: transaksiId.toString(),
+      logoUrl: logoUrl, // [BARU] Pass logo URL untuk preview
     );
   }
 

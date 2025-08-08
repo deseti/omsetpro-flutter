@@ -8,23 +8,27 @@ import '../services/receipt_service.dart';
 class ReceiptPreviewDialog extends ConsumerWidget {
   final String receiptText;
   final String transaksiId;
+  final String? logoUrl; // [BARU] URL logo dari server
 
   const ReceiptPreviewDialog({
     super.key,
     required this.receiptText,
     required this.transaksiId,
+    this.logoUrl, // [BARU] Optional logo URL
   });
 
   static void show(
     BuildContext context, {
     required String receiptText,
     required String transaksiId,
+    String? logoUrl, // [BARU] Optional logo URL
   }) {
     showDialog(
       context: context,
       builder: (context) => ReceiptPreviewDialog(
         receiptText: receiptText,
         transaksiId: transaksiId,
+        logoUrl: logoUrl, // [BARU] Pass logo URL
       ),
     );
   }
@@ -32,7 +36,7 @@ class ReceiptPreviewDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isPrinterConnected = ref.watch(isPrinterConnectedProvider);
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -85,14 +89,70 @@ class ReceiptPreviewDialog extends ConsumerWidget {
                   ],
                 ),
                 child: SingleChildScrollView(
-                  child: SelectableText(
-                    receiptText,
-                    style: const TextStyle(
-                      fontFamily: 'Courier', // Font monospace
-                      fontSize: 12,
-                      height: 1.2,
-                      color: Colors.black87,
-                    ),
+                  child: Column(
+                    children: [
+                      // [BARU] Logo preview jika ada
+                      if (logoUrl != null && logoUrl!.isNotEmpty) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              logoUrl!,
+                              height: 80,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Logo tidak dapat dimuat',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  height: 60,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                      // Teks struk
+                      SelectableText(
+                        receiptText,
+                        style: const TextStyle(
+                          fontFamily: 'Courier', // Font monospace
+                          fontSize: 12,
+                          height: 1.2,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -121,15 +181,19 @@ class ReceiptPreviewDialog extends ConsumerWidget {
                 // Tombol print ke thermal printer atau placeholder
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: isPrinterConnected 
+                    onPressed: isPrinterConnected
                         ? () => _printToThermalPrinter(context, ref)
                         : () => _showPrinterSetupDialog(context),
-                    icon: Icon(isPrinterConnected ? Icons.print : Icons.print_disabled),
+                    icon: Icon(isPrinterConnected
+                        ? Icons.print
+                        : Icons.print_disabled),
                     label: Text(isPrinterConnected ? 'Print' : 'Setup Printer'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      backgroundColor: isPrinterConnected ? Colors.green.shade50 : null,
-                      foregroundColor: isPrinterConnected ? Colors.green.shade700 : null,
+                      backgroundColor:
+                          isPrinterConnected ? Colors.green.shade50 : null,
+                      foregroundColor:
+                          isPrinterConnected ? Colors.green.shade700 : null,
                     ),
                   ),
                 ),
@@ -170,10 +234,11 @@ class ReceiptPreviewDialog extends ConsumerWidget {
   }
 
   /// Print receipt to thermal printer
-  Future<void> _printToThermalPrinter(BuildContext context, WidgetRef ref) async {
+  Future<void> _printToThermalPrinter(
+      BuildContext context, WidgetRef ref) async {
     try {
       final hardwareManager = ref.read(hardwareManagerProvider);
-      
+
       // Show loading
       showDialog(
         context: context,
@@ -182,17 +247,17 @@ class ReceiptPreviewDialog extends ConsumerWidget {
           child: CircularProgressIndicator(),
         ),
       );
-      
+
       // Print to thermal printer
       final result = await hardwareManager.printReceipt(
         receiptText: receiptText,
         autoCut: true,
         openDrawer: false, // Don't open drawer on receipt reprint
       );
-      
+
       // Close loading dialog
       if (context.mounted) Navigator.of(context).pop();
-      
+
       // Show result
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -203,11 +268,10 @@ class ReceiptPreviewDialog extends ConsumerWidget {
           ),
         );
       }
-      
     } catch (e) {
       // Close loading dialog if still open
       if (context.mounted) Navigator.of(context).pop();
-      
+
       // Show error
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
