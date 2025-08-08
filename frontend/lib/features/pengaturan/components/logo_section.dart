@@ -74,15 +74,8 @@ class _LogoSectionState extends State<LogoSection> {
   }
 
   Widget _buildLogoContent() {
-    print('🖼️ Building logo content...');
-    print('- selectedImageBytes != null: ${widget.selectedImageBytes != null}');
-    print('- selectedImage != null: ${widget.selectedImage != null}');
-    print('- currentLogoUrl: ${widget.currentLogoUrl}');
-    print('- kIsWeb: $kIsWeb');
-
     // Prioritas: bytes (web) > file (mobile) > network image > placeholder
     if (kIsWeb && widget.selectedImageBytes != null) {
-      print('✅ Using selected image bytes (web)');
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.memory(
@@ -93,7 +86,6 @@ class _LogoSectionState extends State<LogoSection> {
         ),
       );
     } else if (!kIsWeb && widget.selectedImage != null) {
-      print('✅ Using selected image file (mobile)');
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.file(
@@ -105,7 +97,6 @@ class _LogoSectionState extends State<LogoSection> {
       );
     } else if (widget.currentLogoUrl != null &&
         widget.currentLogoUrl!.isNotEmpty) {
-      print('✅ Using network image from URL: ${widget.currentLogoUrl}');
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.network(
@@ -115,11 +106,8 @@ class _LogoSectionState extends State<LogoSection> {
           height: double.infinity,
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) {
-              print('✅ Network image loaded successfully');
               return child;
             }
-            print(
-                '⏳ Loading network image... ${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes}');
             return Center(
               child: CircularProgressIndicator(
                 value: loadingProgress.expectedTotalBytes != null
@@ -130,13 +118,11 @@ class _LogoSectionState extends State<LogoSection> {
             );
           },
           errorBuilder: (context, error, stackTrace) {
-            print('❌ Error loading network image: $error');
             return _buildLogoPlaceholder();
           },
         ),
       );
     } else {
-      print('📋 Using placeholder (no image available)');
       return _buildLogoPlaceholder();
     }
   }

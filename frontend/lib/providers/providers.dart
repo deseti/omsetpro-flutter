@@ -10,32 +10,30 @@ import '../services/network_service.dart'; // Import network service
 
 // Payment Method enum
 enum PaymentMethod {
-  cash,
-  digital,
-  manual,
+  cash, // Pembayaran tunai langsung
+  manual, // Pembayaran manual (Langsung/Tempo)
 }
 
 // Platform info provider
 final platformInfoProvider = Provider<Map<String, dynamic>>((ref) {
   return {
     'platform': kIsWeb ? 'web' : 'mobile',
-    'digitalPaymentSupported':
-        !kIsWeb, // Digital payment only on mobile for now
+    'digitalPaymentSupported': false, // Nonaktifkan pembayaran digital
+    'features': {
+      'manualPayment': true, // Aktifkan manual payment (Langsung/Tempo)
+      'cashPayment': true, // Aktifkan pembayaran tunai
+    },
   };
 });
 
 // Available payment methods provider
 final availablePaymentMethodsProvider = Provider<List<PaymentMethod>>((ref) {
-  final platformInfo = ref.watch(platformInfoProvider);
-  final List<PaymentMethod> methods = [PaymentMethod.cash];
-
-  if (platformInfo['digitalPaymentSupported']) {
-    methods.add(PaymentMethod.digital);
-  } else {
-    methods.add(PaymentMethod.manual); // Manual payment for web
-  }
-
-  return methods;
+  // Untuk semua platform, sediakan opsi tunai dan manual
+  // Manual payment mendukung: Pembayaran Langsung dan Pembayaran Tempo/Hutang
+  return [
+    PaymentMethod.cash, // Pembayaran tunai langsung
+    PaymentMethod.manual, // Pembayaran manual (Langsung/Tempo)
+  ];
 });
 
 // ... (provider lain tetap sama)
@@ -62,12 +60,13 @@ final dioAsyncProvider = FutureProvider<Dio>((ref) async {
 // Provider sync untuk backward compatibility dengan existing code
 final dioProvider = Provider<Dio>((ref) {
   // Gunakan NetworkService cache jika sudah ada, atau fallback ke ApiConfig
-  final dio = NetworkService.getCachedDio() ?? Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  final dio = NetworkService.getCachedDio() ??
+      Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
   final token = ref.watch(accessTokenProvider);
 
   // Clear existing interceptors to avoid duplicates
   dio.interceptors.clear();
-  
+
   dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
