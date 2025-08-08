@@ -53,4 +53,15 @@ export class TransaksiController {
     const userId = req.user.id;
     return this.transaksiService.batalkanTransaksiOnline(transaksiId, userId);
   }
+
+  // [BARU] Update informasi pengiriman
+  @Put(':id/update-shipping')
+  updateShippingInfo(
+    @Param('id', ParseIntPipe) transaksiId: number,
+    @Body() shippingInfo: { nomorResi?: string; namaKurir?: string },
+    @Request() req
+  ) {
+    const userId = req.user.id;
+    return this.transaksiService.updateShippingInfo(transaksiId, shippingInfo, userId);
+  }
 }

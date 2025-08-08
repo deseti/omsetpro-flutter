@@ -82,4 +82,33 @@ class RiwayatTransaksiService {
   String _formatDate(DateTime date) {
     return date.toIso8601String().split('T')[0];
   }
+
+  // Update informasi pengiriman
+  Future<void> updateShippingInfo({
+    required int transaksiId,
+    String? nomorResi,
+    String? namaKurir,
+  }) async {
+    try {
+      print('📦 Updating shipping info for transaction: $transaksiId');
+      print('🚚 Resi: $nomorResi, Kurir: $namaKurir');
+
+      final response = await _dio.put(
+        '/transaksi/$transaksiId/update-shipping',
+        data: {
+          'nomorResi': nomorResi,
+          'namaKurir': namaKurir,
+        },
+      );
+
+      print('✅ Shipping info updated: ${response.statusCode}');
+    } on DioException catch (e) {
+      print('❌ DioException in updateShippingInfo: ${e.message}');
+      print('Response data: ${e.response?.data}');
+      throw Exception(_handleError(e));
+    } catch (e) {
+      print('❌ Error in updateShippingInfo: $e');
+      throw Exception('Terjadi kesalahan saat mengupdate informasi pengiriman');
+    }
+  }
 }

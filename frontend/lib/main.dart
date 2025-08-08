@@ -21,7 +21,6 @@ import 'features/pengaturan/pengaturan_akun_page.dart'; // <-- IMPORT HALAMAN PE
 import 'features/pengaturan/pengaturan_umum_page.dart'; // <-- IMPORT HALAMAN PENGATURAN UMUM
 import 'features/profil/profil_page.dart'; // <-- IMPORT HALAMAN PROFIL
 import 'features/riwayat/riwayat_transaksi_page.dart'; // <-- IMPORT HALAMAN RIWAYAT TRANSAKSI
-import 'pages/toko_online_page.dart'; // <-- IMPORT HALAMAN TOKO ONLINE
 import 'theme/app_theme.dart'; // Import tema baru
 import 'services/hardware/hardware_manager_service.dart'; // Import hardware manager
 import 'services/network_service.dart'; // Import network service
@@ -98,8 +97,6 @@ class OmsetProApp extends StatelessWidget {
         '/pengaturan-akun': (context) =>
             const PengaturanAkunPage(), // <-- RUTE PENGATURAN AKUN
         '/profil': (context) => const ProfilPage(), // <-- RUTE PROFIL
-        '/toko-online': (context) =>
-            const TokoOnlinePage(), // <-- RUTE TOKO ONLINE
       },
       initialRoute: '/',
     );

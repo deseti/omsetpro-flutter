@@ -122,7 +122,7 @@ class ReceiptPreviewDialog extends ConsumerWidget {
                               loadingBuilder:
                                   (context, child, loadingProgress) {
                                 if (loadingProgress == null) return child;
-                                return Container(
+                                return SizedBox(
                                   height: 60,
                                   child: Center(
                                     child: CircularProgressIndicator(

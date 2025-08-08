@@ -33,6 +33,14 @@ model User {
   // Relasi untuk hak akses sebagai kasir/admin
   aksesCabang         AksesCabang[]
   transaksiKasir      Transaksi[]         @relation("KasirBuatTransaksi")
+  // Relasi untuk fitur tambahan tim/karyawan
+  absensi             Absensi[]           @relation("UserAbsensi")
+  jadwalTim           JadwalTim[]         @relation("UserJadwal")
+  gajiTim             GajiTim?            @relation("UserGaji")
+  auditLogs           AuditLog[]          @relation("UserAuditLog")
+  izinTim             IzinTim[]           @relation("UserIzinTim")
+  izinTimApproved     IzinTim[]           @relation("UserApproveIzin")
+  notifikasi          Notifikasi[]        @relation("UserNotifikasi")
 }
 
 enum Role {
@@ -56,6 +64,9 @@ model Cabang {
   produk        Produk[]
   transaksi     Transaksi[]
   aksesPengguna AksesCabang[]
+  // Relasi untuk fitur tambahan tim/karyawan
+  absensi       Absensi[]     @relation("CabangAbsensi")
+  shift         Shift[]       @relation("CabangShift")
 }
 
 model AksesCabang {
@@ -106,6 +117,9 @@ model Transaksi {
   // [BARU] Data pelanggan toko online (jika tidak terdaftar)
   namaPelangganOnline    String?
   noHpPelangganOnline    String?
+  // [BARU] Informasi pengiriman kurir
+  nomorResi     String?           // Nomor resi pengiriman
+  namaKurir     String?           // Nama jasa pengiriman (JNE, JT Express, dll)
   // Relasi ke Cabang & Kasir
   cabangId      Int
   cabang        Cabang            @relation(fields: [cabangId], references: [id], onDelete: Cascade)
@@ -219,6 +233,141 @@ model ProdukPromo {
 enum PromoTipe {
   PERCENTAGE // Diskon persen untuk produk tertentu
   NOMINAL    // Diskon nominal untuk produk tertentu
+}
+
+// ============== FITUR TAMBAHAN UNTUK TIM (KARYAWAN) ==============
+// Absensi tim/karyawan
+model Absensi {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation("UserAbsensi", fields: [userId], references: [id])
+  cabangId  Int
+  cabang    Cabang   @relation("CabangAbsensi", fields: [cabangId], references: [id])
+  tanggal   DateTime
+  checkIn   DateTime?
+  checkOut  DateTime?
+  status    AbsensiStatus @default(TIDAK_HADIR)
+  catatan   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, cabangId, tanggal])
+}
+
+enum AbsensiStatus {
+  HADIR
+  TIDAK_HADIR
+  IZIN
+  SAKIT
+  CUTI
+}
+
+// Shift/Jadwal kerja untuk tim
+model Shift {
+  id          Int       @id @default(autoincrement())
+  nama        String    // "Pagi", "Siang", "Malam"
+  jamMulai    String    // "08:00"
+  jamSelesai  String    // "16:00"
+  cabangId    Int
+  cabang      Cabang    @relation("CabangShift", fields: [cabangId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  // Relasi ke jadwal tim
+  jadwalTim JadwalTim[]
+}
+
+model JadwalTim {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  user     User     @relation("UserJadwal", fields: [userId], references: [id])
+  shiftId  Int
+  shift    Shift    @relation(fields: [shiftId], references: [id])
+  tanggal  DateTime
+  isActive Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, tanggal])
+}
+
+// Pengaturan gaji dan komisi untuk tim
+model GajiTim {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  user          User     @relation("UserGaji", fields: [userId], references: [id])
+  gajiPokok     Int      @default(0)
+  komisiPersen  Float    @default(0) // Komisi dari penjualan (%)
+  komisiNominal Int      @default(0) // Komisi tetap per transaksi
+  tunjangan     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Log audit aktivitas
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation("UserAuditLog", fields: [userId], references: [id])
+  aksi      String   // "LOGIN", "LOGOUT", "CREATE_TRANSAKSI", "UPDATE_PRODUK", dll
+  modul     String   // "AUTH", "TRANSAKSI", "PRODUK", "CABANG", dll
+  detail    String?  // JSON atau text detail
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+// Izin cuti/sakit untuk tim
+model IzinTim {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  user        User        @relation("UserIzinTim", fields: [userId], references: [id])
+  tipe        TipeIzin
+  tanggalMulai DateTime
+  tanggalSelesai DateTime
+  alasan      String
+  status      StatusIzin  @default(PENDING)
+  approvedBy  Int?
+  approver    User?       @relation("UserApproveIzin", fields: [approvedBy], references: [id])
+  approvedAt  DateTime?
+  catatan     String?     // Catatan dari approver
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum TipeIzin {
+  CUTI
+  SAKIT
+  IZIN_KHUSUS
+}
+
+enum StatusIzin {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Notifikasi dan reminder
+model Notifikasi {
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  user      User            @relation("UserNotifikasi", fields: [userId], references: [id])
+  tipe      TipeNotifikasi
+  judul     String
+  pesan     String
+  isRead    Boolean         @default(false)
+  data      String?         // JSON data tambahan
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+enum TipeNotifikasi {
+  SHIFT_REMINDER
+  IZIN_REQUEST
+  IZIN_APPROVED
+  IZIN_REJECTED
+  SYSTEM
+  GENERAL
 }
 
 // ============== PENGATURAN AKUN TOKO ==============

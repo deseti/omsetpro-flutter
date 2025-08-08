@@ -19,7 +19,7 @@ class ModernAuthContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = kIsWeb;
+    const isWeb = kIsWeb;
 
     // Untuk web, selalu gunakan layout terpusat yang sama
     if (isWeb) {
@@ -262,7 +262,7 @@ class ModernAuthContainer extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final isMobile = mediaQuery.size.width < 600;
     final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
-    final isWeb = kIsWeb;
+    const isWeb = kIsWeb;
 
     // Padding yang lebih agresif untuk mobile ketika keyboard aktif
     double cardPadding = 32;

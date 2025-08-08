@@ -11,6 +11,14 @@ class RiwayatTransaksi {
   final CabangInfo cabang;
   final PelangganInfo? pelanggan;
 
+  // Toko Online fields
+  final String? sumberTransaksi;
+  final String? tipePengiriman;
+  final String? namaPelangganOnline;
+  final String? noHpPelangganOnline;
+  final String? nomorResi;
+  final String? namaKurir;
+
   RiwayatTransaksi({
     required this.id,
     required this.total,
@@ -21,6 +29,12 @@ class RiwayatTransaksi {
     required this.kasir,
     required this.cabang,
     this.pelanggan,
+    this.sumberTransaksi,
+    this.tipePengiriman,
+    this.namaPelangganOnline,
+    this.noHpPelangganOnline,
+    this.nomorResi,
+    this.namaKurir,
   });
 
   factory RiwayatTransaksi.fromJson(Map<String, dynamic> json) {
@@ -35,14 +49,26 @@ class RiwayatTransaksi {
           .toList(),
       kasir: KasirInfo.fromJson(json['kasir']),
       cabang: CabangInfo.fromJson(json['cabang']),
-      pelanggan: json['pelanggan'] != null 
+      pelanggan: json['pelanggan'] != null
           ? PelangganInfo.fromJson(json['pelanggan'])
           : null,
+      sumberTransaksi: json['sumberTransaksi'] as String?,
+      tipePengiriman: json['tipePengiriman'] as String?,
+      namaPelangganOnline: json['namaPelangganOnline'] as String?,
+      noHpPelangganOnline: json['noHpPelangganOnline'] as String?,
+      nomorResi: json['nomorResi'] as String?,
+      namaKurir: json['namaKurir'] as String?,
     );
   }
 
   int get totalSebelumDiskon => total + potongan;
   int get totalItem => detail.fold(0, (sum, item) => sum + item.jumlah);
+
+  // Helper methods
+  bool get isTokoOnline => sumberTransaksi == 'TokoOnline';
+  bool get isDelivery => tipePengiriman == 'Diantar';
+  bool get hasShippingInfo =>
+      nomorResi?.isNotEmpty == true || namaKurir?.isNotEmpty == true;
 }
 
 class DetailTransaksi {
@@ -202,11 +228,11 @@ enum FilterPeriode {
         final startOfDay = DateTime(now.year, now.month, now.day);
         final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
         return DateRange(start: startOfDay, end: endOfDay);
-      
+
       case FilterPeriode.satuBulan:
         final oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
         return DateRange(start: oneMonthAgo, end: now);
-      
+
       case FilterPeriode.satuTahun:
         final oneYearAgo = DateTime(now.year - 1, now.month, now.day);
         return DateRange(start: oneYearAgo, end: now);

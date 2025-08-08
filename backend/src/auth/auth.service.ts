@@ -6,6 +6,7 @@ import {
 import { RegisterUserDto, LoginUserDto } from './auth.dto';
 import { UpdateProfileDto, ChangePasswordDto } from './update-profile.dto';
 import { PrismaService } from '../prisma.service';
+import { AuditService } from '../audit/audit.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt'; // Import JwtService
 
@@ -15,6 +16,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private auditService: AuditService, // Inject AuditService
   ) {}
 
   // Fungsi registrasi (tidak berubah)
@@ -41,7 +43,7 @@ export class AuthService {
   /**
    * Fungsi untuk memvalidasi login pengguna.
    */
-  async login(loginUserDto: LoginUserDto) {
+  async login(loginUserDto: LoginUserDto, ipAddress?: string, userAgent?: string) {
     const { email, password } = loginUserDto;
 
     // 1. Cari pengguna berdasarkan email
@@ -66,7 +68,15 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email };
     const accessToken = await this.jwtService.signAsync(payload);
 
-    // 4. Kirim tiket tersebut ke frontend
+    // 4. Log aktivitas login
+    try {
+      await this.auditService.logLogin(user.id, ipAddress, userAgent);
+    } catch (error) {
+      // Log error tapi jangan gagalkan login
+      console.error('Failed to log login activity:', error);
+    }
+
+    // 5. Kirim tiket tersebut ke frontend
     return {
       message: 'Login berhasil!',
       accessToken: accessToken,
@@ -128,8 +138,35 @@ export class AuthService {
       data: { password: hashedNewPassword },
     });
 
+    // Log aktivitas change password
+    try {
+      await this.auditService.logActivity(
+        userId,
+        'CHANGE_PASSWORD',
+        'AUTH',
+        { timestamp: new Date() }
+      );
+    } catch (error) {
+      console.error('Failed to log change password activity:', error);
+    }
+
     return {
       message: 'Password berhasil diubah',
+    };
+  }
+
+  /**
+   * Logout dan log aktivitas
+   */
+  async logout(userId: number, ipAddress?: string, userAgent?: string) {
+    try {
+      await this.auditService.logLogout(userId, ipAddress, userAgent);
+    } catch (error) {
+      console.error('Failed to log logout activity:', error);
+    }
+
+    return {
+      message: 'Logout berhasil!',
     };
   }
 }

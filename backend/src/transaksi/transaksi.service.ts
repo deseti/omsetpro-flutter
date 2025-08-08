@@ -483,4 +483,71 @@ export class TransaksiService {
       return updatedTransaksi;
     });
   }
+
+  // [BARU] Update informasi pengiriman
+  async updateShippingInfo(
+    transaksiId: number,
+    shippingInfo: { nomorResi?: string; namaKurir?: string },
+    userId: number
+  ) {
+    // 1. Cari transaksi
+    const transaksi = await this.prisma.transaksi.findUnique({
+      where: { id: transaksiId },
+      include: {
+        cabang: true,
+      },
+    });
+
+    if (!transaksi) {
+      throw new NotFoundException('Transaksi tidak ditemukan');
+    }
+
+    // 2. Verifikasi akses ke cabang
+    await this.verifyCabangAccess(transaksi.cabangId, userId);
+
+    // 3. Pastikan ini adalah transaksi online dengan tipe pengiriman "Diantar"
+    if (transaksi.sumberTransaksi !== 'TokoOnline') {
+      throw new BadRequestException('Hanya transaksi toko online yang dapat diupdate info pengirimannya');
+    }
+
+    if (transaksi.tipePengiriman !== 'Diantar') {
+      throw new BadRequestException('Hanya pesanan yang diantar kurir yang dapat diupdate info pengirimannya');
+    }
+
+    // 4. Update informasi pengiriman
+    const updatedTransaksi = await this.prisma.transaksi.update({
+      where: { id: transaksiId },
+      data: {
+        nomorResi: shippingInfo.nomorResi,
+        namaKurir: shippingInfo.namaKurir,
+      },
+      include: {
+        detail: {
+          include: {
+            produk: {
+              select: {
+                id: true,
+                nama: true,
+                fotoUrl: true,
+              },
+            },
+          },
+        },
+        kasir: {
+          select: {
+            id: true,
+            namaLengkap: true,
+          },
+        },
+        cabang: {
+          select: {
+            id: true,
+            nama: true,
+          },
+        },
+      },
+    });
+
+    return updatedTransaksi;
+  }
 }

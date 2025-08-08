@@ -184,7 +184,7 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
     final mediaQuery = MediaQuery.of(context);
     final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
     final isSmallScreen = mediaQuery.size.height < 700;
-    final isWeb = kIsWeb;
+    const isWeb = kIsWeb;
 
     return Form(
       key: _formKey,

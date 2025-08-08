@@ -72,7 +72,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 class PublicTokoOnlinePage extends ConsumerStatefulWidget {
   final String slug;
 
-  const PublicTokoOnlinePage({Key? key, required this.slug}) : super(key: key);
+  const PublicTokoOnlinePage({super.key, required this.slug});
 
   @override
   ConsumerState<PublicTokoOnlinePage> createState() =>
@@ -413,11 +413,11 @@ class CheckoutBottomSheet extends ConsumerStatefulWidget {
   final VoidCallback onOrderPlaced;
 
   const CheckoutBottomSheet({
-    Key? key,
+    super.key,
     required this.cart,
     required this.toko,
     required this.onOrderPlaced,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<CheckoutBottomSheet> createState() =>

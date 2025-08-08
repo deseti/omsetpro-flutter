@@ -158,7 +158,7 @@ class _ModernRegisterFormState extends ConsumerState<ModernRegisterForm> {
     final keyboardVisible = mediaQuery.viewInsets.bottom > 0;
     final screenHeight = mediaQuery.size.height;
     final isSmallScreen = screenHeight < 700; // Small screen detection
-    final isWeb = kIsWeb;
+    const isWeb = kIsWeb;
 
     return Form(
       key: _formKey,

@@ -14,6 +14,13 @@ import { MidtransModule } from './midtrans/midtrans.module'; // <-- IMPORT MODUL
 import { PengaturanModule } from './pengaturan/pengaturan.module'; // <-- IMPORT MODUL PENGATURAN
 import { DashboardModule } from './dashboard/dashboard.module'; // <-- IMPORT MODUL DASHBOARD
 import { TokoOnlineModule } from './toko-online/toko-online.module'; // <-- IMPORT MODUL TOKO ONLINE
+// Import modul fitur tambahan tim/karyawan
+import { AbsensiModule } from './absensi/absensi.module';
+import { ShiftModule } from './shift/shift.module';
+import { GajiModule } from './gaji/gaji.module';
+import { IzinModule } from './izin/izin.module';
+import { AuditModule } from './audit/audit.module';
+import { NotifikasiModule } from './notifikasi/notifikasi.module';
 
 @Module({
   imports: [
@@ -30,6 +37,13 @@ import { TokoOnlineModule } from './toko-online/toko-online.module'; // <-- IMPO
     PengaturanModule, // <-- DAFTARKAN MODUL PENGATURAN
     DashboardModule, // <-- DAFTARKAN MODUL DASHBOARD
     TokoOnlineModule, // <-- DAFTARKAN MODUL TOKO ONLINE
+    // Daftarkan modul fitur tambahan tim/karyawan
+    AbsensiModule,
+    ShiftModule,
+    GajiModule,
+    IzinModule,
+    AuditModule,
+    NotifikasiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
