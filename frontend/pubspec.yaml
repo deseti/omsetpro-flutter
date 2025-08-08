@@ -85,6 +85,10 @@ flutter:
   
   # Generate app localization (untuk format tanggal dan angka)
   generate: true
+  
+  # Assets configuration
+  assets:
+    - assets/logo/
 
 # Flutter Launcher Icons Configuration
 flutter_icons:

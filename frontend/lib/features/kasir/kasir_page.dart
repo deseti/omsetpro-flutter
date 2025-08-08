@@ -6,9 +6,7 @@ import '../../providers/hardware_providers.dart';
 import '../../services/sync_service.dart';
 import '../../services/hardware/hardware_manager_service.dart';
 import '../../services/hardware/barcode_scanner_service.dart';
-import '../../services/payment_service_interface.dart';
 import '../../widgets/responsive_widgets.dart';
-import '../../widgets/payment/payment_webview_page.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/hardware_settings_page.dart';
 import './widgets/product_grid_widget.dart';
@@ -66,15 +64,16 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   /// Handle barcode scanned from external scanner
   void _handleBarcodeScanned(String barcode) {
     // Find product by barcode and add to cart
-    final produkList = ref.read(AppProviders.produkListWithOfflineProvider(widget.cabangId));
-    
+    final produkList =
+        ref.read(AppProviders.produkListWithOfflineProvider(widget.cabangId));
+
     produkList.when(
       data: (products) {
         final product = products.firstWhere(
           (p) => p['barcode']?.toString() == barcode,
           orElse: () => null,
         );
-        
+
         if (product != null) {
           _addToCartByBarcode(product);
           // Show feedback
@@ -104,12 +103,12 @@ class _KasirPageState extends ConsumerState<KasirPage> {
   /// Add product to cart from barcode scan
   void _addToCartByBarcode(Map<String, dynamic> produk) {
     final currentCart = ref.read(AppProviders.cartProvider);
-    
+
     // Check if product already in cart
     final existingIndex = currentCart.indexWhere(
       (item) => item['produk']['id'] == produk['id'],
     );
-    
+
     if (existingIndex != -1) {
       // Increase quantity
       final updatedCart = [...currentCart];
@@ -124,7 +123,10 @@ class _KasirPageState extends ConsumerState<KasirPage> {
         'produk': produk,
         'jumlah': 1,
       };
-      ref.read(AppProviders.cartProvider.notifier).state = [...currentCart, newItem];
+      ref.read(AppProviders.cartProvider.notifier).state = [
+        ...currentCart,
+        newItem
+      ];
     }
   }
 
@@ -158,117 +160,18 @@ class _KasirPageState extends ConsumerState<KasirPage> {
     );
   }
 
-  // [MODIFIKASI FINAL] Mengubah alur fungsi ini
-  Future<void> _processDigitalTransaction({
-    required List<Map<String, dynamic>> cart,
-    required int totalHarga,
-  }) async {
-    // 1. Panggil service untuk memulai pembayaran dan tunggu hasilnya
-    final paymentResult = await TransactionService.processDigitalTransaction(
-      context: context,
-      ref: ref,
-      cart: cart,
-      totalHarga: totalHarga,
-      cabangId: widget.cabangId, // [PERBAIKAN] Kirim cabangId
-    );
-
-    // 2. Periksa hasilnya
-    if (paymentResult.isSuccess) {
-      // 3. Jika ada action untuk buka WebView, buka PaymentWebViewPage
-      if (paymentResult.additionalData?['action'] == 'open_webview') {
-        final snapUrl = paymentResult.additionalData?['snapUrl'];
-        if (snapUrl != null && mounted) {
-          // Buka WebView untuk pembayaran
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PaymentWebViewPage(
-                snapUrl: snapUrl,
-                orderId: paymentResult.transactionId ?? 'unknown',
-                onResult: (PaymentResult result) {
-                  Navigator.pop(context);
-                  
-                  if (mounted) {
-                    // Handle hasil dari WebView
-                    if (result.isSuccess) {
-                      if (result.additionalData?['status'] == 'success') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pembayaran berhasil! Transaksi telah dicatat.'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      } else if (result.additionalData?['status'] == 'pending') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pembayaran sedang diproses. Silakan tunggu konfirmasi.'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(result.message ?? 'Status pembayaran tidak diketahui.'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(result.message ?? 'Pembayaran dibatalkan atau gagal.'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
-            ),
-          );
-        }
-      } else {
-        // Fallback untuk platform lain atau metode pembayaran lain
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(paymentResult.message ??
-                  'Halaman pembayaran dibuka. Selesaikan pembayaran di sana.'),
-              backgroundColor: Colors.blue,
-            ),
-          );
-        }
-      }
-
-      // Bersihkan keranjang setelah pembayaran dimulai
-      CartHelper.clearCart(ref);
-    } else {
-      // 4. JIKA GAGAL, tampilkan pesan error
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                paymentResult.message ?? 'Gagal memulai pembayaran digital.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _processManualDigitalPayment(
+  void _processManualPayment(
     List<Map<String, dynamic>> cart,
     int totalHarga,
     String paymentType,
   ) {
-    TransactionService.processManualDigitalPayment(
-      context: context,
-      ref: ref,
-      cabangId: widget.cabangId,
-      cabangNama: widget.cabangNama,
+    // Untuk pembayaran manual, langsung proses transaksi
+    // dengan metode pembayaran yang dipilih
+    _processTransaction(
       cart: cart,
       totalHarga: totalHarga,
-      paymentType: paymentType,
+      paymentMethod: paymentType,
+      orderId: 'MANUAL-${DateTime.now().millisecondsSinceEpoch}',
     );
   }
 
@@ -314,7 +217,7 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             builder: (context, ref, child) {
               final isPrinterConnected = ref.watch(isPrinterConnectedProvider);
               final isScannerConnected = ref.watch(isScannerConnectedProvider);
-              
+
               return IconButton(
                 onPressed: () {
                   Navigator.push(
@@ -398,10 +301,9 @@ class _KasirPageState extends ConsumerState<KasirPage> {
               detail: CartSectionWidget(
                 onCashPayment: () =>
                     _processTransaction(cart: cart, totalHarga: totalHarga),
-                onDigitalPayment: () => _processDigitalTransaction(
-                    cart: cart, totalHarga: totalHarga),
+                onDigitalPayment: () => {}, // Tidak digunakan lagi
                 onManualPayment: (paymentType) =>
-                    _processManualDigitalPayment(cart, totalHarga, paymentType),
+                    _processManualPayment(cart, totalHarga, paymentType),
               ),
               masterWidth: ResponsiveBreakpoints.getResponsiveValue(
                 context,
@@ -440,10 +342,9 @@ class _KasirPageState extends ConsumerState<KasirPage> {
             child: CartSectionWidget(
               onCashPayment: () =>
                   _processTransaction(cart: cart, totalHarga: totalHarga),
-              onDigitalPayment: () => _processDigitalTransaction(
-                  cart: cart, totalHarga: totalHarga),
+              onDigitalPayment: () => {}, // Tidak digunakan lagi
               onManualPayment: (paymentType) =>
-                  _processManualDigitalPayment(cart, totalHarga, paymentType),
+                  _processManualPayment(cart, totalHarga, paymentType),
             ),
           ),
         ),

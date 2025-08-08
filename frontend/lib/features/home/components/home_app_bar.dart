@@ -24,13 +24,24 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Icon(
-              Icons.point_of_sale,
-              color: theme.colorScheme.onPrimary,
-              size: 20,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/logo/omsetpro_logo.png',
+                width: 40,
+                height: 40,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -105,7 +116,8 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
           ],
-          onSelected: (value) => _handleMenuSelection(context, ref, value, profile),
+          onSelected: (value) =>
+              _handleMenuSelection(context, ref, value, profile),
         ),
         const SizedBox(width: 8),
       ],

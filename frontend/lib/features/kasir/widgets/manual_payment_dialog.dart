@@ -33,7 +33,7 @@ class ManualPaymentDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Pilih Pembayaran'), // Judul diubah agar lebih umum
+      title: const Text('Pilih Metode Pembayaran'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,28 +46,31 @@ class ManualPaymentDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // [MODIFIKASI] Opsi ini sekarang memanggil fungsi yang berbeda
+          // Opsi Pembayaran Langsung
           _buildPaymentOption(
             context,
-            icon: Icons.qr_code,
-            title: 'QRIS & E-Wallet',
-            subtitle: 'Buat pembayaran via Midtrans',
+            icon: Icons.payment,
+            title: 'Pembayaran Langsung',
+            subtitle: 'Tunai, kartu debit, atau e-wallet langsung',
+            color: Colors.green,
             onTapAction: () {
               Navigator.of(context).pop();
-              onDigitalPaymentInitiated(); // Panggil fungsi untuk memunculkan QRIS
+              onManualPaymentSelected('Langsung');
             },
           ),
 
-          // [MODIFIKASI] Opsi ini tetap sebagai pencatatan manual
+          const SizedBox(height: 8),
+
+          // Opsi Pembayaran Tempo/Hutang
           _buildPaymentOption(
             context,
-            icon: Icons.credit_card,
-            title: 'Transfer Bank (Manual)',
-            subtitle: 'Catat sebagai lunas via transfer',
+            icon: Icons.schedule,
+            title: 'Pembayaran Tempo/Hutang',
+            subtitle: 'Akan dibayar kemudian',
+            color: Colors.orange,
             onTapAction: () {
               Navigator.of(context).pop();
-              // 'transfer' adalah nama metode bayar yang akan disimpan
-              onManualPaymentSelected('Transfer Bank');
+              onManualPaymentSelected('Tempo/Hutang');
             },
           ),
         ],
@@ -86,13 +89,17 @@ class ManualPaymentDialog extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    required VoidCallback onTapAction, // [MODIFIKASI] Gunakan callback umum
+    required VoidCallback onTapAction,
+    Color? color,
   }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      onTap: onTapAction, // Gunakan action yang sudah ditentukan
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading: Icon(icon, color: color),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        onTap: onTapAction,
+      ),
     );
   }
 }

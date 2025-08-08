@@ -3,7 +3,7 @@
 
 abstract class PaymentServiceInterface {
   Future<void> initializePayment();
-  
+
   Future<PaymentResult> processPayment({
     required String orderId,
     required int totalAmount,
@@ -30,7 +30,6 @@ class PaymentResult {
 }
 
 enum PaymentMethod {
-  digital,  // Midtrans untuk mobile
-  manual,   // Manual entry untuk web
-  cash,     // Pembayaran tunai
+  cash, // Pembayaran tunai langsung
+  manual, // Pembayaran tempo/hutang (manual entry)
 }

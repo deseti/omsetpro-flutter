@@ -69,29 +69,16 @@ class PaymentButtonsWidget extends ConsumerWidget {
   Widget _buildPaymentButton(
       BuildContext context, WidgetRef ref, AppProviders.PaymentMethod method) {
     switch (method) {
-      case AppProviders.PaymentMethod.digital:
-        return FilledButton.icon(
-          onPressed: cart.isEmpty ? null : onDigitalPayment,
-          icon: const Icon(Icons.qr_code),
-          label: const Text('Bayar Digital (QRIS, dll)'),
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-          ),
-        );
       case AppProviders.PaymentMethod.manual:
         return FilledButton.tonal(
           onPressed: cart.isEmpty
               ? null
-              // [MODIFIKASI] Panggil dialog yang sudah diperbarui dengan DUA fungsi
               : () => ManualPaymentDialog.show(
                     context,
                     totalHarga: totalHarga,
-                    // Sambungkan ke fungsi pencatatan manual
                     onManualPaymentSelected: onManualPayment,
-                    // Sambungkan ke fungsi yang memunculkan QRIS
-                    onDigitalPaymentInitiated: onDigitalPayment,
+                    onDigitalPaymentInitiated:
+                        () {}, // Kosongkan karena tidak digunakan
                   ),
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
@@ -99,10 +86,9 @@ class PaymentButtonsWidget extends ConsumerWidget {
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.credit_card),
+              Icon(Icons.schedule_send),
               SizedBox(width: AppTheme.spaceSM),
-              // [MODIFIKASI] Ganti nama tombol agar lebih jelas
-              Text('Input Pembayaran Digital'),
+              Text('Pembayaran Manual'),
             ],
           ),
         );
@@ -111,7 +97,7 @@ class PaymentButtonsWidget extends ConsumerWidget {
         return FilledButton.icon(
           onPressed: cart.isEmpty ? null : onCashPayment,
           icon: Icon(isOfflineMode ? Icons.offline_bolt : Icons.payments),
-          label: const Text('Bayar (Tunai)'),
+          label: const Text('Pembayaran Tunai'),
           style: FilledButton.styleFrom(
             backgroundColor: isOfflineMode
                 ? Theme.of(context).colorScheme.tertiary
@@ -122,6 +108,8 @@ class PaymentButtonsWidget extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
           ),
         );
+      default:
+        return const SizedBox.shrink();
     }
   }
 }

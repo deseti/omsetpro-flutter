@@ -4,25 +4,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'payment_service_interface.dart';
-import 'payment_service_factory_mobile.dart' 
-  if (dart.library.html) 'payment_service_factory_web.dart';
+import 'payment_service_factory_mobile.dart'
+    if (dart.library.html) 'payment_service_factory_web.dart';
 
 // Export PaymentServiceFactory dari file yang sesuai
-export 'payment_service_factory_mobile.dart' 
-  if (dart.library.html) 'payment_service_factory_web.dart';
+export 'payment_service_factory_mobile.dart'
+    if (dart.library.html) 'payment_service_factory_web.dart';
+
 // Provider untuk mendeteksi platform dan payment methods yang tersedia
 final availablePaymentMethodsProvider = Provider<List<PaymentMethod>>((ref) {
-  if (kIsWeb) {
-    return [
-      PaymentMethod.manual,  // Manual entry untuk web
-      PaymentMethod.cash,    // Cash payment
-    ];
-  } else {
-    return [
-      PaymentMethod.digital, // Midtrans untuk mobile
-      PaymentMethod.cash,    // Cash payment
-    ];
-  }
+  // Nonaktifkan pembayaran digital Midtrans untuk semua platform
+  // Hanya tersedia opsi pembayaran manual dan tunai
+  return [
+    PaymentMethod.cash, // Pembayaran tunai langsung
+    PaymentMethod.manual, // Pembayaran tempo/hutang (manual entry)
+  ];
 });
 
 // Provider untuk informasi platform
@@ -30,11 +26,11 @@ final platformInfoProvider = Provider<Map<String, dynamic>>((ref) {
   return {
     'isWeb': kIsWeb,
     'platform': kIsWeb ? 'web' : 'mobile',
-    'digitalPaymentSupported': !kIsWeb,
+    'digitalPaymentSupported': false, // Nonaktifkan pembayaran digital
     'features': {
-      'midtrans': !kIsWeb,
-      'manualEntry': kIsWeb,
-      'cashPayment': true,
+      'midtrans': false, // Nonaktifkan Midtrans
+      'manualEntry': true, // Aktifkan manual entry untuk tempo/hutang
+      'cashPayment': true, // Aktifkan pembayaran tunai
     },
   };
 });
