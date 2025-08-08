@@ -46,7 +46,7 @@ class _ProdukPageState extends ConsumerState<ProdukPage> {
       final dio = ref.read(dioProvider);
 
       // Request export dengan response type bytes
-      final response = await dio.get(
+      await dio.get(
         '/produk/export/${widget.cabangId}',
         options: Options(
           responseType: ResponseType.bytes,

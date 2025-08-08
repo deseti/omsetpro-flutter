@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import '../models/data_toko_model.dart';
 import '../providers/data_toko_provider.dart';
 import '../../../providers/providers.dart';

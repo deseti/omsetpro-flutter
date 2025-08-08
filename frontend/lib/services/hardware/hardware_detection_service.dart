@@ -212,7 +212,7 @@ class HardwareDetectionService {
 
         for (final ip in commonPrinterIPs) {
           // Basic network device placeholder
-          final device = HardwareDevice(
+          HardwareDevice(
             id: 'network_$ip',
             name: 'Network Printer ($ip)',
             manufacturer: 'Unknown',

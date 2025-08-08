@@ -32,23 +32,23 @@ class PrintResult {
 }
 
 class ThermalPrinterService {
-  static final ThermalPrinterService _instance = ThermalPrinterService._internal();
+  static final ThermalPrinterService _instance =
+      ThermalPrinterService._internal();
   factory ThermalPrinterService() => _instance;
   ThermalPrinterService._internal();
 
   // Printer connections
   Socket? _networkSocket;
-  BluetoothCharacteristic? _bluetoothCharacteristic;
   BluetoothDevice? _bluetoothDevice;
-  
+
   // Current state
   HardwareDevice? _connectedDevice;
   PrinterStatus _status = PrinterStatus.disconnected;
-  
+
   // Stream controllers
-  final StreamController<PrinterStatus> _statusController = 
+  final StreamController<PrinterStatus> _statusController =
       StreamController<PrinterStatus>.broadcast();
-  
+
   Stream<PrinterStatus> get statusStream => _statusController.stream;
   PrinterStatus get currentStatus => _status;
   HardwareDevice? get connectedDevice => _connectedDevice;
@@ -70,10 +70,10 @@ class ThermalPrinterService {
     }
 
     _updateStatus(PrinterStatus.connecting);
-    
+
     try {
       bool connected = false;
-      
+
       switch (device.connectionType) {
         case ConnectionType.bluetooth:
           connected = await _connectBluetooth(device);
@@ -86,19 +86,19 @@ class ThermalPrinterService {
           print('❌ Unsupported connection type: ${device.connectionType}');
           connected = false;
       }
-      
+
       if (connected) {
         _connectedDevice = device;
         _updateStatus(PrinterStatus.connected);
         print('✅ Connected to printer: ${device.name}');
-        
+
         // Test printer status
         await _checkPrinterStatus();
       } else {
         _updateStatus(PrinterStatus.error);
         print('❌ Failed to connect to printer: ${device.name}');
       }
-      
+
       return connected;
     } catch (e) {
       _updateStatus(PrinterStatus.error);
@@ -112,10 +112,11 @@ class ThermalPrinterService {
     try {
       // For flutter_blue_plus, we need to implement a different approach
       // This is a simplified implementation
-      print('⚠️ Bluetooth printer connection using flutter_blue_plus requires updated implementation');
-      print('💡 Please use Network/WiFi printers for now or implement full flutter_blue_plus integration');
+      print(
+          '⚠️ Bluetooth printer connection using flutter_blue_plus requires updated implementation');
+      print(
+          '💡 Please use Network/WiFi printers for now or implement full flutter_blue_plus integration');
       return false;
-      
     } catch (e) {
       print('❌ Bluetooth connection failed: $e');
       return false;
@@ -134,9 +135,9 @@ class ThermalPrinterService {
     try {
       final ip = device.address;
       final port = device.capabilities['port'] as int? ?? 9100;
-      
+
       _networkSocket = await Socket.connect(ip, port);
-      
+
       if (_networkSocket != null) {
         print('✅ Network printer connected: $ip:$port');
         return true;
@@ -165,7 +166,7 @@ class ThermalPrinterService {
     }
 
     _updateStatus(PrinterStatus.printing);
-    
+
     try {
       final profile = await CapabilityProfile.load();
       final generator = Generator(PaperSize.mm58, profile);
@@ -174,15 +175,15 @@ class ThermalPrinterService {
       // Generate ESC/POS commands for receipt
       bytes.addAll(generator.reset());
       bytes.addAll(generator.text(receiptText, styles: const PosStyles()));
-      
+
       if (autoCut) {
         bytes.addAll(generator.cut());
       }
-      
+
       if (openDrawer) {
         bytes.addAll(generator.drawer());
       }
-      
+
       bytes.addAll(generator.feed(2));
 
       // Send to printer based on connection type
@@ -198,15 +199,14 @@ class ThermalPrinterService {
         default:
           success = false;
       }
-      
+
       _updateStatus(success ? PrinterStatus.connected : PrinterStatus.error);
-      
+
       return PrintResult(
         success: success,
         message: success ? 'Receipt printed successfully' : 'Print failed',
         status: _status,
       );
-      
     } catch (e) {
       _updateStatus(PrinterStatus.error);
       return PrintResult(
@@ -220,7 +220,8 @@ class ThermalPrinterService {
   /// Print via Bluetooth
   Future<bool> _printBluetooth(List<int> bytes) async {
     try {
-      print('⚠️ Bluetooth printing using flutter_blue_plus requires updated implementation');
+      print(
+          '⚠️ Bluetooth printing using flutter_blue_plus requires updated implementation');
       print('💡 Please use Network/WiFi printers for now');
       return false;
     } catch (e) {
@@ -240,10 +241,10 @@ class ThermalPrinterService {
   Future<bool> _printNetwork(List<int> bytes) async {
     try {
       if (_networkSocket == null) return false;
-      
+
       _networkSocket!.add(bytes);
       await _networkSocket!.flush();
-      
+
       return true;
     } catch (e) {
       print('❌ Network print failed: $e');
@@ -338,14 +339,13 @@ working correctly.
       if (_bluetoothDevice != null) {
         await _bluetoothDevice!.disconnect();
         _bluetoothDevice = null;
-        _bluetoothCharacteristic = null;
       }
-      
+
       if (_networkSocket != null) {
         await _networkSocket!.close();
         _networkSocket = null;
       }
-      
+
       _connectedDevice = null;
       _updateStatus(PrinterStatus.disconnected);
       print('✅ Printer disconnected');

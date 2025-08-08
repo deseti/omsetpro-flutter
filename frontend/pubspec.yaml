@@ -27,6 +27,9 @@ dependencies:
   # Untuk memilih gambar dari galeri/kamera
   image_picker: ^1.1.2
 
+  # Untuk manipulasi gambar (diperlukan untuk receipt service)
+  image: ^3.3.0
+
   # Untuk menyimpan data sesi login secara persisten
   shared_preferences: ^2.2.3
 

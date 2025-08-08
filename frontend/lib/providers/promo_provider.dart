@@ -40,7 +40,7 @@ class Promo {
   });
 
   factory Promo.fromJson(Map<String, dynamic> json) {
-    var produkList = (json['produk'] as List)
+    List<SimpleProduk> produkList = (json['produk'] as List)
         .map((item) => SimpleProduk(
               id: item['produk']['id'],
               nama: item['produk']['nama'],

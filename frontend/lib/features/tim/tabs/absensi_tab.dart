@@ -7,8 +7,28 @@ import '../../../providers/providers.dart';
 final absensiListProvider =
     FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final dio = ref.read(dioProvider);
-  final response = await dio.get('/absensi/riwayat');
-  return response.data;
+  try {
+    final response = await dio.get('/absensi/riwayat');
+
+    // Validate response data type
+    if (response.data is List) {
+      return response.data as List<dynamic>;
+    }
+
+    // Handle unexpected response type
+    print(
+        '⚠️ Unexpected response type from /absensi/riwayat: ${response.data.runtimeType}');
+    return <dynamic>[];
+  } catch (e) {
+    if (e is DioException) {
+      print('❌ Absensi List API Error - Status: ${e.response?.statusCode}');
+      print('❌ Response Data Type: ${e.response?.data.runtimeType}');
+      print('❌ Response Data: ${e.response?.data}');
+    }
+
+    print('❌ Error fetching absensi riwayat: $e');
+    rethrow;
+  }
 });
 
 final absensiHariIniProvider = FutureProvider.autoDispose
@@ -16,11 +36,33 @@ final absensiHariIniProvider = FutureProvider.autoDispose
   final dio = ref.read(dioProvider);
   try {
     final response = await dio.get('/absensi/hari-ini/$cabangId');
-    return response.data;
-  } catch (e) {
-    if (e is DioException && e.response?.statusCode == 404) {
-      return null; // Belum absen hari ini
+
+    // Validate response data type
+    if (response.data == null) {
+      return null;
     }
+
+    if (response.data is Map<String, dynamic>) {
+      return response.data as Map<String, dynamic>;
+    }
+
+    // Handle case where response.data is not the expected type
+    print(
+        '⚠️ Unexpected response type from /absensi/hari-ini: ${response.data.runtimeType}');
+    return null;
+  } catch (e) {
+    if (e is DioException) {
+      if (e.response?.statusCode == 404) {
+        return null; // Belum absen hari ini
+      }
+
+      // Log detailed error information
+      print('❌ Absensi API Error - Status: ${e.response?.statusCode}');
+      print('❌ Response Data Type: ${e.response?.data.runtimeType}');
+      print('❌ Response Data: ${e.response?.data}');
+    }
+
+    print('❌ Error fetching absensi hari ini: $e');
     rethrow;
   }
 });
@@ -276,7 +318,36 @@ class _AbsensiTabState extends ConsumerState<AbsensiTab>
 
     return absensiHariIni.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      error: (err, stack) {
+        print('❌ Error in _buildTodayTab: $err');
+        print('❌ Stack trace: $stack');
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text(
+                'Gagal memuat data absensi',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Error: $err',
+                style: const TextStyle(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.invalidate(absensiHariIniProvider(selectedCabangId));
+                },
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
+        );
+      },
       data: (absensi) {
         if (absensi == null) {
           // Belum check-in
@@ -312,72 +383,107 @@ class _AbsensiTabState extends ConsumerState<AbsensiTab>
           );
         }
 
-        // Sudah check-in
-        final checkIn = DateTime.parse(absensi['checkIn']);
-        final checkOut = absensi['checkOut'] != null
-            ? DateTime.parse(absensi['checkOut'])
-            : null;
-        final status = absensi['status'];
+        // Sudah check-in - with safe parsing
+        try {
+          final checkIn = absensi['checkIn'] != null
+              ? DateTime.parse(absensi['checkIn'].toString())
+              : DateTime.now();
+          final checkOut = absensi['checkOut'] != null
+              ? DateTime.parse(absensi['checkOut'].toString())
+              : null;
+          final status = absensi['status']?.toString() ?? 'HADIR';
 
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        checkOut != null
-                            ? Icons.check_circle
-                            : Icons.access_time,
-                        color: checkOut != null ? Colors.green : Colors.orange,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        checkOut != null ? 'Sudah Check-Out' : 'Sedang Bekerja',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                  _buildInfoRow(
-                      'Tanggal', absensi['tanggal'].toString().split('T')[0]),
-                  _buildInfoRow('Check-In',
-                      '${checkIn.hour.toString().padLeft(2, '0')}:${checkIn.minute.toString().padLeft(2, '0')}'),
-                  if (checkOut != null)
-                    _buildInfoRow('Check-Out',
-                        '${checkOut.hour.toString().padLeft(2, '0')}:${checkOut.minute.toString().padLeft(2, '0')}'),
-                  _buildInfoRow('Status', status),
-                  if (absensi['catatan'] != null &&
-                      absensi['catatan'].isNotEmpty)
-                    _buildInfoRow('Catatan', absensi['catatan']),
-                  if (checkOut != null)
-                    _buildInfoRow('Total Jam Kerja',
-                        _calculateWorkingHours(checkIn, checkOut)),
-                  if (checkOut == null) ...[
-                    const SizedBox(height: 16),
-                    Center(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _showCheckOutDialog(absensi['id']),
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Check-Out'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          checkOut != null
+                              ? Icons.check_circle
+                              : Icons.access_time,
+                          color:
+                              checkOut != null ? Colors.green : Colors.orange,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          checkOut != null
+                              ? 'Sudah Check-Out'
+                              : 'Sedang Bekerja',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    _buildInfoRow(
+                        'Tanggal', absensi['tanggal'].toString().split('T')[0]),
+                    _buildInfoRow('Check-In',
+                        '${checkIn.hour.toString().padLeft(2, '0')}:${checkIn.minute.toString().padLeft(2, '0')}'),
+                    if (checkOut != null)
+                      _buildInfoRow('Check-Out',
+                          '${checkOut.hour.toString().padLeft(2, '0')}:${checkOut.minute.toString().padLeft(2, '0')}'),
+                    _buildInfoRow('Status', status),
+                    if (absensi['catatan'] != null &&
+                        absensi['catatan'].isNotEmpty)
+                      _buildInfoRow('Catatan', absensi['catatan']),
+                    if (checkOut != null)
+                      _buildInfoRow('Total Jam Kerja',
+                          _calculateWorkingHours(checkIn, checkOut)),
+                    if (checkOut == null) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showCheckOutDialog(absensi['id']),
+                          icon: const Icon(Icons.logout),
+                          label: const Text('Check-Out'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-        );
+          );
+        } catch (e) {
+          print('❌ Error parsing absensi data: $e');
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Gagal memuat data absensi',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Format data tidak valid: $e',
+                  style: const TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    ref.invalidate(absensiHariIniProvider(selectedCabangId));
+                  },
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          );
+        }
       },
     );
   }
@@ -387,7 +493,36 @@ class _AbsensiTabState extends ConsumerState<AbsensiTab>
 
     return absensiList.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      error: (err, stack) {
+        print('❌ Error in _buildHistoryTab: $err');
+        print('❌ Stack trace: $stack');
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text(
+                'Gagal memuat riwayat absensi',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Error: $err',
+                style: const TextStyle(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.invalidate(absensiListProvider);
+                },
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
+        );
+      },
       data: (absensiList) {
         if (absensiList.isEmpty) {
           return const Center(
@@ -408,57 +543,88 @@ class _AbsensiTabState extends ConsumerState<AbsensiTab>
             itemCount: absensiList.length,
             itemBuilder: (context, index) {
               final absensi = absensiList[index];
-              final tanggal = DateTime.parse(absensi['tanggal']);
-              final checkIn = absensi['checkIn'] != null
-                  ? DateTime.parse(absensi['checkIn'])
-                  : null;
-              final checkOut = absensi['checkOut'] != null
-                  ? DateTime.parse(absensi['checkOut'])
-                  : null;
-              final status = absensi['status'];
 
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  leading: Icon(
-                    _getStatusIcon(status),
-                    color: _getStatusColor(status),
-                  ),
-                  title:
-                      Text('${tanggal.day}/${tanggal.month}/${tanggal.year}'),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Cabang: ${absensi['cabang']['nama']}'),
-                      if (checkIn != null)
+              try {
+                final tanggal = absensi['tanggal'] != null
+                    ? DateTime.parse(absensi['tanggal'].toString())
+                    : DateTime.now();
+                final checkIn = absensi['checkIn'] != null
+                    ? DateTime.parse(absensi['checkIn'].toString())
+                    : null;
+                final checkOut = absensi['checkOut'] != null
+                    ? DateTime.parse(absensi['checkOut'].toString())
+                    : null;
+                final status = absensi['status']?.toString() ?? 'HADIR';
+
+                return Card(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    leading: Icon(
+                      _getStatusIcon(status),
+                      color: _getStatusColor(status),
+                    ),
+                    title:
+                        Text('${tanggal.day}/${tanggal.month}/${tanggal.year}'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Cabang: ${absensi['cabang']?['nama'] ?? 'N/A'}'),
+                        if (checkIn != null)
+                          Text(
+                              'In: ${checkIn.hour.toString().padLeft(2, '0')}:${checkIn.minute.toString().padLeft(2, '0')}'),
+                        if (checkOut != null)
+                          Text(
+                              'Out: ${checkOut.hour.toString().padLeft(2, '0')}:${checkOut.minute.toString().padLeft(2, '0')}'),
+                      ],
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
                         Text(
-                            'In: ${checkIn.hour.toString().padLeft(2, '0')}:${checkIn.minute.toString().padLeft(2, '0')}'),
-                      if (checkOut != null)
-                        Text(
-                            'Out: ${checkOut.hour.toString().padLeft(2, '0')}:${checkOut.minute.toString().padLeft(2, '0')}'),
-                    ],
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        status,
-                        style: TextStyle(
-                          color: _getStatusColor(status),
-                          fontWeight: FontWeight.bold,
+                          status,
+                          style: TextStyle(
+                            color: _getStatusColor(status),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      if (checkIn != null && checkOut != null)
-                        Text(
-                          _calculateWorkingHours(checkIn, checkOut),
-                          style:
-                              const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                    ],
+                        if (checkIn != null && checkOut != null)
+                          Text(
+                            _calculateWorkingHours(checkIn, checkOut),
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              );
+                );
+              } catch (e) {
+                print('❌ Error parsing absensi item at index $index: $e');
+                print('❌ Absensi data: $absensi');
+
+                // Return a card with error information
+                return Card(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    leading: const Icon(Icons.error_outline, color: Colors.red),
+                    title: const Text('Data Error'),
+                    subtitle: Text('Item #${index + 1} - Format tidak valid'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.info_outline),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              }
             },
           ),
         );

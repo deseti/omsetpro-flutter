@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/providers.dart' as AppProviders;
 import '../../../theme/app_theme.dart';
+import '../../../models/pelanggan_model.dart';
 import './cart_item_widget.dart';
 import './empty_cart_widget.dart';
 import './payment_buttons_widget.dart';
@@ -9,7 +10,7 @@ import './cart_floating_buttons.dart';
 
 class MobileCartWidget extends ConsumerWidget {
   final List<Map<String, dynamic>> cart;
-  final selectedPelanggan;
+  final Pelanggan? selectedPelanggan;
   final double totalHarga;
   final VoidCallback? onCashPayment;
   final VoidCallback? onDigitalPayment;

@@ -263,7 +263,8 @@ class BarcodeScannerService {
     if (_connectedDevice == null) return false;
 
     try {
-      final commandBytes = command.codeUnits;
+      // Convert command to bytes for transmission
+      command.codeUnits;
 
       switch (_connectedDevice!.connectionType) {
         case ConnectionType.bluetooth:

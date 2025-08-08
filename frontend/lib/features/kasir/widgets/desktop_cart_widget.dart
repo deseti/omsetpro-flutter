@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/providers.dart' as AppProviders;
 import '../../../widgets/responsive_widgets.dart';
 import '../../../theme/app_theme.dart';
+import '../../../models/pelanggan_model.dart';
 import './cart_item_widget.dart';
 import './empty_cart_widget.dart';
 import './pelanggan_info_widget.dart';
@@ -12,7 +13,7 @@ import './payment_buttons_widget.dart';
 
 class DesktopCartWidget extends ConsumerWidget {
   final List<Map<String, dynamic>> cart;
-  final selectedPelanggan;
+  final Pelanggan? selectedPelanggan;
   final double totalHarga;
   final VoidCallback? onCashPayment;
   final VoidCallback? onDigitalPayment;

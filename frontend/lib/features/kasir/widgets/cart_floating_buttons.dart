@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../models/pelanggan_model.dart';
 import './cart_bottom_sheets.dart';
 
 class CartFloatingButtons extends StatelessWidget {
-  final selectedPelanggan;
+  final Pelanggan? selectedPelanggan;
   final double totalHarga;
 
   const CartFloatingButtons({

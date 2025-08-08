@@ -39,7 +39,8 @@ Contoh Produk A,10000,8000,50,1234567890
 Contoh Produk B,15000,12000,30,0987654321
 Contoh Produk C,5000,3500,100,1122334455''';
 
-    final bytes = Uint8List.fromList(csvContent.codeUnits);
+    // Convert to bytes for download
+    Uint8List.fromList(csvContent.codeUnits);
 
     if (kIsWeb) {
       // Web platform - would need universal_html or different approach

@@ -42,8 +42,9 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    var aksesList = json['aksesCabang'] as List;
-    List<AksesCabang> aksesCabangList = aksesList.map((i) => AksesCabang.fromJson(i)).toList();
+    List<dynamic> aksesList = json['aksesCabang'] as List;
+    List<AksesCabang> aksesCabangList =
+        aksesList.map((i) => AksesCabang.fromJson(i)).toList();
 
     return User(
       id: json['id'],
