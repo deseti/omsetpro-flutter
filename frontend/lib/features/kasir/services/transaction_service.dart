@@ -6,7 +6,8 @@ import '../../../providers/providers.dart' as AppProviders;
 import '../../../services/offline_database_proxy.dart' as OfflineDatabase;
 import '../../../services/connectivity_service.dart';
 import '../../../services/receipt_service.dart';
-import '../../pengaturan/pengaturan_akun_page.dart'; // Untuk DataToko dan dataTokoProvider
+import '../../pengaturan/models/data_toko_model.dart'; // Untuk DataToko
+import '../../pengaturan/providers/data_toko_provider.dart'; // Untuk dataTokoProvider
 import '../../../services/midtrans_service.dart';
 import '../../../services/payment_service_interface.dart';
 import '../../../widgets/receipt_preview_dialog.dart';
@@ -329,7 +330,7 @@ class TransactionService {
     String namaToko = 'OmsetPro POS'; // default
     try {
       // Get store data from provider
-      final dataToko = await ref.read(dataTokoProvider.future);
+      final DataToko dataToko = await ref.read(dataTokoProvider.future);
 
       namaToko = dataToko.nama.isNotEmpty ? dataToko.nama : namaToko;
       logoUrl = dataToko.logoUrl; // This is the URL from backend
