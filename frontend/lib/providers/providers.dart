@@ -10,7 +10,6 @@ import '../services/network_service.dart'; // Import network service
 
 // Payment Method enum
 enum PaymentMethod {
-  cash, // Pembayaran tunai langsung
   manual, // Pembayaran manual (Langsung/Tempo)
 }
 
@@ -21,17 +20,16 @@ final platformInfoProvider = Provider<Map<String, dynamic>>((ref) {
     'digitalPaymentSupported': false, // Nonaktifkan pembayaran digital
     'features': {
       'manualPayment': true, // Aktifkan manual payment (Langsung/Tempo)
-      'cashPayment': true, // Aktifkan pembayaran tunai
+      'cashPayment': false, // Nonaktifkan pembayaran tunai terpisah
     },
   };
 });
 
 // Available payment methods provider
 final availablePaymentMethodsProvider = Provider<List<PaymentMethod>>((ref) {
-  // Untuk semua platform, sediakan opsi tunai dan manual
+  // Untuk semua platform, hanya sediakan opsi manual
   // Manual payment mendukung: Pembayaran Langsung dan Pembayaran Tempo/Hutang
   return [
-    PaymentMethod.cash, // Pembayaran tunai langsung
     PaymentMethod.manual, // Pembayaran manual (Langsung/Tempo)
   ];
 });

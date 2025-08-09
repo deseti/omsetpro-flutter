@@ -30,6 +30,5 @@ class PaymentResult {
 }
 
 enum PaymentMethod {
-  cash, // Pembayaran tunai langsung
-  manual, // Pembayaran tempo/hutang (manual entry)
+  manual, // Pembayaran manual (Langsung/Tempo/Hutang)
 }

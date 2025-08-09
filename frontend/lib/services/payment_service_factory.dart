@@ -14,10 +14,9 @@ export 'payment_service_factory_mobile.dart'
 // Provider untuk mendeteksi platform dan payment methods yang tersedia
 final availablePaymentMethodsProvider = Provider<List<PaymentMethod>>((ref) {
   // Nonaktifkan pembayaran digital Midtrans untuk semua platform
-  // Hanya tersedia opsi pembayaran manual dan tunai
+  // Hanya tersedia opsi pembayaran manual
   return [
-    PaymentMethod.cash, // Pembayaran tunai langsung
-    PaymentMethod.manual, // Pembayaran tempo/hutang (manual entry)
+    PaymentMethod.manual, // Pembayaran manual (Langsung/Tempo/Hutang)
   ];
 });
 

@@ -92,24 +92,6 @@ class PaymentButtonsWidget extends ConsumerWidget {
             ],
           ),
         );
-      case AppProviders.PaymentMethod.cash:
-        final isOfflineMode = ref.watch(AppProviders.offlineModeProvider);
-        return FilledButton.icon(
-          onPressed: cart.isEmpty ? null : onCashPayment,
-          icon: Icon(isOfflineMode ? Icons.offline_bolt : Icons.payments),
-          label: const Text('Pembayaran Tunai'),
-          style: FilledButton.styleFrom(
-            backgroundColor: isOfflineMode
-                ? Theme.of(context).colorScheme.tertiary
-                : Theme.of(context).colorScheme.secondary,
-            foregroundColor: isOfflineMode
-                ? Theme.of(context).colorScheme.onTertiary
-                : Theme.of(context).colorScheme.onSecondary,
-            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-          ),
-        );
-      default:
-        return const SizedBox.shrink();
     }
   }
 }
